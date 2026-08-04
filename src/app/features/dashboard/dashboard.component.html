@@ -1,0 +1,106 @@
+<div class="page-header">
+  <h1>Dashboard</h1>
+</div>
+
+@if (loading()) {
+  <div class="loading-state">Cargando métricas...</div>
+} @else if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+} @else {
+  @if (metrics(); as m) {
+  <div class="metrics-grid">
+    <div class="metric-card card">
+      <span class="metric-card__label">Usuarios totales</span>
+      <span class="metric-card__value">{{ m.totalUsers }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Usuarios activos</span>
+      <span class="metric-card__value">{{ m.activeUsers }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Campos</span>
+      <span class="metric-card__value">{{ m.totalFields }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Lotes</span>
+      <span class="metric-card__value">{{ m.totalLots }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Diagnósticos</span>
+      <span class="metric-card__value">{{ m.totalAnalysis }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Diagnósticos fallidos</span>
+      <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysis }}</span>
+    </div>
+    <div class="metric-card card">
+      <span class="metric-card__label">Duración promedio</span>
+      <span class="metric-card__value">{{ m.averageAnalysisDurationMs | duration }}</span>
+    </div>
+  </div>
+
+  <div class="lists-grid">
+    <div class="card">
+      <div class="list-header">
+        <h2>Últimos diagnósticos</h2>
+        <a routerLink="/analysis">Ver todos →</a>
+      </div>
+      @if (m.latestAnalysis.length) {
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Estado</th>
+              <th>Duración</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of m.latestAnalysis; track item.id) {
+              <tr>
+                <td>{{ item.lotName }}</td>
+                <td>
+                  <app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" />
+                </td>
+                <td>{{ item.durationMs | duration }}</td>
+                <td>{{ item.createdAt | date: 'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty-state">Todavía no hay diagnósticos.</p>
+      }
+    </div>
+
+    <div class="card">
+      <div class="list-header">
+        <h2>Últimas solicitudes de acceso</h2>
+        <a routerLink="/access-requests">Ver todas →</a>
+      </div>
+      @if (m.latestAccessRequests.length) {
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of m.latestAccessRequests; track item.id) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.email }}</td>
+                <td>{{ item.createdAt | date: 'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty-state">Todavía no hay solicitudes de acceso.</p>
+      }
+    </div>
+  </div>
+  }
+}

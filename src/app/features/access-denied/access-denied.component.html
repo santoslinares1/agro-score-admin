@@ -1,0 +1,13 @@
+<div class="denied-page">
+  <div class="denied-card card">
+    <h1>Acceso denegado</h1>
+    <p>
+      Tu cuenta @if (currentUser) {
+        ({{ currentUser.email }})
+      } no tiene rol <strong>owner</strong> ni <strong>admin</strong>, así que no
+      puede entrar al panel administrativo de AgroScore.
+    </p>
+    <p class="hint">Si creés que esto es un error, pedile a un owner que te promueva desde el backend.</p>
+    <button type="button" class="btn" (click)="logout()">Cerrar sesión</button>
+  </div>
+</div>

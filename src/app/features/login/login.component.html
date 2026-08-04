@@ -1,0 +1,30 @@
+<div class="login-page">
+  <form class="login-card card" (ngSubmit)="submit()">
+    <h1>AgroScore <span>Admin</span></h1>
+    <p class="subtitle">Panel interno — acceso restringido a owner/admin.</p>
+
+    @if (errorMessage(); as message) {
+      <div class="error-banner">{{ message }}</div>
+    }
+
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
+    </label>
+
+    <label>
+      Contraseña
+      <input
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        required
+        autocomplete="current-password"
+      />
+    </label>
+
+    <button type="submit" class="btn btn-primary" [disabled]="loading()">
+      {{ loading() ? 'Ingresando...' : 'Ingresar' }}
+    </button>
+  </form>
+</div>

@@ -1,0 +1,55 @@
+<div class="page-header">
+  <h1>Solicitudes de acceso</h1>
+  <div class="filters">
+    <select [value]="status()" (change)="onStatusChange($any($event.target).value)">
+      <option value="">Todos los estados</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ statusLabels[s] }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-state">Cargando solicitudes...</div>
+} @else if (!items().length) {
+  <p class="empty-state">No hay solicitudes de acceso todavía.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Organización</th>
+        <th>Perfil</th>
+        <th>Mensaje</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id) {
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.email }}</td>
+          <td>{{ item.organization }}</td>
+          <td>{{ profileLabels[item.profile] }}</td>
+          <td class="error-cell">{{ item.message ?? '—' }}</td>
+          <td><app-status-badge [label]="statusLabels[item.status]" [tone]="statusTone(item.status)" /></td>
+          <td>{{ item.createdAt | date: 'short' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <app-pagination-controls
+    [page]="page()"
+    [limit]="limit"
+    [total]="total()"
+    (pageChange)="onPageChange($event)"
+  />
+}

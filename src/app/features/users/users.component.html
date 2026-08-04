@@ -1,0 +1,111 @@
+<div class="page-header">
+  <h1>Usuarios</h1>
+  <div class="page-header__actions">
+    <input
+      type="search"
+      placeholder="Buscar por email o nombre..."
+      [value]="search()"
+      (input)="onSearchChange($any($event.target).value)"
+    />
+    <button type="button" class="btn btn-primary" (click)="openCreateForm()">+ Crear usuario</button>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-state">Cargando usuarios...</div>
+} @else if (!users().length) {
+  <p class="empty-state">No hay usuarios para mostrar.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Nombre</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Creado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (user of users(); track user.id) {
+        <tr [class.row--inactive]="!user.isActive">
+          <td>{{ user.email }}</td>
+          <td>{{ user.fullName }}</td>
+          <td><span class="role-pill" [class]="'role-pill--' + user.role">{{ user.role }}</span></td>
+          <td>{{ user.isActive ? 'Activo' : 'Inactivo' }}</td>
+          <td>{{ user.createdAt | date: 'short' }}</td>
+          <td class="actions">
+            <button type="button" class="btn" (click)="openEditForm(user)">Editar</button>
+            @if (user.isActive) {
+              <button type="button" class="btn btn-danger" (click)="deactivate(user)">
+                Desactivar
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <app-pagination-controls
+    [page]="page()"
+    [limit]="limit"
+    [total]="total()"
+    (pageChange)="onPageChange($event)"
+  />
+}
+
+@if (formOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <form class="modal card" (click)="$event.stopPropagation()" (ngSubmit)="submitForm()" [formGroup]="form">
+      <h2>{{ formMode() === 'create' ? 'Crear usuario' : 'Editar usuario' }}</h2>
+
+      @if (formError()) {
+        <div class="error-banner">{{ formError() }}</div>
+      }
+
+      <label>
+        Nombre
+        <input type="text" formControlName="fullName" />
+      </label>
+
+      <label>
+        Email
+        <input type="email" formControlName="email" />
+      </label>
+
+      @if (formMode() === 'create') {
+        <label>
+          Contraseña temporal
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
+      }
+
+      <label>
+        Rol
+        <select formControlName="role">
+          @for (role of roles; track role) {
+            <option [value]="role">{{ role }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" formControlName="isActive" />
+        Activo
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="closeForm()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="formSubmitting()">
+          {{ formSubmitting() ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
+}

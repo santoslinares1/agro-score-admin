@@ -1,0 +1,29 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sidebar__brand">AgroScore <span>Admin</span></div>
+    <nav class="sidebar__nav">
+      @for (item of navItems; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+      }
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar__spacer"></div>
+      <div class="topbar__user">
+        @if (authService.currentUser; as user) {
+          <span class="topbar__user-info">
+            {{ user.fullName }}
+            <span class="topbar__role">{{ user.role }}</span>
+          </span>
+        }
+        <button type="button" class="btn" (click)="logout()">Salir</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

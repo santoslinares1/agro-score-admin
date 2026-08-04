@@ -1,0 +1,51 @@
+<div class="page-header">
+  <h1>Campos</h1>
+  <div class="page-header__actions">
+    <input
+      type="search"
+      placeholder="Buscar por nombre..."
+      [value]="search()"
+      (input)="onSearchChange($any($event.target).value)"
+    />
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-state">Cargando campos...</div>
+} @else if (!items().length) {
+  <p class="empty-state">No hay campos para mostrar.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Dueño</th>
+        <th>Lotes</th>
+        <th>Creado</th>
+        <th>Actualizado</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (field of items(); track field.id) {
+        <tr>
+          <td>{{ field.name }}</td>
+          <td>{{ field.ownerFullName }} <span class="muted">({{ field.ownerEmail }})</span></td>
+          <td>{{ field.lotsCount }}</td>
+          <td>{{ field.createdAt | date: 'short' }}</td>
+          <td>{{ field.updatedAt | date: 'short' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <app-pagination-controls
+    [page]="page()"
+    [limit]="limit"
+    [total]="total()"
+    (pageChange)="onPageChange($event)"
+  />
+}

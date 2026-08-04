@@ -1,0 +1,20 @@
+.page-header__actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.filters {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.error-cell {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
