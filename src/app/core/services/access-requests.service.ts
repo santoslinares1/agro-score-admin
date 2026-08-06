@@ -3,7 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environment/environment';
-import { AdminAccessRequest, AccessRequestStatus } from '../models/access-request.model';
+import {
+  AccessRequestStatus,
+  AdminAccessRequest,
+  CreateUserFromAccessRequestPayload,
+  CreateUserFromAccessRequestResult,
+  UpdateAccessRequestPayload,
+} from '../models/access-request.model';
 import { PaginatedResult, PaginationQuery } from '../models/pagination.model';
 import { toHttpParams } from './query-params.util';
 
@@ -20,6 +26,23 @@ export class AccessRequestsService {
     return this.http.get<PaginatedResult<AdminAccessRequest>>(
       `${this.apiUrl}/admin/access-requests`,
       { params: toHttpParams(query) },
+    );
+  }
+
+  update(id: string, payload: UpdateAccessRequestPayload): Observable<AdminAccessRequest> {
+    return this.http.patch<AdminAccessRequest>(
+      `${this.apiUrl}/admin/access-requests/${id}`,
+      payload,
+    );
+  }
+
+  createUserFromRequest(
+    id: string,
+    payload: CreateUserFromAccessRequestPayload,
+  ): Observable<CreateUserFromAccessRequestResult> {
+    return this.http.post<CreateUserFromAccessRequestResult>(
+      `${this.apiUrl}/admin/access-requests/${id}/create-user`,
+      payload,
     );
   }
 }

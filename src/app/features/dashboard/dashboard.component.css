@@ -1,8 +1,39 @@
+.metrics-section {
+  margin-bottom: 1.75rem;
+}
+
+.metrics-section__title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.6rem;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.75rem;
+}
+
+.status-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.status-summary__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-summary__count {
+  font-weight: 700;
 }
 
 .metric-card {

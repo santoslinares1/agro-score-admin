@@ -1,6 +1,12 @@
 <div class="page-header">
   <h1>Solicitudes de acceso</h1>
-  <div class="filters">
+  <div class="page-header__actions">
+    <input
+      type="search"
+      placeholder="Buscar por nombre, email u organización..."
+      [value]="search()"
+      (input)="onSearchChange($any($event.target).value)"
+    />
     <select [value]="status()" (change)="onStatusChange($any($event.target).value)">
       <option value="">Todos los estados</option>
       @for (s of statuses; track s) {
@@ -17,7 +23,7 @@
 @if (loading()) {
   <div class="loading-state">Cargando solicitudes...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay solicitudes de acceso todavía.</p>
+  <p class="empty-state">No hay solicitudes de acceso para estos filtros.</p>
 } @else {
   <table>
     <thead>
@@ -26,9 +32,10 @@
         <th>Email</th>
         <th>Organización</th>
         <th>Perfil</th>
-        <th>Mensaje</th>
         <th>Estado</th>
-        <th>Fecha</th>
+        <th>Responsable</th>
+        <th>Creada</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -38,9 +45,12 @@
           <td>{{ item.email }}</td>
           <td>{{ item.organization }}</td>
           <td>{{ profileLabels[item.profile] }}</td>
-          <td class="error-cell">{{ item.message ?? '—' }}</td>
           <td><app-status-badge [label]="statusLabels[item.status]" [tone]="statusTone(item.status)" /></td>
+          <td class="muted">{{ assigneeLabel(item.assignedToUserId) }}</td>
           <td>{{ item.createdAt | date: 'short' }}</td>
+          <td class="actions">
+            <button type="button" class="btn" (click)="openDetail(item)">Ver detalle</button>
+          </td>
         </tr>
       }
     </tbody>
@@ -52,4 +62,115 @@
     [total]="total()"
     (pageChange)="onPageChange($event)"
   />
+}
+
+@if (selected(); as item) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal modal--wide card" (click)="$event.stopPropagation()">
+      <h2>{{ item.name }}</h2>
+
+      <div>
+        <p><strong>Email:</strong> {{ item.email }}</p>
+        <p><strong>Organización:</strong> {{ item.organization }}</p>
+        <p><strong>Perfil:</strong> {{ profileLabels[item.profile] }}</p>
+        <p><strong>Superficie estimada:</strong> {{ item.estimatedSurface ?? '—' }}</p>
+        <p><strong>Mensaje:</strong> {{ item.message ?? '—' }}</p>
+      </div>
+
+      <div class="modal-section">
+        <p class="muted">
+          Creada {{ item.createdAt | date: 'short' }}
+          @if (item.contactedAt) { · Contactada {{ item.contactedAt | date: 'short' }} }
+          @if (item.convertedAt) { · Convertida {{ item.convertedAt | date: 'short' }} }
+          @if (item.discardedAt) { · Descartada {{ item.discardedAt | date: 'short' }} }
+        </p>
+      </div>
+
+      <div class="modal-section">
+        @if (detailError()) {
+          <div class="error-banner">{{ detailError() }}</div>
+        }
+
+        <label>
+          Estado
+          <select [(ngModel)]="editStatus" name="editStatus">
+            @for (s of statuses; track s) {
+              <option [value]="s">{{ statusLabels[s] }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Notas internas
+          <textarea rows="3" [(ngModel)]="editInternalNotes" name="editInternalNotes"></textarea>
+        </label>
+
+        <label>
+          Responsable asignado
+          <select [(ngModel)]="editAssignedToUserId" name="editAssignedToUserId">
+            <option value="">Sin asignar</option>
+            @for (u of assignableUsers(); track u.id) {
+              <option [value]="u.id">{{ u.fullName }} ({{ u.email }})</option>
+            }
+          </select>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="closeDetail()">Cerrar</button>
+          <button type="button" class="btn btn-primary" [disabled]="detailSaving()" (click)="saveDetail()">
+            {{ detailSaving() ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        @if (createUserResult(); as invitation) {
+          <div class="success-banner">
+            Invitación creada para <strong>{{ invitation.email }}</strong> (rol {{ invitation.role }}),
+            vence {{ invitation.expiresAt | date: 'short' }}.
+          </div>
+
+          @if (invitation.invitationToken) {
+            <div class="warning-banner">
+              Token de invitación (solo visible en desarrollo — nunca se muestra así en producción):
+            </div>
+            <div class="token-box">{{ invitation.invitationUrl ?? invitation.invitationToken }}</div>
+          } @else {
+            <p class="muted">{{ invitation.message ?? 'Invitación creada; el envío por email todavía no está integrado.' }}</p>
+          }
+        } @else if (item.status === 'converted') {
+          <p class="muted">Esta solicitud ya fue convertida en una invitación de usuario.</p>
+        } @else if (!createUserOpen()) {
+          <button type="button" class="btn btn-primary" (click)="openCreateUser()">
+            Crear usuario desde esta solicitud
+          </button>
+        } @else {
+          @if (createUserError()) {
+            <div class="error-banner">{{ createUserError() }}</div>
+          }
+
+          <label>
+            Rol del nuevo usuario
+            <select [(ngModel)]="createUserRole" name="createUserRole">
+              @for (r of roles; track r) {
+                <option [value]="r">{{ r }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="modal-actions">
+            <button type="button" class="btn" (click)="cancelCreateUser()">Cancelar</button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              [disabled]="createUserSubmitting()"
+              (click)="confirmCreateUser()"
+            >
+              {{ createUserSubmitting() ? 'Creando...' : 'Confirmar creación' }}
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
 }

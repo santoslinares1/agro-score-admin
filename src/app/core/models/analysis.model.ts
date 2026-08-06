@@ -16,5 +16,10 @@ export interface AdminAnalysis {
   failedAt: string | null;
   durationMs: number | null;
   errorMessage: string | null;
+  // ADMIN-2: operación sobre diagnósticos fallidos.
+  reviewedAt: string | null;
+  reviewedByUserId: string | null;
+  retryCount: number;
+  lastRetriedAt: string | null;
   createdAt: string;
 }

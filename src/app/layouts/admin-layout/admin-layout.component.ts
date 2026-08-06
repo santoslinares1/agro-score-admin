@@ -17,10 +17,12 @@ export class AdminLayoutComponent {
   protected readonly navItems = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/users', label: 'Usuarios' },
+    { path: '/access-requests', label: 'Solicitudes' },
     { path: '/fields', label: 'Campos' },
     { path: '/lots', label: 'Lotes' },
     { path: '/analysis', label: 'Diagnósticos' },
-    { path: '/access-requests', label: 'Solicitudes de acceso' },
+    { path: '/audit-logs', label: 'Auditoría' },
+    { path: '/system', label: 'Sistema' },
   ];
 
   logout(): void {

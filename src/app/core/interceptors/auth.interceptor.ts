@@ -26,6 +26,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         router.navigate(['/login']);
       }
 
+      // ADMIN-2: un 403 en vivo (no al navegar, sino en medio de una
+      // acción) significa que el rol ya no es owner/admin — normalmente
+      // adminGuard ya lo hubiera atajado al cargar la ruta, pero un rol
+      // bajado mientras la sesión seguía abierta en esta pestaña puede
+      // llegar acá primero. No se limpia la sesión (el token sigue siendo
+      // válido, solo no autorizado) — se manda a /access-denied, igual que
+      // hace el guard.
+      if (error.status === 403 && router.url !== '/access-denied') {
+        router.navigate(['/access-denied']);
+      }
+
       return throwError(() => error);
     }),
   );

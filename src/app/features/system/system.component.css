@@ -1,0 +1,20 @@
+.health-card__value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.health-card__value--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+}
+
+.lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.lists-grid h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}

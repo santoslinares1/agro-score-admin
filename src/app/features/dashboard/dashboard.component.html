@@ -8,36 +8,127 @@
   <div class="error-banner">{{ errorMessage() }}</div>
 } @else {
   @if (metrics(); as m) {
-  <div class="metrics-grid">
-    <div class="metric-card card">
-      <span class="metric-card__label">Usuarios totales</span>
-      <span class="metric-card__value">{{ m.totalUsers }}</span>
+  <section class="metrics-section">
+    <h2 class="metrics-section__title">Usuarios</h2>
+    <div class="metrics-grid">
+      <div class="metric-card card">
+        <span class="metric-card__label">Totales</span>
+        <span class="metric-card__value">{{ m.totalUsers }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Activos</span>
+        <span class="metric-card__value">{{ m.activeUsers }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Nuevos (7 días)</span>
+        <span class="metric-card__value">{{ m.usersCreatedLast7Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Nuevos (30 días)</span>
+        <span class="metric-card__value">{{ m.usersCreatedLast30Days ?? 0 }}</span>
+      </div>
     </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Usuarios activos</span>
-      <span class="metric-card__value">{{ m.activeUsers }}</span>
+  </section>
+
+  <section class="metrics-section">
+    <h2 class="metrics-section__title">Campos</h2>
+    <div class="metrics-grid">
+      <div class="metric-card card">
+        <span class="metric-card__label">Totales</span>
+        <span class="metric-card__value">{{ m.totalFields }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Lotes</span>
+        <span class="metric-card__value">{{ m.totalLots }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Nuevos (7 días)</span>
+        <span class="metric-card__value">{{ m.fieldsCreatedLast7Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Nuevos (30 días)</span>
+        <span class="metric-card__value">{{ m.fieldsCreatedLast30Days ?? 0 }}</span>
+      </div>
     </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Campos</span>
-      <span class="metric-card__value">{{ m.totalFields }}</span>
+  </section>
+
+  <section class="metrics-section">
+    <h2 class="metrics-section__title">Diagnósticos</h2>
+    <div class="metrics-grid">
+      <div class="metric-card card">
+        <span class="metric-card__label">Totales</span>
+        <span class="metric-card__value">{{ m.totalAnalysis }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Completados</span>
+        <span class="metric-card__value">{{ m.completedAnalysis }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Fallidos</span>
+        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysis }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Últimos 7 días</span>
+        <span class="metric-card__value">{{ m.analysisCreatedLast7Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Últimos 30 días</span>
+        <span class="metric-card__value">{{ m.analysisCreatedLast30Days ?? 0 }}</span>
+      </div>
     </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Lotes</span>
-      <span class="metric-card__value">{{ m.totalLots }}</span>
+  </section>
+
+  <section class="metrics-section">
+    <h2 class="metrics-section__title">Salud operativa</h2>
+    <div class="metrics-grid">
+      <div class="metric-card card">
+        <span class="metric-card__label">Fallidos (7 días)</span>
+        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast7Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Fallidos (30 días)</span>
+        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast30Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Tasa de fallo (7 días)</span>
+        <span class="metric-card__value">
+          @if (m.analysisFailureRateLast7Days != null) {
+            {{ m.analysisFailureRateLast7Days * 100 | number: '1.0-1' }}%
+          } @else {
+            No disponible
+          }
+        </span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Duración promedio</span>
+        <span class="metric-card__value">{{ m.averageAnalysisDurationMs | duration }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Duración promedio (7 días)</span>
+        <span class="metric-card__value">{{ m.averageAnalysisDurationMsLast7Days | duration }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Usuarios sin diagnóstico</span>
+        <span class="metric-card__value">{{ m.usersWithNoAnalysis ?? 0 }}</span>
+      </div>
+      <div class="metric-card card">
+        <span class="metric-card__label">Campos sin diagnóstico</span>
+        <span class="metric-card__value">{{ m.fieldsWithNoAnalysis ?? 0 }}</span>
+      </div>
     </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Diagnósticos</span>
-      <span class="metric-card__value">{{ m.totalAnalysis }}</span>
+  </section>
+
+  <section class="metrics-section">
+    <h2 class="metrics-section__title">Solicitudes de acceso</h2>
+    <div class="status-summary">
+      @for (s of accessRequestStatusOrder; track s) {
+        <div class="status-summary__item">
+          <app-status-badge [label]="accessRequestStatusLabels[s]" [tone]="accessRequestStatusTone(s)" />
+          <span class="status-summary__count">{{ m.accessRequestsByStatus?.[s] ?? 0 }}</span>
+        </div>
+      }
     </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Diagnósticos fallidos</span>
-      <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysis }}</span>
-    </div>
-    <div class="metric-card card">
-      <span class="metric-card__label">Duración promedio</span>
-      <span class="metric-card__value">{{ m.averageAnalysisDurationMs | duration }}</span>
-    </div>
-  </div>
+  </section>
 
   <div class="lists-grid">
     <div class="card">

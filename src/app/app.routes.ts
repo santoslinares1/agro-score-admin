@@ -52,6 +52,18 @@ export const routes: Routes = [
             (m) => m.AccessRequestsComponent,
           ),
       },
+      {
+        path: 'audit-logs',
+        loadComponent: () =>
+          import('./features/audit-logs/audit-logs.component').then(
+            (m) => m.AuditLogsComponent,
+          ),
+      },
+      {
+        path: 'system',
+        loadComponent: () =>
+          import('./features/system/system.component').then((m) => m.SystemComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

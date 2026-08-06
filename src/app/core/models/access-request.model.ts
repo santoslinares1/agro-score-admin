@@ -1,4 +1,8 @@
-export type AccessRequestStatus = 'new' | 'contacted' | 'discarded';
+import { UserRole } from './user.model';
+
+// ADMIN-2: status ampliado de 3 a 5 valores — ver docs/admin-backend.md en
+// agro-score-api.
+export type AccessRequestStatus = 'new' | 'contacted' | 'interested' | 'discarded' | 'converted';
 
 export type AccessRequestProfile =
   | 'producer'
@@ -24,5 +28,39 @@ export interface AdminAccessRequest {
   estimatedSurface?: string | null;
   message?: string | null;
   status: AccessRequestStatus;
+  internalNotes?: string | null;
+  assignedToUserId?: string | null;
+  contactedAt?: string | null;
+  convertedAt?: string | null;
+  discardedAt?: string | null;
   createdAt: string;
+}
+
+export interface UpdateAccessRequestPayload {
+  status?: AccessRequestStatus;
+  internalNotes?: string;
+  assignedToUserId?: string;
+}
+
+export interface CreateUserFromAccessRequestPayload {
+  role?: UserRole;
+}
+
+// ADMIN-2: la respuesta nunca incluye password/hash — el usuario se da de
+// alta vía invitación. invitationToken/invitationUrl solo vienen si el
+// backend NO está en producción (NODE_ENV=production oculta el token por
+// completo); `message` viene en su lugar cuando no hay token para mostrar.
+export interface IssuedInvitationSummary {
+  id: string;
+  email: string;
+  role: UserRole;
+  expiresAt: string;
+  invitationToken?: string;
+  invitationUrl?: string;
+  message?: string;
+}
+
+export interface CreateUserFromAccessRequestResult {
+  accessRequest: AdminAccessRequest;
+  invitation: IssuedInvitationSummary;
 }

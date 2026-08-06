@@ -1,19 +1,32 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { AdminUser, UserRole } from '../../core/models/user.model';
+import { IssuedInvitationSummary } from '../../core/models/access-request.model';
+import { AdminUser, PasswordResetResult, UserRole } from '../../core/models/user.model';
 import { UsersService } from '../../core/services/users.service';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 
 type FormMode = 'create' | 'edit';
+type ActiveFilter = '' | 'active' | 'inactive';
 
 const PAGE_LIMIT = 20;
+// ADMIN-2: el backend no soporta filtrar /admin/users por rol/isActive
+// server-side (solo page/limit/search — ver docs/admin-backend.md). Cuando
+// alguno de esos dos filtros está activo, se trae este lote más grande y se
+// filtra en el cliente; no escala a miles de usuarios, pero es correcto
+// para el volumen actual y no requiere tocar el backend. Ver README.
+const CLIENT_FILTER_LIMIT = 100;
+
+function apiErrorMessage(err: unknown, fallback: string): string {
+  const message = (err as { error?: { message?: string | string[] } })?.error?.message;
+  return Array.isArray(message) ? message.join(', ') : (message ?? fallback);
+}
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, PaginationControlsComponent],
+  imports: [DatePipe, FormsModule, ReactiveFormsModule, PaginationControlsComponent],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css',
 })
@@ -31,6 +44,22 @@ export class UsersComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
 
+  protected readonly roleFilter = signal<UserRole | ''>('');
+  protected readonly activeFilter = signal<ActiveFilter>('');
+  protected readonly clientFilterMode = computed(
+    () => this.roleFilter() !== '' || this.activeFilter() !== '',
+  );
+  protected readonly visibleUsers = computed(() => {
+    const role = this.roleFilter();
+    const active = this.activeFilter();
+
+    return this.users().filter(
+      (u) =>
+        (!role || u.role === role) &&
+        (!active || (active === 'active' ? u.isActive : !u.isActive)),
+    );
+  });
+
   protected readonly formOpen = signal(false);
   protected readonly formMode = signal<FormMode>('create');
   protected readonly formError = signal<string | null>(null);
@@ -45,6 +74,20 @@ export class UsersComponent implements OnInit {
     isActive: [true],
   });
 
+  // ── Invitación ──
+  protected readonly inviteOpen = signal(false);
+  protected readonly inviteSubmitting = signal(false);
+  protected readonly inviteError = signal<string | null>(null);
+  protected readonly inviteResult = signal<IssuedInvitationSummary | null>(null);
+  protected inviteEmail = '';
+  protected inviteRole: UserRole = 'user';
+
+  // ── Password reset ──
+  protected readonly resetTarget = signal<AdminUser | null>(null);
+  protected readonly resetSubmitting = signal(false);
+  protected readonly resetError = signal<string | null>(null);
+  protected readonly resetResult = signal<PasswordResetResult | null>(null);
+
   ngOnInit(): void {
     this.load();
   }
@@ -53,16 +96,22 @@ export class UsersComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
+    const usingClientFilters = this.clientFilterMode();
+
     this.usersService
-      .list({ page: this.page(), limit: this.limit, search: this.search() || undefined })
+      .list({
+        page: usingClientFilters ? 1 : this.page(),
+        limit: usingClientFilters ? CLIENT_FILTER_LIMIT : this.limit,
+        search: this.search() || undefined,
+      })
       .subscribe({
         next: (result) => {
           this.users.set(result.items);
           this.total.set(result.total);
           this.loading.set(false);
         },
-        error: () => {
-          this.errorMessage.set('No se pudo cargar la lista de usuarios.');
+        error: (err) => {
+          this.errorMessage.set(apiErrorMessage(err, 'No se pudo cargar la lista de usuarios.'));
           this.loading.set(false);
         },
       });
@@ -74,10 +123,22 @@ export class UsersComponent implements OnInit {
     this.load();
   }
 
+  protected onRoleFilterChange(value: string): void {
+    this.roleFilter.set(value as UserRole | '');
+    this.load();
+  }
+
+  protected onActiveFilterChange(value: string): void {
+    this.activeFilter.set(value as ActiveFilter);
+    this.load();
+  }
+
   protected onPageChange(page: number): void {
     this.page.set(page);
     this.load();
   }
+
+  // ── Alta/edición existente ──
 
   protected openCreateForm(): void {
     this.formMode.set('create');
@@ -134,7 +195,7 @@ export class UsersComponent implements OnInit {
       },
       error: (err) => {
         this.formSubmitting.set(false);
-        this.formError.set(err?.error?.message ?? 'No se pudo guardar el usuario.');
+        this.formError.set(apiErrorMessage(err, 'No se pudo guardar el usuario.'));
       },
     });
   }
@@ -147,8 +208,72 @@ export class UsersComponent implements OnInit {
     this.usersService.deactivate(user.id).subscribe({
       next: () => this.load(),
       error: (err) => {
-        this.errorMessage.set(err?.error?.message ?? 'No se pudo desactivar al usuario.');
+        this.errorMessage.set(apiErrorMessage(err, 'No se pudo desactivar al usuario.'));
       },
     });
+  }
+
+  // ── Invitación ──
+
+  protected openInvite(): void {
+    this.inviteEmail = '';
+    this.inviteRole = 'user';
+    this.inviteError.set(null);
+    this.inviteResult.set(null);
+    this.inviteOpen.set(true);
+  }
+
+  protected closeInvite(): void {
+    this.inviteOpen.set(false);
+  }
+
+  protected submitInvite(): void {
+    if (!this.inviteEmail.trim()) {
+      return;
+    }
+
+    this.inviteSubmitting.set(true);
+    this.inviteError.set(null);
+
+    this.usersService
+      .createInvitation({ email: this.inviteEmail.trim(), role: this.inviteRole })
+      .subscribe({
+        next: (result) => {
+          this.inviteSubmitting.set(false);
+          this.inviteResult.set(result);
+        },
+        error: (err) => {
+          this.inviteSubmitting.set(false);
+          this.inviteError.set(apiErrorMessage(err, 'No se pudo crear la invitación.'));
+        },
+      });
+  }
+
+  // ── Password reset ──
+
+  protected openReset(user: AdminUser): void {
+    if (!confirm(`¿Generar un token de reset de contraseña para ${user.email}?`)) {
+      return;
+    }
+
+    this.resetTarget.set(user);
+    this.resetError.set(null);
+    this.resetResult.set(null);
+    this.resetSubmitting.set(true);
+
+    this.usersService.requestPasswordReset(user.id).subscribe({
+      next: (result) => {
+        this.resetSubmitting.set(false);
+        this.resetResult.set(result);
+      },
+      error: (err) => {
+        this.resetSubmitting.set(false);
+        this.resetError.set(apiErrorMessage(err, 'No se pudo generar el reset de contraseña.'));
+      },
+    });
+  }
+
+  protected closeReset(): void {
+    this.resetTarget.set(null);
   }
 }

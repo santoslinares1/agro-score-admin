@@ -1,14 +1,44 @@
 <div class="page-header">
   <h1>Diagnósticos</h1>
+</div>
+
+<div class="card" style="margin-bottom: 1.25rem">
   <div class="filters">
-    <select [value]="status()" (change)="onStatusChange($any($event.target).value)">
+    <select [(ngModel)]="status" name="status">
       <option value="">Todos los estados</option>
       @for (s of statuses; track s) {
         <option [value]="s">{{ s }}</option>
       }
     </select>
+
+    <label class="checkbox-inline">
+      <input type="checkbox" [(ngModel)]="onlyFailed" name="onlyFailed" />
+      Solo fallidos
+    </label>
+
+    <label class="checkbox-inline">
+      <input type="checkbox" [(ngModel)]="onlyUnreviewed" name="onlyUnreviewed" />
+      Solo no revisados
+    </label>
+
+    <input type="text" placeholder="fieldId (UUID)" [(ngModel)]="fieldId" name="fieldId" />
+    <input type="text" placeholder="userId (UUID)" [(ngModel)]="userId" name="userId" />
+
+    <label class="checkbox-inline">
+      Desde
+      <input type="date" [(ngModel)]="from" name="from" />
+    </label>
+    <label class="checkbox-inline">
+      Hasta
+      <input type="date" [(ngModel)]="to" name="to" />
+    </label>
+
+    <button type="button" class="btn btn-primary" (click)="applyFilters()">Filtrar</button>
+    <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
   </div>
 </div>
+
+<p class="muted" style="margin-bottom: 1rem">{{ retryCopy }}</p>
 
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
@@ -17,7 +47,7 @@
 @if (loading()) {
   <div class="loading-state">Cargando diagnósticos...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay diagnósticos para mostrar.</p>
+  <p class="empty-state">No hay diagnósticos para estos filtros.</p>
 } @else {
   <table>
     <thead>
@@ -25,15 +55,22 @@
         <th>Campo</th>
         <th>Usuario</th>
         <th>Estado</th>
+        <th>Creado</th>
+        <th>Completado</th>
         <th>Duración</th>
-        <th>Fecha</th>
+        <th>Revisión / reintentos</th>
         <th>Error</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       @for (item of items(); track item.id) {
         <tr>
-          <td>{{ item.fieldName ?? '—' }}</td>
+          <td>
+            {{ item.fieldName ?? '—' }}
+            <br />
+            <span class="muted" style="font-family: ui-monospace, monospace">#{{ shortId(item.id) }}</span>
+          </td>
           <td>
             {{ item.ownerFullName ?? '—' }}
             @if (item.ownerEmail) {
@@ -41,9 +78,49 @@
             }
           </td>
           <td><app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" /></td>
-          <td>{{ item.durationMs | duration }}</td>
           <td>{{ item.createdAt | date: 'short' }}</td>
+          <td>{{ item.completedAt ? (item.completedAt | date: 'short') : '—' }}</td>
+          <td>{{ item.durationMs | duration }}</td>
+          <td class="muted">
+            @if (item.reviewedAt) {
+              Revisado {{ item.reviewedAt | date: 'short' }}
+              @if (reviewerLabel(item.reviewedByUserId); as reviewer) {
+                <br />por {{ reviewer }}
+              }
+            } @else {
+              No revisado
+            }
+            @if (item.retryCount > 0) {
+              <br />
+              Reintentos: {{ item.retryCount }}
+              @if (item.lastRetriedAt) {
+                (última {{ item.lastRetriedAt | date: 'short' }})
+              }
+            }
+          </td>
           <td class="error-cell">{{ item.errorMessage ?? '—' }}</td>
+          <td class="actions">
+            @if (item.status === 'Error' && !item.reviewedAt) {
+              <button
+                type="button"
+                class="btn"
+                [disabled]="actionPendingId() === item.id"
+                (click)="markReviewed(item)"
+              >
+                Marcar revisado
+              </button>
+            }
+            @if (item.status === 'Error') {
+              <button
+                type="button"
+                class="btn"
+                [disabled]="actionPendingId() === item.id"
+                (click)="retry(item)"
+              >
+                Reintentar
+              </button>
+            }
+          </td>
         </tr>
       }
     </tbody>

@@ -3,8 +3,15 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environment/environment';
+import { IssuedInvitationSummary } from '../models/access-request.model';
 import { PaginatedResult, PaginationQuery } from '../models/pagination.model';
-import { AdminUser, CreateAdminUserPayload, UpdateAdminUserPayload } from '../models/user.model';
+import {
+  AdminUser,
+  CreateAdminUserPayload,
+  CreateInvitationPayload,
+  PasswordResetResult,
+  UpdateAdminUserPayload,
+} from '../models/user.model';
 import { toHttpParams } from './query-params.util';
 
 @Injectable({ providedIn: 'root' })
@@ -28,5 +35,19 @@ export class UsersService {
 
   deactivate(id: string): Observable<AdminUser> {
     return this.http.delete<AdminUser>(`${this.apiUrl}/admin/users/${id}`);
+  }
+
+  // ADMIN-2: alta de usuario vía invitación — mismo endpoint/forma de
+  // respuesta que usa AccessRequestsComponent (IssuedInvitationSummary),
+  // reutilizado acá en vez de duplicarlo.
+  createInvitation(payload: CreateInvitationPayload): Observable<IssuedInvitationSummary> {
+    return this.http.post<IssuedInvitationSummary>(`${this.apiUrl}/admin/invitations`, payload);
+  }
+
+  requestPasswordReset(userId: string): Observable<PasswordResetResult> {
+    return this.http.post<PasswordResetResult>(
+      `${this.apiUrl}/admin/users/${userId}/password-reset`,
+      {},
+    );
   }
 }

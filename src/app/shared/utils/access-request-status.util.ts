@@ -3,8 +3,11 @@ import { StatusTone } from '../components/status-badge/status-badge.component';
 
 export function accessRequestStatusTone(status: AccessRequestStatus): StatusTone {
   switch (status) {
-    case 'contacted':
+    case 'converted':
       return 'success';
+    case 'contacted':
+    case 'interested':
+      return 'warning';
     case 'discarded':
       return 'neutral';
     case 'new':
@@ -17,5 +20,7 @@ export function accessRequestStatusTone(status: AccessRequestStatus): StatusTone
 export const ACCESS_REQUEST_STATUS_LABELS: Record<AccessRequestStatus, string> = {
   new: 'Nueva',
   contacted: 'Contactada',
+  interested: 'Interesada',
   discarded: 'Descartada',
+  converted: 'Convertida',
 };

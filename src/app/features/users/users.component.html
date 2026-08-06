@@ -7,6 +7,18 @@
       [value]="search()"
       (input)="onSearchChange($any($event.target).value)"
     />
+    <select [value]="roleFilter()" (change)="onRoleFilterChange($any($event.target).value)">
+      <option value="">Todos los roles</option>
+      @for (role of roles; track role) {
+        <option [value]="role">{{ role }}</option>
+      }
+    </select>
+    <select [value]="activeFilter()" (change)="onActiveFilterChange($any($event.target).value)">
+      <option value="">Activos e inactivos</option>
+      <option value="active">Solo activos</option>
+      <option value="inactive">Solo inactivos</option>
+    </select>
+    <button type="button" class="btn" (click)="openInvite()">+ Crear invitación</button>
     <button type="button" class="btn btn-primary" (click)="openCreateForm()">+ Crear usuario</button>
   </div>
 </div>
@@ -17,9 +29,16 @@
 
 @if (loading()) {
   <div class="loading-state">Cargando usuarios...</div>
-} @else if (!users().length) {
+} @else if (!visibleUsers().length) {
   <p class="empty-state">No hay usuarios para mostrar.</p>
 } @else {
+  @if (clientFilterMode()) {
+    <p class="muted" style="margin-bottom: 0.75rem">
+      Filtro de rol/estado aplicado sobre los primeros {{ users().length }} usuarios (de
+      {{ total() }} en total) — {{ visibleUsers().length }} coinciden.
+    </p>
+  }
+
   <table>
     <thead>
       <tr>
@@ -28,19 +47,22 @@
         <th>Rol</th>
         <th>Estado</th>
         <th>Creado</th>
+        <th>Actualizado</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      @for (user of users(); track user.id) {
+      @for (user of visibleUsers(); track user.id) {
         <tr [class.row--inactive]="!user.isActive">
           <td>{{ user.email }}</td>
           <td>{{ user.fullName }}</td>
           <td><span class="role-pill" [class]="'role-pill--' + user.role">{{ user.role }}</span></td>
           <td>{{ user.isActive ? 'Activo' : 'Inactivo' }}</td>
           <td>{{ user.createdAt | date: 'short' }}</td>
+          <td>{{ user.updatedAt | date: 'short' }}</td>
           <td class="actions">
             <button type="button" class="btn" (click)="openEditForm(user)">Editar</button>
+            <button type="button" class="btn" (click)="openReset(user)">Generar reset</button>
             @if (user.isActive) {
               <button type="button" class="btn btn-danger" (click)="deactivate(user)">
                 Desactivar
@@ -52,12 +74,14 @@
     </tbody>
   </table>
 
-  <app-pagination-controls
-    [page]="page()"
-    [limit]="limit"
-    [total]="total()"
-    (pageChange)="onPageChange($event)"
-  />
+  @if (!clientFilterMode()) {
+    <app-pagination-controls
+      [page]="page()"
+      [limit]="limit"
+      [total]="total()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
 }
 
 @if (formOpen()) {
@@ -107,5 +131,99 @@
         </button>
       </div>
     </form>
+  </div>
+}
+
+@if (inviteOpen()) {
+  <div class="modal-backdrop" (click)="closeInvite()">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>Crear invitación</h2>
+      <p class="muted">
+        Da de alta al usuario vía invitación (sin password temporal) — vence en 7 días.
+      </p>
+
+      @if (inviteResult(); as invitation) {
+        <div class="success-banner">
+          Invitación creada para <strong>{{ invitation.email }}</strong> (rol {{ invitation.role }}),
+          vence {{ invitation.expiresAt | date: 'short' }}.
+        </div>
+
+        @if (invitation.invitationToken) {
+          <div class="warning-banner">
+            Token de invitación (solo visible en desarrollo — nunca se muestra así en producción):
+          </div>
+          <div class="token-box">{{ invitation.invitationUrl ?? invitation.invitationToken }}</div>
+        } @else {
+          <p class="muted">
+            {{ invitation.message ?? 'Invitación generada. El envío por email todavía no está integrado.' }}
+          </p>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" (click)="closeInvite()">Cerrar</button>
+        </div>
+      } @else {
+        @if (inviteError()) {
+          <div class="error-banner">{{ inviteError() }}</div>
+        }
+
+        <label>
+          Email
+          <input type="email" [(ngModel)]="inviteEmail" name="inviteEmail" />
+        </label>
+
+        <label>
+          Rol
+          <select [(ngModel)]="inviteRole" name="inviteRole">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="modal-actions">
+          <button type="button" class="btn" (click)="closeInvite()">Cancelar</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="inviteSubmitting() || !inviteEmail.trim()"
+            (click)="submitInvite()"
+          >
+            {{ inviteSubmitting() ? 'Creando...' : 'Crear invitación' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (resetTarget(); as user) {
+  <div class="modal-backdrop" (click)="closeReset()">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>Reset de contraseña — {{ user.email }}</h2>
+
+      @if (resetSubmitting()) {
+        <p class="loading-state">Generando token...</p>
+      } @else if (resetError()) {
+        <div class="error-banner">{{ resetError() }}</div>
+      } @else {
+        @if (resetResult(); as result) {
+          @if (result.resetToken) {
+            <div class="warning-banner">
+              Token de reset (solo visible en desarrollo — nunca se muestra así en producción):
+            </div>
+            <div class="token-box">{{ result.resetUrl ?? result.resetToken }}</div>
+          } @else {
+            <p class="muted">
+              {{ result.message ?? 'Reset generado. El envío por email todavía no está integrado.' }}
+            </p>
+          }
+        }
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" (click)="closeReset()">Cerrar</button>
+      </div>
+    </div>
   </div>
 }

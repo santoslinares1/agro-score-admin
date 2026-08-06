@@ -8,6 +8,20 @@
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.filters label.checkbox-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.filters input[type='date'],
+.filters input[type='text'] {
+  width: 150px;
 }
 
 .error-cell {

@@ -1,0 +1,103 @@
+<div class="page-header">
+  <h1>Auditoría</h1>
+</div>
+
+<div class="card" style="margin-bottom: 1.25rem">
+  <div class="filters" style="flex-wrap: wrap">
+    <select [(ngModel)]="action" name="action">
+      <option value="">Todas las acciones</option>
+      @for (a of knownActions; track a) {
+        <option [value]="a">{{ actionLabel(a) }}</option>
+      }
+    </select>
+
+    <select [(ngModel)]="targetType" name="targetType">
+      <option value="">Todos los targets</option>
+      @for (t of knownTargetTypes; track t) {
+        <option [value]="t">{{ targetTypeLabel(t) }}</option>
+      }
+    </select>
+
+    <input type="text" placeholder="actorUserId (UUID)" [(ngModel)]="actorUserId" name="actorUserId" />
+    <input type="text" placeholder="targetId (UUID)" [(ngModel)]="targetId" name="targetId" />
+
+    <button type="button" class="btn btn-primary" (click)="applyFilters()">Filtrar</button>
+    <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-state">Cargando auditoría...</div>
+} @else if (!items().length) {
+  <p class="empty-state">No hay eventos de auditoría para estos filtros.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Actor</th>
+        <th>Acción</th>
+        <th>Target</th>
+        <th>Resumen</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (log of items(); track log.id) {
+        <tr>
+          <td>{{ log.createdAt | date: 'short' }}</td>
+          <td class="muted">{{ actorDisplay(log.actorUserId) }}</td>
+          <td><code>{{ log.action }}</code></td>
+          <td class="muted">{{ targetTypeLabel(log.targetType) }} · {{ log.targetId ?? '—' }}</td>
+          <td>{{ actionLabel(log.action) }}</td>
+          <td class="actions">
+            <button type="button" class="btn" (click)="openDetail(log)">Ver JSON</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <app-pagination-controls
+    [page]="page()"
+    [limit]="limit"
+    [total]="total()"
+    (pageChange)="onPageChange($event)"
+  />
+}
+
+@if (selected(); as log) {
+  <div class="modal-backdrop" (click)="closeDetail()">
+    <div class="modal modal--wide card" (click)="$event.stopPropagation()">
+      <h2>{{ actionLabel(log.action) }}</h2>
+      <p class="muted">
+        {{ log.createdAt | date: 'medium' }} · actor {{ actorDisplay(log.actorUserId) }} · target
+        {{ targetTypeLabel(log.targetType) }} {{ log.targetId ?? '—' }}
+      </p>
+      @if (log.ip || log.userAgent) {
+        <p class="muted">
+          @if (log.ip) { IP: {{ log.ip }} }
+          @if (log.userAgent) { · {{ log.userAgent }} }
+        </p>
+      }
+
+      <div class="modal-section">
+        <label>Antes</label>
+        <div class="json-viewer">{{ formatJson(log.before) }}</div>
+      </div>
+
+      <div class="modal-section">
+        <label>Después</label>
+        <div class="json-viewer">{{ formatJson(log.after) }}</div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn" (click)="closeDetail()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}
