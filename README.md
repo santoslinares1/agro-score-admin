@@ -2,7 +2,7 @@
 
 Panel de administración interno de AgroScore. App Angular 18 standalone, separada de `agro-score-web` (landing/app pública) y `agro-score-api` (backend). Consume la misma API NestJS de `agro-score-api`, bajo los endpoints `/admin/*` (ficha `ADMIN-1` + `ADMIN-2`, ver `agro-score-api/docs/admin-backend.md`).
 
-**Estado:** el panel consume todas las capacidades de `ADMIN-2` (backend) — Solicitudes de acceso, Auditoría, Sistema, Usuarios (invitaciones + reset) y Diagnósticos (revisión + retry) — más un Dashboard con las métricas extendidas.
+**Estado:** el panel consume todas las capacidades de `ADMIN-2`/`ADMIN-3` (backend) — Solicitudes de acceso, Auditoría, Sistema, Usuarios (invitaciones + reset, ahora con envío real de email) y Diagnósticos (revisión + retry) — más un Dashboard con las métricas extendidas.
 
 Stack: Angular 18 (standalone components + signals), TypeScript, CSS plano (sin Tailwind ni librerías de UI — panel interno, sobrio y liviano). Bundle inicial ~85kB comprimido.
 
@@ -69,8 +69,8 @@ El backend autentica con **JWT Bearer en el header `Authorization`**, no con coo
 - `core/services/system.service.ts` (nuevo) — `getHealth`.
 - `core/services/users.service.ts` — suma `createInvitation`, `requestPasswordReset`.
 - `core/services/analysis.service.ts` — suma filtros nuevos en `AnalysisQuery` y `markReviewed`/`retry` (tipados `Observable<unknown>` a propósito: la respuesta de esos dos endpoints es la entidad `Analysis` completa, no el DTO liviano de `list()`, y no se usa — cada acción refresca la tabla con `list()`).
-- `core/models/access-request.model.ts` — `AccessRequestStatus` ampliado a 5 valores, `internalNotes`/`assignedToUserId`/`contactedAt`/`convertedAt`/`discardedAt`, payloads de update y creación de usuario, `IssuedInvitationSummary` (reutilizado también por Usuarios).
-- `core/models/user.model.ts` — suma `CreateInvitationPayload`, `PasswordResetResult`.
+- `core/models/access-request.model.ts` — `AccessRequestStatus` ampliado a 5 valores, `internalNotes`/`assignedToUserId`/`contactedAt`/`convertedAt`/`discardedAt`, payloads de update y creación de usuario, `IssuedInvitationSummary` (reutilizado también por Usuarios; ADMIN-3: suma `emailSent`/`dryRun`/`provider`, `message` queda deprecated).
+- `core/models/user.model.ts` — suma `CreateInvitationPayload`, `PasswordResetResult` (ADMIN-3: suma `emailSent`/`dryRun`/`provider`, `message` queda deprecated).
 - `core/models/analysis.model.ts` — suma `reviewedAt`/`reviewedByUserId`/`retryCount`/`lastRetriedAt`.
 - `core/models/metrics.model.ts` — todos los campos de ADMIN-2 como opcionales (compatibilidad hacia atrás si el backend no los manda).
 - `core/models/audit-log.model.ts` (nuevo) — `AdminAuditAction` (unión de acciones conocidas + `string` como fallback, para no romper si el backend agrega una acción nueva).
@@ -110,9 +110,9 @@ Salida en `dist/agro-score-admin/browser/` (el builder `application` de Angular 
 
 ## Qué no incluye esta fase / deuda conocida
 
-**El panel ya consume todo `ADMIN-2`.** Deuda que queda, explícita:
+**El panel ya consume todo `ADMIN-2`/`ADMIN-3`.** Deuda que queda, explícita:
 
-- **Envío de emails**: invitaciones y reset de contraseña no mandan ningún email todavía (deuda del backend, no del frontend) — en producción esos flujos generan el token/registro pero no hay ningún canal de entrega real al usuario final más allá de que un owner/admin comparta el link a mano en desarrollo. El frontend ya está preparado para el día que se integre (solo deja de mostrar el token/URL cuando `NODE_ENV=production`, sin ningún otro cambio necesario).
+- **Resuelto en ADMIN-3**: invitaciones y reset de contraseña ya mandan email real (Resend, vía `EmailService` en `agro-score-api` — ver `docs/invitation-password-reset-email.md` en ese repo). Los modales de "Crear invitación"/"Generar reset" ahora muestran "Invitación enviada por email" / "Reset generado en modo dry-run" / un error claro según `emailSent`/`dryRun`, en vez del viejo mensaje "el envío por email todavía no está integrado". El token/link crudo se sigue mostrando solo fuera de producción (sin cambios en ese criterio). Las páginas públicas donde el usuario final completa el flujo (`/accept-invitation`, `/reset-password`) viven en `agro-score-web`, no acá — coherente con que el login real de usuarios `user` tampoco vive en este panel.
 - **Retry no re-ejecuta el pipeline**: `POST /admin/analysis/:id/retry` es "retry requested" — incrementa `retryCount`, no vuelve a llamar al worker. Comunicado explícitamente en la UI (ver copy obligatorio arriba), no es una limitación oculta.
 - **Filtro de rol/estado en Usuarios es client-side**: `GET /admin/users` no soporta `role`/`isActive` como query params server-side (solo `page`/`limit`/`search` — confirmado contra `docs/admin-backend.md` y el DTO real). En vez de tocar el backend sin autorización previa, cuando alguno de esos dos filtros está activo el frontend trae un lote de hasta 100 usuarios y filtra ahí, mostrando el conteo filtrado real y ocultando la paginación server-side en ese modo. Correcto para el volumen actual (~10-90 usuarios en esta instancia), no escala a miles. Si hace falta que escale, es un cambio chico en el backend (agregar `role`/`isActive` a `PaginationQueryDto`/`AdminService.listUsers`) — no se hizo sin confirmación.
 - **No se puede desasignar un responsable ya asignado** en una solicitud de acceso — el backend valida `assignedToUserId` como UUID si viene, pero no acepta `null` para vaciarlo. El frontend omite el campo del `PATCH` cuando el select queda en "Sin asignar", así que un responsable ya asignado solo se puede reemplazar por otro. Mismo criterio: cambio de backend no hecho sin confirmación previa.

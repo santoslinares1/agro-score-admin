@@ -130,13 +130,23 @@
             vence {{ invitation.expiresAt | date: 'short' }}.
           </div>
 
+          @if (invitation.emailSent && !invitation.dryRun) {
+            <p class="muted">Invitación enviada por email a {{ invitation.email }}.</p>
+          } @else if (invitation.dryRun) {
+            <p class="warning-banner">
+              Invitación generada en modo dry-run — no se envió ningún email real (EMAIL_DRY_RUN=true en el backend).
+            </p>
+          } @else if (invitation.emailSent === false) {
+            <div class="error-banner">
+              No se pudo enviar el email de invitación. Revisá la configuración de email del backend.
+            </div>
+          }
+
           @if (invitation.invitationToken) {
             <div class="warning-banner">
-              Token de invitación (solo visible en desarrollo — nunca se muestra así en producción):
+              Link de invitación (solo visible en desarrollo — nunca se muestra así en producción):
             </div>
             <div class="token-box">{{ invitation.invitationUrl ?? invitation.invitationToken }}</div>
-          } @else {
-            <p class="muted">{{ invitation.message ?? 'Invitación creada; el envío por email todavía no está integrado.' }}</p>
           }
         } @else if (item.status === 'converted') {
           <p class="muted">Esta solicitud ya fue convertida en una invitación de usuario.</p>

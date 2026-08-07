@@ -46,17 +46,23 @@ export interface CreateUserFromAccessRequestPayload {
   role?: UserRole;
 }
 
-// ADMIN-2: la respuesta nunca incluye password/hash — el usuario se da de
+// ADMIN-3: la respuesta nunca incluye password/hash — el usuario se da de
 // alta vía invitación. invitationToken/invitationUrl solo vienen si el
 // backend NO está en producción (NODE_ENV=production oculta el token por
-// completo); `message` viene en su lugar cuando no hay token para mostrar.
+// completo, ver docs/admin-backend.md en agro-score-api). emailSent/dryRun/
+// provider vienen siempre (envío real vía Resend desde ADMIN-3) — el
+// frontend arma el mensaje con esos tres campos, ya no con `message`.
 export interface IssuedInvitationSummary {
   id: string;
   email: string;
   role: UserRole;
   expiresAt: string;
+  emailSent: boolean;
+  dryRun: boolean;
+  provider?: string;
   invitationToken?: string;
   invitationUrl?: string;
+  /** @deprecated ADMIN-3: el backend ya no lo manda — se deriva de emailSent/dryRun. */
   message?: string;
 }
 

@@ -148,15 +148,23 @@
           vence {{ invitation.expiresAt | date: 'short' }}.
         </div>
 
+        @if (invitation.emailSent && !invitation.dryRun) {
+          <p class="muted">Invitación enviada por email a {{ invitation.email }}.</p>
+        } @else if (invitation.dryRun) {
+          <p class="warning-banner">
+            Invitación generada en modo dry-run — no se envió ningún email real (EMAIL_DRY_RUN=true en el backend).
+          </p>
+        } @else if (invitation.emailSent === false) {
+          <div class="error-banner">
+            No se pudo enviar el email de invitación. Revisá la configuración de email del backend.
+          </div>
+        }
+
         @if (invitation.invitationToken) {
           <div class="warning-banner">
-            Token de invitación (solo visible en desarrollo — nunca se muestra así en producción):
+            Link de invitación (solo visible en desarrollo — nunca se muestra así en producción):
           </div>
           <div class="token-box">{{ invitation.invitationUrl ?? invitation.invitationToken }}</div>
-        } @else {
-          <p class="muted">
-            {{ invitation.message ?? 'Invitación generada. El envío por email todavía no está integrado.' }}
-          </p>
         }
 
         <div class="modal-actions">
@@ -208,15 +216,23 @@
         <div class="error-banner">{{ resetError() }}</div>
       } @else {
         @if (resetResult(); as result) {
+          @if (result.emailSent && !result.dryRun) {
+            <p class="muted">Email de recuperación enviado a {{ result.email }}.</p>
+          } @else if (result.dryRun) {
+            <p class="warning-banner">
+              Reset generado en modo dry-run — no se envió ningún email real (EMAIL_DRY_RUN=true en el backend).
+            </p>
+          } @else if (result.emailSent === false) {
+            <div class="error-banner">
+              No se pudo enviar el email de recuperación. Revisá la configuración de email del backend.
+            </div>
+          }
+
           @if (result.resetToken) {
             <div class="warning-banner">
-              Token de reset (solo visible en desarrollo — nunca se muestra así en producción):
+              Link de reset (solo visible en desarrollo — nunca se muestra así en producción):
             </div>
             <div class="token-box">{{ result.resetUrl ?? result.resetToken }}</div>
-          } @else {
-            <p class="muted">
-              {{ result.message ?? 'Reset generado. El envío por email todavía no está integrado.' }}
-            </p>
           }
         }
       }
