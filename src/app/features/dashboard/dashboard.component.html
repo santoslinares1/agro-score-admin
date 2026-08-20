@@ -60,6 +60,10 @@
         <span class="metric-card__value">{{ m.totalAnalysis }}</span>
       </div>
       <div class="metric-card card">
+        <span class="metric-card__label">Procesando</span>
+        <span class="metric-card__value metric-card__value--processing">{{ processingAnalysis(m) }}</span>
+      </div>
+      <div class="metric-card card">
         <span class="metric-card__label">Completados</span>
         <span class="metric-card__value">{{ m.completedAnalysis }}</span>
       </div>
@@ -137,6 +141,7 @@
         <a routerLink="/analysis">Ver todos →</a>
       </div>
       @if (m.latestAnalysis.length) {
+        <div class="table-scroll table-scroll--plain">
         <table>
           <thead>
             <tr>
@@ -159,6 +164,7 @@
             }
           </tbody>
         </table>
+        </div>
       } @else {
         <p class="empty-state">Todavía no hay diagnósticos.</p>
       }
@@ -170,6 +176,7 @@
         <a routerLink="/access-requests">Ver todas →</a>
       </div>
       @if (m.latestAccessRequests.length) {
+        <div class="table-scroll table-scroll--plain">
         <table>
           <thead>
             <tr>
@@ -188,6 +195,7 @@
             }
           </tbody>
         </table>
+        </div>
       } @else {
         <p class="empty-state">Todavía no hay solicitudes de acceso.</p>
       }

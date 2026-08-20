@@ -49,6 +49,7 @@
 } @else if (!items().length) {
   <p class="empty-state">No hay diagnósticos para estos filtros.</p>
 } @else {
+  <div class="table-scroll">
   <table>
     <thead>
       <tr>
@@ -98,7 +99,16 @@
               }
             }
           </td>
-          <td class="error-cell">{{ item.errorMessage ?? '—' }}</td>
+          <td class="error-cell" [class.error-cell--expanded]="isErrorExpanded(item.id)">
+            @if (item.errorMessage) {
+              <span class="error-cell__text">{{ item.errorMessage }}</span>
+              <button type="button" class="link-button" (click)="toggleErrorExpanded(item.id)">
+                {{ isErrorExpanded(item.id) ? 'Ocultar' : 'Ver error completo' }}
+              </button>
+            } @else {
+              <span class="muted">Sin error registrado</span>
+            }
+          </td>
           <td class="actions">
             @if (item.status === 'Error' && !item.reviewedAt) {
               <button
@@ -125,6 +135,7 @@
       }
     </tbody>
   </table>
+  </div>
 
   <app-pagination-controls
     [page]="page()"

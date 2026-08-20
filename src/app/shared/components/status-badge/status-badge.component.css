@@ -22,6 +22,11 @@
   color: var(--color-warning);
 }
 
+.badge--info {
+  background: color-mix(in srgb, var(--color-info) 15%, transparent);
+  color: var(--color-info);
+}
+
 .badge--neutral {
   background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
   color: var(--color-text-muted);

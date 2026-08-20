@@ -10,7 +10,11 @@
   --color-success: #1f6b3f;
   --color-error: #b3261e;
   --color-warning: #9a6300;
+  --color-info: #4338ca;
   --sidebar-width: 220px;
+  --shadow-sm:
+    0 1px 2px rgb(0 0 0 / 5%),
+    0 1px 3px rgb(0 0 0 / 6%);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +30,10 @@
     --color-success: #4caf7d;
     --color-error: #e5766d;
     --color-warning: #d7a233;
+    --color-info: #818cf8;
+    --shadow-sm:
+      0 1px 2px rgb(0 0 0 / 25%),
+      0 1px 3px rgb(0 0 0 / 30%);
   }
 }
 
@@ -63,6 +71,13 @@ a {
   color: var(--color-primary);
 }
 
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -85,9 +100,60 @@ th {
   letter-spacing: 0.03em;
 }
 
+tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Contenedor de scroll horizontal propio para tablas, para no depender del
+   scroll de toda la página (`.content { overflow-x: auto }`) en mobile. La
+   variante `--plain` se usa cuando la tabla ya vive dentro de un `.card`
+   (dashboard, sistema) y no necesita un segundo marco. */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.table-scroll table {
+  border: none;
+}
+
+.table-scroll--plain {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
 button {
   font-family: inherit;
   font-size: 0.875rem;
+}
+
+/* Header de pantalla (buscador + selects + botones) — compartido por todas
+   las pantallas de listado, antes duplicado en shared-list.component.css y
+   users.component.css sin flex-wrap (causaba overflow horizontal en mobile). */
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.page-header__actions input[type='search'],
+.page-header__actions input[type='text'] {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+/* Celda de acciones de tabla — compartida por todas las pantallas de
+   listado (antes solo definida localmente en users.component.css). */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -152,6 +218,7 @@ textarea:focus {
   border: 1px solid var(--color-border);
   border-radius: 10px;
   padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .page-header {
@@ -177,6 +244,9 @@ textarea:focus {
   color: var(--color-text-muted);
   text-align: center;
   padding: 2rem 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
 }
 
 .loading-state {
@@ -190,10 +260,11 @@ textarea:focus {
   font-size: 0.8rem;
 }
 
-/* ADMIN-2: modal genérico — usado por detalle/edición de solicitudes de
-   acceso, detalle de auditoría, y por users.component.css (que define su
-   propia copia local; duplicarlo acá no genera conflicto, cada componente
-   Angular scopea su CSS). */
+/* ADMIN-2: modal genérico — única definición, usada por todos los modales
+   de la app (usuarios, solicitudes de acceso, auditoría). Antes también
+   existía una copia local en users.component.css con un max-width distinto
+   (380px vs 480px acá); se eliminó esa copia (UI-1) para que todos los
+   modales se vean consistentes. */
 .modal-backdrop {
   position: fixed;
   inset: 0;

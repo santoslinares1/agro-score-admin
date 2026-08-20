@@ -19,6 +19,7 @@
 } @else if (!items().length) {
   <p class="empty-state">No hay lotes para mostrar.</p>
 } @else {
+  <div class="table-scroll">
   <table>
     <thead>
       <tr>
@@ -41,6 +42,7 @@
       }
     </tbody>
   </table>
+  </div>
 
   <app-pagination-controls
     [page]="page()"

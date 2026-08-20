@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
@@ -24,6 +24,18 @@ export class AdminLayoutComponent {
     { path: '/audit-logs', label: 'Auditoría' },
     { path: '/system', label: 'Sistema' },
   ];
+
+  // UI-1: sidebar off-canvas en pantallas angostas (ver admin-layout.component.css).
+  // En desktop no tiene efecto visual (el botón que la controla está oculto).
+  protected readonly sidebarOpen = signal(false);
+
+  protected toggleSidebar(): void {
+    this.sidebarOpen.update((open) => !open);
+  }
+
+  protected closeSidebar(): void {
+    this.sidebarOpen.set(false);
+  }
 
   logout(): void {
     this.authService.logout();

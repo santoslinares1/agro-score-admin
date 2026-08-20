@@ -58,6 +58,10 @@
   color: var(--color-error);
 }
 
+.metric-card__value--processing {
+  color: var(--color-info);
+}
+
 .lists-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

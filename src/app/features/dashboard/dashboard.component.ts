@@ -44,6 +44,16 @@ export class DashboardComponent implements OnInit {
     this.load();
   }
 
+  // `/admin/metrics` no expone un contador de análisis "en proceso" (ver
+  // docs/admin-audit.md §9). Los únicos tres estados posibles de un análisis
+  // son Procesando/Finalizado/Error (ver AnalysisStatus), así que se deriva
+  // de forma exacta a partir de los totales que el backend sí devuelve.
+  // Se acota a 0 como defensa ante una lectura inconsistente entre contadores
+  // (p. ej. un análisis creado entre los distintos COUNT del backend).
+  protected processingAnalysis(m: AdminMetrics): number {
+    return Math.max(0, m.totalAnalysis - m.completedAnalysis - m.failedAnalysis);
+  }
+
   private load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);

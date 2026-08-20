@@ -1,15 +1,31 @@
 <div class="shell">
-  <aside class="sidebar">
+  @if (sidebarOpen()) {
+    <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+  }
+
+  <aside class="sidebar" [class.sidebar--open]="sidebarOpen()">
     <div class="sidebar__brand">AgroScore <span>Admin</span></div>
     <nav class="sidebar__nav">
       @for (item of navItems; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">{{ item.label }}</a>
       }
     </nav>
   </aside>
 
   <div class="main">
     <header class="topbar">
+      <button
+        type="button"
+        class="sidebar-toggle"
+        [attr.aria-expanded]="sidebarOpen()"
+        [attr.aria-label]="sidebarOpen() ? 'Cerrar navegación' : 'Abrir navegación'"
+        (click)="toggleSidebar()"
+      >
+        <span class="sidebar-toggle__bar"></span>
+        <span class="sidebar-toggle__bar"></span>
+        <span class="sidebar-toggle__bar"></span>
+      </button>
+
       <div class="topbar__spacer"></div>
       <div class="topbar__user">
         @if (authService.currentUser; as user) {

@@ -61,6 +61,10 @@ export class AnalysisComponent implements OnInit {
   // bloquear el resto de la tabla.
   protected readonly actionPendingId = signal<string | null>(null);
 
+  // Ids cuya celda de error está expandida (texto completo en vez de
+  // truncado). Cada fila se expande/colapsa de forma independiente.
+  private readonly expandedErrorIds = signal<ReadonlySet<string>>(new Set());
+
   ngOnInit(): void {
     this.load();
     this.usersService.list({ page: 1, limit: 100 }).subscribe({
@@ -135,6 +139,20 @@ export class AnalysisComponent implements OnInit {
 
   protected shortId(id: string): string {
     return id.slice(0, 8);
+  }
+
+  protected isErrorExpanded(id: string): boolean {
+    return this.expandedErrorIds().has(id);
+  }
+
+  protected toggleErrorExpanded(id: string): void {
+    const next = new Set(this.expandedErrorIds());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.expandedErrorIds.set(next);
   }
 
   protected markReviewed(item: AdminAnalysis): void {

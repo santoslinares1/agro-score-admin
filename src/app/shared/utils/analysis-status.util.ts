@@ -8,7 +8,7 @@ export function analysisStatusTone(status: AnalysisStatus): StatusTone {
     case 'Error':
       return 'error';
     case 'Procesando':
-      return 'warning';
+      return 'info';
     default:
       return 'neutral';
   }
