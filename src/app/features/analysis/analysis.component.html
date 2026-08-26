@@ -61,6 +61,7 @@
         <th>Duración</th>
         <th>Revisión / reintentos</th>
         <th>Error</th>
+        <th>Veredicto técnico</th>
         <th>Acciones</th>
       </tr>
     </thead>
@@ -109,6 +110,24 @@
               <span class="muted">Sin error registrado</span>
             }
           </td>
+          <td class="verdict-cell">
+            @if (item.technicalVerdict; as verdict) {
+              <app-status-badge
+                [label]="generationStatusLabel(verdict.status)"
+                [tone]="generationStatusTone(verdict.status)"
+              />
+              @if (verdict.verdict) {
+                <br />
+                <span class="muted">{{ verdictLabel(verdict.verdict) }}</span>
+              }
+              <br />
+              <button type="button" class="link-button" (click)="toggleVerdictExpanded(item.id)">
+                {{ isVerdictExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
+              </button>
+            } @else {
+              <span class="muted">No disponible</span>
+            }
+          </td>
           <td class="actions">
             @if (item.status === 'Error' && !item.reviewedAt) {
               <button
@@ -132,6 +151,83 @@
             }
           </td>
         </tr>
+        @if (isVerdictExpanded(item.id) && item.technicalVerdict; as verdict) {
+          <tr class="verdict-detail-row">
+            <td colspan="10">
+              <div class="verdict-panel">
+                <h3>Veredicto técnico</h3>
+
+                <div class="verdict-panel__meta">
+                  <app-status-badge
+                    [label]="'Estado de generación: ' + generationStatusLabel(verdict.status)"
+                    [tone]="generationStatusTone(verdict.status)"
+                  />
+                  @if (verdict.verdict) {
+                    <app-status-badge
+                      [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
+                      [tone]="verdictTone(verdict.verdict)"
+                    />
+                  }
+                  @if (verdict.confidence) {
+                    <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+                  }
+                </div>
+
+                @if (verdict.summary) {
+                  <p class="verdict-panel__summary">{{ verdict.summary }}</p>
+                }
+
+                @if (verdict.keyFindings.length) {
+                  <p class="verdict-panel__section-title">Hallazgos principales</p>
+                  <ul>
+                    @for (finding of verdict.keyFindings; track finding) {
+                      <li>{{ finding }}</li>
+                    }
+                  </ul>
+                }
+
+                @if (verdict.possibleCauses.length) {
+                  <p class="verdict-panel__section-title">Posibles causas</p>
+                  <ul>
+                    @for (cause of verdict.possibleCauses; track cause) {
+                      <li>{{ cause }}</li>
+                    }
+                  </ul>
+                }
+
+                @if (verdict.recommendations.length) {
+                  <p class="verdict-panel__section-title">Recomendaciones</p>
+                  <ul>
+                    @for (recommendation of verdict.recommendations; track recommendation) {
+                      <li>{{ recommendation }}</li>
+                    }
+                  </ul>
+                }
+
+                @if (verdict.limitations.length) {
+                  <p class="verdict-panel__section-title">Limitaciones</p>
+                  <ul>
+                    @for (limitation of verdict.limitations; track limitation) {
+                      <li>{{ limitation }}</li>
+                    }
+                  </ul>
+                }
+
+                @if (verdict.status === 'failed' && verdict.errorMessage) {
+                  <p class="verdict-panel__section-title verdict-panel__section-title--error">Error técnico</p>
+                  <p class="verdict-panel__error">{{ verdict.errorMessage }}</p>
+                }
+
+                <p class="verdict-panel__section-title">Datos técnicos</p>
+                <ul class="verdict-panel__tech-data">
+                  <li>Generator: {{ verdict.generator ?? '—' }}</li>
+                  <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+                  <li>Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        }
       }
     </tbody>
   </table>

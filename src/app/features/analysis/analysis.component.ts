@@ -9,6 +9,13 @@ import { PaginationControlsComponent } from '../../shared/components/pagination-
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
+import {
+  confidenceLabel,
+  generationStatusLabel,
+  generationStatusTone,
+  verdictLabel,
+  verdictTone,
+} from '../../shared/utils/technical-verdict-labels';
 
 const PAGE_LIMIT = 20;
 
@@ -37,6 +44,15 @@ export class AnalysisComponent implements OnInit {
   protected readonly analysisStatusTone = analysisStatusTone;
   protected readonly retryCopy = RETRY_COPY;
 
+  // PR 13A: veredicto técnico — solo lectura, mismos labels que web/PDF (ver
+  // technical-verdict-labels.ts), pero acá se permiten mostrar generator/promptVersion/
+  // generatedAt/errorMessage (soporte/debugging), nunca en el frontend público.
+  protected readonly verdictLabel = verdictLabel;
+  protected readonly confidenceLabel = confidenceLabel;
+  protected readonly generationStatusLabel = generationStatusLabel;
+  protected readonly verdictTone = verdictTone;
+  protected readonly generationStatusTone = generationStatusTone;
+
   protected readonly items = signal<AdminAnalysis[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
@@ -64,6 +80,10 @@ export class AnalysisComponent implements OnInit {
   // Ids cuya celda de error está expandida (texto completo en vez de
   // truncado). Cada fila se expande/colapsa de forma independiente.
   private readonly expandedErrorIds = signal<ReadonlySet<string>>(new Set());
+
+  // PR 13A: mismo patrón que expandedErrorIds — set independiente para no acoplar el toggle del
+  // panel de veredicto técnico con el de error (una fila puede tener ambos, o solo uno).
+  private readonly expandedVerdictIds = signal<ReadonlySet<string>>(new Set());
 
   ngOnInit(): void {
     this.load();
@@ -153,6 +173,20 @@ export class AnalysisComponent implements OnInit {
       next.add(id);
     }
     this.expandedErrorIds.set(next);
+  }
+
+  protected isVerdictExpanded(id: string): boolean {
+    return this.expandedVerdictIds().has(id);
+  }
+
+  protected toggleVerdictExpanded(id: string): void {
+    const next = new Set(this.expandedVerdictIds());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    this.expandedVerdictIds.set(next);
   }
 
   protected markReviewed(item: AdminAnalysis): void {

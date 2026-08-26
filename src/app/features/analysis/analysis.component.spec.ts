@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { AdminAnalysis } from '../../core/models/analysis.model';
+import { AdminAnalysis, AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
 import { PaginatedResult } from '../../core/models/pagination.model';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { UsersService } from '../../core/services/users.service';
@@ -26,6 +26,24 @@ function buildAnalysis(overrides: Partial<AdminAnalysis> = {}): AdminAnalysis {
     retryCount: 0,
     lastRetriedAt: null,
     createdAt: '2026-08-01T09:59:00.000Z',
+    ...overrides,
+  };
+}
+
+function buildTechnicalVerdict(overrides: Partial<AnalysisTechnicalVerdict> = {}): AnalysisTechnicalVerdict {
+  return {
+    status: 'generated',
+    verdict: 'attention',
+    confidence: 'medium',
+    summary: 'El campo muestra variabilidad relevante entre zonas.',
+    keyFindings: ['Zona Alta concentra la mayor superficie del campo.'],
+    possibleCauses: [],
+    recommendations: ['Revisar riego diferencial en los sectores de menor respuesta.'],
+    limitations: ['Cobertura satelital parcial en el período analizado.'],
+    generatedAt: '2026-08-26T01:40:38.000Z',
+    generator: 'claude',
+    promptVersion: 'technical-verdict-v1',
+    errorMessage: null,
     ...overrides,
   };
 }
@@ -115,5 +133,225 @@ describe('AnalysisComponent', () => {
 
     expect(cells[0].classList).toContain('error-cell--expanded');
     expect(cells[1].classList).not.toContain('error-cell--expanded');
+  });
+
+  describe('Veredicto técnico (PR 13A)', () => {
+    function expandVerdict(el: HTMLElement): void {
+      const toggle = el.querySelector('.verdict-cell button') as HTMLButtonElement;
+      toggle.click();
+      fixture.detectChanges();
+    }
+
+    it('renderiza "Veredicto técnico" y su contenido cuando status=generated', () => {
+      setup([buildAnalysis({ technicalVerdict: buildTechnicalVerdict() })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const panel = el.querySelector('.verdict-panel') as HTMLElement;
+      expect(panel).toBeTruthy();
+      expect(panel.textContent).toContain('Veredicto técnico');
+    });
+
+    it('renderiza el summary', () => {
+      setup([buildAnalysis({ technicalVerdict: buildTechnicalVerdict({ summary: 'Resumen de prueba.' }) })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      expect((el.querySelector('.verdict-panel') as HTMLElement).textContent).toContain('Resumen de prueba.');
+    });
+
+    it('renderiza keyFindings', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({ keyFindings: ['Hallazgo uno', 'Hallazgo dos'] }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Hallazgos principales');
+      expect(text).toContain('Hallazgo uno');
+      expect(text).toContain('Hallazgo dos');
+    });
+
+    it('renderiza possibleCauses', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({ possibleCauses: ['Baja disponibilidad hídrica.'] }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Posibles causas');
+      expect(text).toContain('Baja disponibilidad hídrica.');
+    });
+
+    it('renderiza recommendations', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({ recommendations: ['Revisar riego en sector sur.'] }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Recomendaciones');
+      expect(text).toContain('Revisar riego en sector sur.');
+    });
+
+    it('renderiza limitations', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({ limitations: ['Cobertura satelital parcial.'] }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Limitaciones');
+      expect(text).toContain('Cobertura satelital parcial.');
+    });
+
+    it('mapea verdict attention → "Requiere atención"', () => {
+      setup([buildAnalysis({ technicalVerdict: buildTechnicalVerdict({ verdict: 'attention' }) })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      expect((el.querySelector('.verdict-panel') as HTMLElement).textContent).toContain('Requiere atención');
+    });
+
+    it('mapea confidence medium → "Media"', () => {
+      setup([buildAnalysis({ technicalVerdict: buildTechnicalVerdict({ confidence: 'medium' }) })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      expect((el.querySelector('.verdict-panel') as HTMLElement).textContent).toContain('Confianza: Media');
+    });
+
+    it('muestra generator, promptVersion y generatedAt — campos internos permitidos en admin', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({
+            generator: 'claude',
+            promptVersion: 'technical-verdict-v1',
+            generatedAt: '2026-08-26T01:40:38.000Z',
+          }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Generator: claude');
+      expect(text).toContain('Prompt version: technical-verdict-v1');
+      expect(text).toContain('Generated at:');
+    });
+
+    it('technicalVerdict failed muestra el errorMessage en "Error técnico"', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({
+            status: 'failed',
+            errorMessage: 'Claude rechazó la API key configurada (401).',
+          }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).toContain('Error técnico');
+      expect(text).toContain('Claude rechazó la API key configurada (401).');
+    });
+
+    it('technicalVerdict null/undefined muestra "No disponible" y no rompe la fila', () => {
+      setup([
+        buildAnalysis({ id: 'a1', technicalVerdict: null }),
+        buildAnalysis({ id: 'a2', technicalVerdict: undefined }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+      const cells = el.querySelectorAll('.verdict-cell');
+
+      expect(cells[0].textContent).toContain('No disponible');
+      expect(cells[0].querySelector('button')).toBeNull();
+      expect(cells[1].textContent).toContain('No disponible');
+      expect(cells[1].querySelector('button')).toBeNull();
+    });
+
+    it('no rompe si los arrays vienen vacíos, y no muestra subtítulos de listas vacías', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({
+            keyFindings: [],
+            possibleCauses: [],
+            recommendations: [],
+            limitations: [],
+          }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).not.toContain('Hallazgos principales');
+      expect(text).not.toContain('Posibles causas');
+      expect(text).not.toContain('Recomendaciones');
+      expect(text).not.toContain('Limitaciones');
+    });
+
+    it('no muestra "undefined"/"null" como texto visible cuando generator/promptVersion/generatedAt son null', () => {
+      setup([
+        buildAnalysis({
+          technicalVerdict: buildTechnicalVerdict({
+            generator: null,
+            promptVersion: null,
+            generatedAt: null,
+          }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expandVerdict(el);
+
+      const text = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
+      expect(text).not.toContain('undefined');
+      expect(text).not.toContain('null');
+      expect(text).toContain('Generator: —');
+      expect(text).toContain('Prompt version: —');
+      expect(text).toContain('Generated at: —');
+    });
+
+    it('el toggle "Ver detalle" expande y colapsa de forma independiente por fila', () => {
+      setup([
+        buildAnalysis({ id: 'a1', technicalVerdict: buildTechnicalVerdict() }),
+        buildAnalysis({ id: 'a2', technicalVerdict: buildTechnicalVerdict() }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelectorAll('.verdict-panel').length).toBe(0);
+
+      const firstToggle = el.querySelectorAll('.verdict-cell button')[0] as HTMLButtonElement;
+      firstToggle.click();
+      fixture.detectChanges();
+
+      expect(el.querySelectorAll('.verdict-panel').length).toBe(1);
+      expect(firstToggle.textContent?.trim()).toBe('Ocultar');
+    });
   });
 });
