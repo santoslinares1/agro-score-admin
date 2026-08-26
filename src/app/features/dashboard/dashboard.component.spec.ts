@@ -61,4 +61,42 @@ describe('DashboardComponent', () => {
 
     expect(processingCardValue(fixture)).toBe('0');
   });
+
+  describe('Alertas operativas (Admin PR 1)', () => {
+    it('renderiza la sección "Alertas operativas" arriba de las cards existentes', () => {
+      const fixture = createComponent(buildMetrics({ failedAnalysisLast30Days: 25 }));
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Alertas operativas');
+      expect(el.querySelector('.alert-card')).toBeTruthy();
+    });
+
+    it('muestra el estado vacío "No hay alertas..." cuando ninguna condición se cumple', () => {
+      const fixture = createComponent(buildMetrics());
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('No hay alertas operativas relevantes en este momento.');
+      expect(el.querySelectorAll('.alert-card').length).toBe(0);
+    });
+
+    it('no rompe ni muestra undefined/null cuando activeSchedulesWithoutRuns/unreviewedFailedAnalysisOlderThan7Days no vienen del backend', () => {
+      const fixture = createComponent(buildMetrics({ failedAnalysisLast30Days: 25 }));
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).not.toContain('undefined');
+      expect(el.textContent).not.toContain('null');
+    });
+
+    it('sigue renderizando las cards existentes (Usuarios/Campos/Diagnósticos) junto con las alertas', () => {
+      const fixture = createComponent(
+        buildMetrics({ totalUsers: 10, totalFields: 78, activeSchedulesWithoutRuns: 2 }),
+      );
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('.alert-card')).toBeTruthy();
+      expect(el.textContent).toContain('Usuarios');
+      expect(el.textContent).toContain('Campos');
+      expect(el.textContent).toContain('Diagnósticos');
+    });
+  });
 });

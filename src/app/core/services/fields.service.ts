@@ -7,12 +7,18 @@ import { AdminField } from '../models/field.model';
 import { PaginatedResult, PaginationQuery } from '../models/pagination.model';
 import { toHttpParams } from './query-params.util';
 
+// Admin PR 1: hasAnalysis=false soporta la alerta "Campos sin diagnóstico" del Dashboard — mismo
+// filtro real que agrega AdminService.listFields en agro-score-api.
+export interface FieldsQuery extends PaginationQuery {
+  hasAnalysis?: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class FieldsService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  list(query: PaginationQuery): Observable<PaginatedResult<AdminField>> {
+  list(query: FieldsQuery): Observable<PaginatedResult<AdminField>> {
     return this.http.get<PaginatedResult<AdminField>>(`${this.apiUrl}/admin/fields`, {
       params: toHttpParams(query),
     });

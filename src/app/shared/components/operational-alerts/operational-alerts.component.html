@@ -1,0 +1,23 @@
+<section class="alerts-section">
+  <h2 class="alerts-section__title">Alertas operativas</h2>
+  <p class="alerts-section__subcopy">Problemas y oportunidades que conviene revisar primero.</p>
+
+  @if (alerts().length) {
+    <ul class="alerts-list">
+      @for (alert of alerts(); track alert.id) {
+        <li class="alert-card" [class]="'alert-card--' + alert.severity">
+          <div class="alert-card__header">
+            <app-status-badge [label]="severityLabel(alert.severity)" [tone]="severityTone(alert.severity)" />
+            <span class="alert-card__title">{{ alert.title }}</span>
+          </div>
+          <p class="alert-card__description">{{ alert.description }}</p>
+          <a class="alert-card__action" [routerLink]="alert.route" [queryParams]="alert.queryParams">
+            {{ alert.actionLabel }} →
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="empty-state">No hay alertas operativas relevantes en este momento.</p>
+  }
+</section>

@@ -40,4 +40,11 @@ export interface AdminMetrics {
   // Fracción 0–1, no porcentaje — se formatea en el template.
   analysisFailureRateLast7Days?: number;
   averageAnalysisDurationMsLast7Days?: number | null;
+
+  // Admin PR 1: stats crudas detrás de las alertas operativas del Dashboard — ver
+  // shared/utils/operational-alerts.util.ts, que arma título/severidad/link a partir de estos
+  // números. Opcionales por el mismo motivo que el resto de este bloque (compatibilidad con un
+  // backend más viejo que el frontend).
+  activeSchedulesWithoutRuns?: number;
+  unreviewedFailedAnalysisOlderThan7Days?: number;
 }

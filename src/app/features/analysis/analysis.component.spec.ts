@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AdminAnalysis, AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
@@ -57,8 +58,23 @@ describe('AnalysisComponent', () => {
   let analysisServiceSpy: jasmine.SpyObj<AnalysisService>;
   let usersServiceSpy: jasmine.SpyObj<UsersService>;
 
-  function setup(items: AdminAnalysis[]): void {
+  // Admin PR 1: queryParams simula la URL con la que llega un deep link desde una alerta
+  // operativa del Dashboard (p. ej. /analysis?status=Error) — vacío por default, como una
+  // entrada normal a la pantalla desde el menú.
+  function setup(items: AdminAnalysis[], queryParams: Record<string, string> = {}): void {
     analysisServiceSpy.list.and.returnValue(of(buildResult(items)));
+
+    TestBed.configureTestingModule({
+      imports: [AnalysisComponent],
+      providers: [
+        { provide: AnalysisService, useValue: analysisServiceSpy },
+        { provide: UsersService, useValue: usersServiceSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+      ],
+    });
 
     fixture = TestBed.createComponent(AnalysisComponent);
     fixture.detectChanges();
@@ -68,14 +84,6 @@ describe('AnalysisComponent', () => {
     analysisServiceSpy = jasmine.createSpyObj('AnalysisService', ['list', 'markReviewed', 'retry']);
     usersServiceSpy = jasmine.createSpyObj('UsersService', ['list']);
     usersServiceSpy.list.and.returnValue(of({ items: [], total: 0, page: 1, limit: 100 }));
-
-    TestBed.configureTestingModule({
-      imports: [AnalysisComponent],
-      providers: [
-        { provide: AnalysisService, useValue: analysisServiceSpy },
-        { provide: UsersService, useValue: usersServiceSpy },
-      ],
-    });
   });
 
   it('shows a truncated error by default and reveals the full message on "Ver error completo"', () => {
@@ -352,6 +360,44 @@ describe('AnalysisComponent', () => {
 
       expect(el.querySelectorAll('.verdict-panel').length).toBe(1);
       expect(firstToggle.textContent?.trim()).toBe('Ocultar');
+    });
+  });
+
+  describe('deep links desde las alertas operativas del Dashboard (Admin PR 1)', () => {
+    it('lee status=Error de la URL y lo pasa al primer pedido a AnalysisService.list', () => {
+      setup([], { status: 'Error' });
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ status: 'Error' }),
+      );
+    });
+
+    it('combina status=Error y onlyUnreviewed=true (alerta de "no revisados hace más de 7 días")', () => {
+      setup([], { status: 'Error', onlyUnreviewed: 'true' });
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ status: 'Error', onlyUnreviewed: true }),
+      );
+    });
+
+    it('ignora un status que no es un AnalysisStatus válido, sin romper la pantalla', () => {
+      setup([], { status: 'no-es-un-estado-valido' });
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ status: undefined }),
+      );
+    });
+
+    it('sin query params se comporta como siempre: sin filtros preseleccionados', () => {
+      setup([]);
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          status: undefined,
+          onlyFailed: undefined,
+          onlyUnreviewed: undefined,
+        }),
+      );
     });
   });
 });

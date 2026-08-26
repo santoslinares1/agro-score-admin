@@ -10,6 +10,13 @@
   </div>
 </div>
 
+@if (hasAnalysisFilter() !== undefined) {
+  <div class="filter-chip">
+    Filtro activo: campos {{ hasAnalysisFilter() ? 'con' : 'sin' }} diagnóstico
+    <button type="button" class="link-button" (click)="clearHasAnalysisFilter()">Quitar filtro</button>
+  </div>
+}
+
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
 }

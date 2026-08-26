@@ -8,6 +8,8 @@
   <div class="error-banner">{{ errorMessage() }}</div>
 } @else {
   @if (metrics(); as m) {
+  <app-operational-alerts [alerts]="operationalAlerts(m)" />
+
   <section class="metrics-section">
     <h2 class="metrics-section__title">Usuarios</h2>
     <div class="metrics-grid">

@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { AdminAnalysis, AnalysisStatus } from '../../core/models/analysis.model';
 import { AnalysisService } from '../../core/services/analysis.service';
@@ -39,6 +40,7 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 export class AnalysisComponent implements OnInit {
   private readonly analysisService = inject(AnalysisService);
   private readonly usersService = inject(UsersService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly statuses: AnalysisStatus[] = ['Procesando', 'Finalizado', 'Error'];
   protected readonly analysisStatusTone = analysisStatusTone;
@@ -86,6 +88,7 @@ export class AnalysisComponent implements OnInit {
   private readonly expandedVerdictIds = signal<ReadonlySet<string>>(new Set());
 
   ngOnInit(): void {
+    this.applyQueryParamFilters();
     this.load();
     this.usersService.list({ page: 1, limit: 100 }).subscribe({
       next: (result) => {
@@ -97,6 +100,26 @@ export class AnalysisComponent implements OnInit {
       },
       error: () => undefined,
     });
+  }
+
+  // Admin PR 1: soporte mínimo de deep links desde las alertas operativas del Dashboard
+  // (/analysis?status=Error, /analysis?status=Error&onlyUnreviewed=true) — se lee una sola vez al
+  // entrar a la pantalla, no se re-sincroniza con la URL mientras el usuario cambia filtros a mano
+  // (mismo alcance que el resto de esta ficha: filtros que ya existían, no un router de estado).
+  private applyQueryParamFilters(): void {
+    const params = this.route.snapshot.queryParamMap;
+
+    const status = params.get('status');
+    if (status && (this.statuses as string[]).includes(status)) {
+      this.status = status as AnalysisStatus;
+    }
+
+    this.onlyFailed = params.get('onlyFailed') === 'true';
+    this.onlyUnreviewed = params.get('onlyUnreviewed') === 'true';
+    this.fieldId = params.get('fieldId') ?? '';
+    this.userId = params.get('userId') ?? '';
+    this.from = params.get('from') ?? '';
+    this.to = params.get('to') ?? '';
   }
 
   protected load(): void {

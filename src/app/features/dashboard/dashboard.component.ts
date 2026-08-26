@@ -4,14 +4,17 @@ import { RouterLink } from '@angular/router';
 
 import { AccessRequestStatus } from '../../core/models/access-request.model';
 import { AdminMetrics } from '../../core/models/metrics.model';
+import { OperationalAlert } from '../../core/models/operational-alert.model';
 import { MetricsService } from '../../core/services/metrics.service';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
+import { OperationalAlertsComponent } from '../../shared/components/operational-alerts/operational-alerts.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
   ACCESS_REQUEST_STATUS_LABELS,
   accessRequestStatusTone,
 } from '../../shared/utils/access-request-status.util';
+import { buildOperationalAlerts } from '../../shared/utils/operational-alerts.util';
 
 const ACCESS_REQUEST_STATUS_ORDER: AccessRequestStatus[] = [
   'new',
@@ -24,7 +27,14 @@ const ACCESS_REQUEST_STATUS_ORDER: AccessRequestStatus[] = [
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink, DurationPipe, StatusBadgeComponent],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    RouterLink,
+    DurationPipe,
+    StatusBadgeComponent,
+    OperationalAlertsComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -52,6 +62,12 @@ export class DashboardComponent implements OnInit {
   // (p. ej. un análisis creado entre los distintos COUNT del backend).
   protected processingAnalysis(m: AdminMetrics): number {
     return Math.max(0, m.totalAnalysis - m.completedAnalysis - m.failedAnalysis);
+  }
+
+  // Admin PR 1: alertas operativas — mismo patrón que processingAnalysis(m) de acá arriba (valor
+  // derivado calculado desde el template, sin un signal aparte).
+  protected operationalAlerts(m: AdminMetrics): OperationalAlert[] {
+    return buildOperationalAlerts(m);
   }
 
   private load(): void {
