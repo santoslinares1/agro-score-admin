@@ -1,10 +1,52 @@
-import { AnalysisStatus, AnalysisTechnicalVerdict } from './analysis.model';
+import {
+  AnalysisStatus,
+  AnalysisTechnicalVerdict,
+  AnalysisTechnicalVerdictStatus,
+  AnalysisVerdictConfidence,
+  AnalysisVerdictLabel,
+} from './analysis.model';
 
 // PR 13B: mismos valores que field-analysis-schedule.entity.ts / scheduled-analysis-run.entity.ts
 // en agro-score-api.
 export type ScheduleFrequency = 'weekly';
 export type ScheduleLastStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type ScheduledRunStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'email_sent';
+
+// PR 16D: sin equivalente en el veredicto individual (que no tiene eje temporal) — mismos valores
+// que weekly-technical-verdict/entities/weekly-technical-verdict.entity.ts en agro-score-api.
+export type WeeklyVerdictTrend =
+  | 'improving'
+  | 'stable'
+  | 'worsening'
+  | 'mixed'
+  | 'insufficient_data';
+
+/**
+ * PR 16D: shape real de weeklyTechnicalVerdict dentro de GET /admin/scheduled-analysis
+ * (WeeklyTechnicalVerdictResponse en agro-score-api/src/weekly-technical-verdict/dto) — reusa
+ * verdict/confidence/status de AnalysisTechnicalVerdict (mismos enums, ver analysis.model.ts) en
+ * vez de redeclararlos: a diferencia del backend (que sí duplica esos tipos entre
+ * analysis-verdict/ y weekly-technical-verdict/ para no acoplar esos dos módulos), en el frontend
+ * ScheduledAnalysisModel ya reusa AnalysisTechnicalVerdict tal cual para `technicalVerdict` más
+ * abajo, así que seguir esa misma convención acá es más consistente que introducir una nueva.
+ * errorMessage SÍ viaja (admin, igual que el veredicto individual).
+ */
+export interface AdminWeeklyTechnicalVerdict {
+  status: AnalysisTechnicalVerdictStatus;
+  verdict: AnalysisVerdictLabel | null;
+  trend: WeeklyVerdictTrend | null;
+  confidence: AnalysisVerdictConfidence | null;
+  summary: string | null;
+  keyChanges: string[];
+  areasToReview: string[];
+  recommendations: string[];
+  limitations: string[];
+  previousSnapshotId: string | null;
+  generatedAt: string | null;
+  generator: string | null;
+  promptVersion: string | null;
+  errorMessage: string | null;
+}
 
 export interface AdminScheduledAnalysisRun {
   id: string;
@@ -42,4 +84,9 @@ export interface AdminScheduledAnalysisItem {
   lastErrorMessage: string | null;
   latestRun: AdminScheduledAnalysisRun | null;
   technicalVerdict: AnalysisTechnicalVerdict | null;
+  /**
+   * PR 16D: diagnóstico semanal comparativo (evolución vs. el reporte anterior) — distinto de
+   * technicalVerdict (estado del análisis puntual de latestRun). Ver PR 16A/16B.
+   */
+  weeklyTechnicalVerdict: AdminWeeklyTechnicalVerdict | null;
 }

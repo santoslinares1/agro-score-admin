@@ -4,6 +4,7 @@ import {
   AnalysisVerdictConfidence,
   AnalysisVerdictLabel,
 } from '../../core/models/analysis.model';
+import { WeeklyVerdictTrend } from '../../core/models/scheduled-analysis.model';
 
 // PR 13A: mismos labels que analysis-result.component.ts (agro-score-web, PR 11C) y
 // report-pdf.helpers.ts (agro-score-api, PR 11D) — el veredicto usa el mismo copy en todos los
@@ -59,4 +60,31 @@ export function verdictTone(verdict: AnalysisVerdictLabel | null): StatusTone {
 
 export function generationStatusTone(status: AnalysisTechnicalVerdictStatus): StatusTone {
   return GENERATION_STATUS_TONES[status] ?? 'neutral';
+}
+
+// PR 16D: trend no tiene equivalente en el veredicto individual (sin eje temporal) — mismo copy
+// que agro-score-api/src/weekly-technical-verdict/weekly-technical-verdict-labels.ts y el mail
+// semanal (PR 16C).
+const TREND_LABELS: Record<WeeklyVerdictTrend, string> = {
+  improving: 'En mejora',
+  stable: 'Estable',
+  worsening: 'En deterioro',
+  mixed: 'Mixta',
+  insufficient_data: 'Datos insuficientes',
+};
+
+const TREND_TONES: Record<WeeklyVerdictTrend, StatusTone> = {
+  improving: 'success',
+  stable: 'neutral',
+  worsening: 'error',
+  mixed: 'warning',
+  insufficient_data: 'neutral',
+};
+
+export function trendLabel(trend: WeeklyVerdictTrend | null): string {
+  return trend ? TREND_LABELS[trend] : 'No disponible';
+}
+
+export function trendTone(trend: WeeklyVerdictTrend | null): StatusTone {
+  return trend ? TREND_TONES[trend] : 'neutral';
 }

@@ -5,6 +5,7 @@ import { AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
 import {
   AdminScheduledAnalysisItem,
   AdminScheduledAnalysisRun,
+  AdminWeeklyTechnicalVerdict,
 } from '../../core/models/scheduled-analysis.model';
 import { PaginatedResult } from '../../core/models/pagination.model';
 import { ScheduledAnalysisService } from '../../core/services/scheduled-analysis.service';
@@ -48,6 +49,28 @@ function buildTechnicalVerdict(
   };
 }
 
+function buildWeeklyTechnicalVerdict(
+  overrides: Partial<AdminWeeklyTechnicalVerdict> = {},
+): AdminWeeklyTechnicalVerdict {
+  return {
+    status: 'generated',
+    verdict: 'attention',
+    trend: 'stable',
+    confidence: 'medium',
+    summary: 'Respecto del reporte anterior, el campo se mantiene estable.',
+    keyChanges: ['El score se mantuvo estable respecto de la semana anterior.'],
+    areasToReview: ['Priorizar zonas con menor desempeño relativo.'],
+    recommendations: ['Continuar el monitoreo semanal habitual.'],
+    limitations: ['La comparación se basa en índices satelitales.'],
+    previousSnapshotId: 'snapshot-0',
+    generatedAt: '2026-08-24T09:05:30.000Z',
+    generator: 'deterministic-v1',
+    promptVersion: null,
+    errorMessage: null,
+    ...overrides,
+  };
+}
+
 function buildItem(overrides: Partial<AdminScheduledAnalysisItem> = {}): AdminScheduledAnalysisItem {
   return {
     id: 'schedule-1',
@@ -64,6 +87,7 @@ function buildItem(overrides: Partial<AdminScheduledAnalysisItem> = {}): AdminSc
     lastErrorMessage: null,
     latestRun: buildRun(),
     technicalVerdict: buildTechnicalVerdict(),
+    weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict(),
     ...overrides,
   };
 }
@@ -242,5 +266,212 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     const el = fixture.nativeElement as HTMLElement;
 
     expect(el.textContent).toContain('No hay campos con seguimiento semanal configurado.');
+  });
+
+  it('renderiza "Diagnóstico semanal" cuando weeklyTechnicalVerdict trae generated', () => {
+    setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict() })]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Diagnóstico semanal');
+  });
+
+  it('renderiza trend stable → Estable', () => {
+    setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({ trend: 'stable' }) })]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Tendencia: Estable');
+  });
+
+  it('renderiza trend improving → En mejora', () => {
+    setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({ trend: 'improving' }) })]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Tendencia: En mejora');
+  });
+
+  it('renderiza el summary del diagnóstico semanal', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          summary: 'El campo retrocedió respecto de la semana anterior.',
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('El campo retrocedió respecto de la semana anterior.');
+  });
+
+  it('renderiza keyChanges bajo "Cambios relevantes"', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          keyChanges: ['El NDVI promedio subió respecto de la semana anterior.'],
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Cambios relevantes');
+    expect(el.textContent).toContain('El NDVI promedio subió respecto de la semana anterior.');
+  });
+
+  it('renderiza areasToReview bajo "Áreas a revisar"', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          areasToReview: ['Revisar sectores asociados a la zona dominante actual.'],
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Áreas a revisar');
+    expect(el.textContent).toContain('Revisar sectores asociados a la zona dominante actual.');
+  });
+
+  it('renderiza recommendations bajo "Recomendaciones"', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          recommendations: ['Repetir el análisis en los próximos días.'],
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Recomendaciones');
+    expect(el.textContent).toContain('Repetir el análisis en los próximos días.');
+  });
+
+  it('renderiza limitations bajo "Limitaciones"', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          limitations: ['No hay un reporte semanal anterior para calcular una tendencia.'],
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Limitaciones');
+    expect(el.textContent).toContain('No hay un reporte semanal anterior para calcular una tendencia.');
+  });
+
+  it('renderiza generator/promptVersion/generatedAt en el detalle (admin sí los ve)', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          generator: 'claude',
+          promptVersion: 'weekly-technical-verdict-v1',
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Generator: claude');
+    expect(el.textContent).toContain('Prompt version: weekly-technical-verdict-v1');
+  });
+
+  it('renderiza errorMessage cuando status=failed', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          status: 'failed',
+          verdict: 'insufficient_data',
+          trend: 'insufficient_data',
+          confidence: 'low',
+          keyChanges: [],
+          areasToReview: [],
+          recommendations: [],
+          limitations: [],
+          errorMessage: 'No se pudo generar el diagnóstico semanal automático.',
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Error técnico');
+    expect(el.textContent).toContain('No se pudo generar el diagnóstico semanal automático.');
+  });
+
+  it('renderiza "Diagnóstico semanal no disponible" cuando weeklyTechnicalVerdict es null', () => {
+    setup([buildItem({ weeklyTechnicalVerdict: null })]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Diagnóstico semanal no disponible.');
+  });
+
+  it('no rompe el bloque existente de Veredicto técnico individual — ambos conviven en el mismo detalle', () => {
+    setup([
+      buildItem({
+        technicalVerdict: buildTechnicalVerdict({ verdict: 'critical' }),
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({ trend: 'worsening' }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    (el.querySelector('td button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Crítico');
+    expect(el.textContent).toContain('Tendencia: En deterioro');
+  });
+
+  it('no deja "undefined"/"null" visibles con weeklyTechnicalVerdict null o con campos internos null', () => {
+    setup([
+      buildItem({
+        weeklyTechnicalVerdict: null,
+      }),
+      buildItem({
+        id: 'schedule-2',
+        weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({
+          generator: null,
+          promptVersion: null,
+          previousSnapshotId: null,
+        }),
+      }),
+    ]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    const toggles = Array.from(el.querySelectorAll('tbody tr:not(.verdict-detail-row) td:last-child button')) as HTMLButtonElement[];
+    toggles.forEach((toggle) => toggle.click());
+    fixture.detectChanges();
+
+    expect(el.textContent).not.toContain('undefined');
+    expect(el.textContent).not.toContain('null');
   });
 });

@@ -17,6 +17,8 @@ import {
   confidenceLabel,
   generationStatusLabel,
   generationStatusTone,
+  trendLabel,
+  trendTone,
   verdictLabel,
   verdictTone,
 } from '../../shared/utils/technical-verdict-labels';
@@ -32,6 +34,8 @@ function apiErrorMessage(err: unknown, fallback: string): string {
  * PR 13B: visibilidad de solo lectura sobre el pipeline semanal (Fase 4A/5/12A) — schedule, la
  * corrida más reciente, el análisis que generó, su veredicto técnico y el estado del mail. Sin
  * acciones mutantes: no crea/activa/desactiva schedules, no reintenta el mail, no regenera nada.
+ * PR 16D suma el diagnóstico semanal comparativo (weeklyTechnicalVerdict) — mismo criterio de
+ * solo lectura, nunca dispara ni regenera nada.
  */
 @Component({
   selector: 'app-scheduled-analysis',
@@ -54,6 +58,8 @@ export class ScheduledAnalysisComponent implements OnInit {
   protected readonly generationStatusLabel = generationStatusLabel;
   protected readonly verdictTone = verdictTone;
   protected readonly generationStatusTone = generationStatusTone;
+  protected readonly trendLabel = trendLabel;
+  protected readonly trendTone = trendTone;
 
   protected readonly items = signal<AdminScheduledAnalysisItem[]>([]);
   protected readonly total = signal(0);

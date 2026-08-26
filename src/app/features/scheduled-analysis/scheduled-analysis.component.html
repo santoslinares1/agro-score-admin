@@ -172,6 +172,88 @@
                 </section>
 
                 <section>
+                  <h3>Diagnóstico semanal</h3>
+                  @if (item.weeklyTechnicalVerdict; as weekly) {
+                    <div class="verdict-panel__meta">
+                      <app-status-badge
+                        [label]="'Estado: ' + generationStatusLabel(weekly.status)"
+                        [tone]="generationStatusTone(weekly.status)"
+                      />
+                      @if (weekly.trend) {
+                        <app-status-badge
+                          [label]="'Tendencia: ' + trendLabel(weekly.trend)"
+                          [tone]="trendTone(weekly.trend)"
+                        />
+                      }
+                      @if (weekly.verdict) {
+                        <app-status-badge
+                          [label]="'Estado del campo: ' + verdictLabel(weekly.verdict)"
+                          [tone]="verdictTone(weekly.verdict)"
+                        />
+                      }
+                      @if (weekly.confidence) {
+                        <span class="muted">Confianza: {{ confidenceLabel(weekly.confidence) }}</span>
+                      }
+                    </div>
+
+                    @if (weekly.summary) {
+                      <p class="verdict-panel__summary">{{ weekly.summary }}</p>
+                    }
+
+                    @if (weekly.keyChanges.length) {
+                      <p class="verdict-panel__section-title">Cambios relevantes</p>
+                      <ul>
+                        @for (change of weekly.keyChanges; track change) {
+                          <li>{{ change }}</li>
+                        }
+                      </ul>
+                    }
+
+                    @if (weekly.areasToReview.length) {
+                      <p class="verdict-panel__section-title">Áreas a revisar</p>
+                      <ul>
+                        @for (area of weekly.areasToReview; track area) {
+                          <li>{{ area }}</li>
+                        }
+                      </ul>
+                    }
+
+                    @if (weekly.recommendations.length) {
+                      <p class="verdict-panel__section-title">Recomendaciones</p>
+                      <ul>
+                        @for (recommendation of weekly.recommendations; track recommendation) {
+                          <li>{{ recommendation }}</li>
+                        }
+                      </ul>
+                    }
+
+                    @if (weekly.limitations.length) {
+                      <p class="verdict-panel__section-title">Limitaciones</p>
+                      <ul>
+                        @for (limitation of weekly.limitations; track limitation) {
+                          <li>{{ limitation }}</li>
+                        }
+                      </ul>
+                    }
+
+                    @if (weekly.errorMessage) {
+                      <p class="verdict-panel__section-title verdict-panel__section-title--error">Error técnico</p>
+                      <p class="verdict-panel__error">{{ weekly.errorMessage }}</p>
+                    }
+
+                    <p class="verdict-panel__section-title">Datos técnicos</p>
+                    <ul class="verdict-panel__tech-data">
+                      <li>Generator: {{ weekly.generator ?? '—' }}</li>
+                      <li>Prompt version: {{ weekly.promptVersion ?? '—' }}</li>
+                      <li>Generated at: {{ weekly.generatedAt ? (weekly.generatedAt | date: 'short') : '—' }}</li>
+                      <li>Previous snapshot: {{ weekly.previousSnapshotId ?? '—' }}</li>
+                    </ul>
+                  } @else {
+                    <p class="muted">Diagnóstico semanal no disponible.</p>
+                  }
+                </section>
+
+                <section>
                   <h3>Mail</h3>
                   <ul class="verdict-panel__tech-data">
                     <li>Estado: {{ mailStatusLabel(item) }}</li>
