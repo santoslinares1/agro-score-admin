@@ -21,6 +21,7 @@ export class AdminLayoutComponent {
     { path: '/fields', label: 'Campos' },
     { path: '/lots', label: 'Lotes' },
     { path: '/analysis', label: 'Diagnósticos' },
+    { path: '/scheduled-analysis', label: 'Programados' },
     { path: '/audit-logs', label: 'Auditoría' },
     { path: '/system', label: 'Sistema' },
   ];

@@ -1,0 +1,197 @@
+<div class="page-header">
+  <h1>Análisis programados</h1>
+</div>
+
+<p class="muted" style="margin-bottom: 1rem">
+  Seguimiento de corridas automáticas, veredicto técnico y envío de reportes semanales.
+</p>
+
+@if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-state">Cargando análisis programados...</div>
+} @else if (!items().length) {
+  <p class="empty-state">No hay campos con seguimiento semanal configurado.</p>
+} @else {
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Campo</th>
+        <th>Usuario</th>
+        <th>Schedule</th>
+        <th>Próxima ejecución</th>
+        <th>Última corrida</th>
+        <th>Análisis</th>
+        <th>Veredicto técnico</th>
+        <th>Mail</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.id) {
+        <tr>
+          <td>
+            {{ item.fieldName ?? '—' }}
+            <br />
+            <span class="muted" style="font-family: ui-monospace, monospace">#{{ shortId(item.fieldId) }}</span>
+          </td>
+          <td>
+            {{ item.userFullName ?? '—' }}
+            @if (item.userEmail) {
+              <br />
+              <span class="muted">{{ item.userEmail }}</span>
+            }
+          </td>
+          <td>
+            <app-status-badge
+              [label]="item.enabled ? 'Activo' : 'Inactivo'"
+              [tone]="scheduleTone(item.enabled)"
+            />
+            <br />
+            <span class="muted">{{ frequencyLabel(item.frequency) }}</span>
+          </td>
+          <td>{{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</td>
+          <td>
+            @if (item.latestRun; as run) {
+              <app-status-badge [label]="runStatusLabel(run.status)" [tone]="runStatusTone(run.status)" />
+              <br />
+              <span class="muted">{{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</span>
+            } @else {
+              <span class="muted">Sin corridas</span>
+            }
+          </td>
+          <td>
+            @if (item.latestRun; as run) {
+              @if (run.analysisStatus) {
+                <app-status-badge [label]="run.analysisStatus" [tone]="analysisStatusTone(run.analysisStatus)" />
+              } @else {
+                <span class="muted">Sin análisis</span>
+              }
+            } @else {
+              <span class="muted">Sin corridas</span>
+            }
+          </td>
+          <td class="verdict-cell">
+            @if (item.technicalVerdict; as verdict) {
+              <app-status-badge
+                [label]="generationStatusLabel(verdict.status)"
+                [tone]="generationStatusTone(verdict.status)"
+              />
+              @if (verdict.verdict) {
+                <br />
+                <span class="muted">{{ verdictLabel(verdict.verdict) }}</span>
+              }
+            } @else {
+              <span class="muted">No disponible</span>
+            }
+          </td>
+          <td>
+            <app-status-badge [label]="mailStatusLabel(item)" [tone]="mailStatusTone(item)" />
+            @if (item.latestRun?.emailSentAt; as emailSentAt) {
+              <br />
+              <span class="muted">{{ emailSentAt | date: 'short' }}</span>
+            }
+          </td>
+          <td>
+            <button type="button" class="link-button" (click)="toggleExpanded(item.id)">
+              {{ isExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
+            </button>
+          </td>
+        </tr>
+        @if (isExpanded(item.id)) {
+          <tr class="verdict-detail-row">
+            <td colspan="9">
+              <div class="verdict-panel scheduled-detail">
+                <section>
+                  <h3>Schedule</h3>
+                  <ul class="verdict-panel__tech-data">
+                    <li>id: {{ item.id }}</li>
+                    <li>enabled: {{ item.enabled }}</li>
+                    <li>frequency: {{ item.frequency }}</li>
+                    <li>nextRunAt: {{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</li>
+                    <li>lastRunAt: {{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</li>
+                    <li>lastStatus: {{ item.lastStatus ?? '—' }}</li>
+                    @if (item.lastErrorMessage) {
+                      <li>lastErrorMessage: {{ item.lastErrorMessage }}</li>
+                    }
+                  </ul>
+                </section>
+
+                <section>
+                  <h3>Última corrida</h3>
+                  @if (item.latestRun; as run) {
+                    <ul class="verdict-panel__tech-data">
+                      <li>run id: {{ run.id }}</li>
+                      <li>status: {{ run.status }}</li>
+                      <li>analysisId: {{ run.analysisId ?? '—' }}</li>
+                      <li>analysisStatus: {{ run.analysisStatus ?? '—' }}</li>
+                      <li>startedAt: {{ run.startedAt ? (run.startedAt | date: 'short') : '—' }}</li>
+                      <li>completedAt: {{ run.completedAt ? (run.completedAt | date: 'short') : '—' }}</li>
+                      <li>failedAt: {{ run.failedAt ? (run.failedAt | date: 'short') : '—' }}</li>
+                      @if (run.errorMessage) {
+                        <li class="verdict-panel__error">errorMessage: {{ run.errorMessage }}</li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="muted">Este campo todavía no disparó ninguna corrida.</p>
+                  }
+                </section>
+
+                <section>
+                  <h3>Veredicto técnico</h3>
+                  @if (item.technicalVerdict; as verdict) {
+                    <div class="verdict-panel__meta">
+                      <app-status-badge
+                        [label]="'Estado: ' + generationStatusLabel(verdict.status)"
+                        [tone]="generationStatusTone(verdict.status)"
+                      />
+                      @if (verdict.verdict) {
+                        <app-status-badge
+                          [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
+                          [tone]="verdictTone(verdict.verdict)"
+                        />
+                      }
+                      @if (verdict.confidence) {
+                        <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+                      }
+                    </div>
+                    <ul class="verdict-panel__tech-data">
+                      <li>Generator: {{ verdict.generator ?? '—' }}</li>
+                      <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+                      <li>Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+                      @if (verdict.errorMessage) {
+                        <li class="verdict-panel__error">errorMessage: {{ verdict.errorMessage }}</li>
+                      }
+                    </ul>
+                  } @else {
+                    <p class="muted">Este análisis no tiene veredicto técnico disponible.</p>
+                  }
+                </section>
+
+                <section>
+                  <h3>Mail</h3>
+                  <ul class="verdict-panel__tech-data">
+                    <li>Estado: {{ mailStatusLabel(item) }}</li>
+                    <li>emailSentAt: {{ item.latestRun?.emailSentAt ? (item.latestRun?.emailSentAt | date: 'short') : '—' }}</li>
+                    <li>Destinatario: {{ item.userEmail ?? '—' }}</li>
+                  </ul>
+                </section>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+  </div>
+
+  <app-pagination-controls
+    [page]="page()"
+    [limit]="limit"
+    [total]="total()"
+    (pageChange)="onPageChange($event)"
+  />
+}

@@ -112,3 +112,19 @@
   font-size: 0.8rem;
   color: var(--color-muted, #6b7280);
 }
+
+/* PR 13B: cuatro secciones (schedule/run/veredicto/mail) en grilla, mismo panel base que PR 13A. */
+.scheduled-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.scheduled-detail section h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+}
+
+.scheduled-detail .verdict-panel__tech-data li {
+  word-break: break-word;
+}

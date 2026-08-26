@@ -46,6 +46,13 @@ export const routes: Routes = [
           import('./features/analysis/analysis.component').then((m) => m.AnalysisComponent),
       },
       {
+        path: 'scheduled-analysis',
+        loadComponent: () =>
+          import('./features/scheduled-analysis/scheduled-analysis.component').then(
+            (m) => m.ScheduledAnalysisComponent,
+          ),
+      },
+      {
         path: 'access-requests',
         loadComponent: () =>
           import('./features/access-requests/access-requests.component').then(
