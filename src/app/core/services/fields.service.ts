@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../environment/environment';
-import { AdminField } from '../models/field.model';
+import { AdminField, FieldAnalysisStatus } from '../models/field.model';
 import { PaginatedResult, PaginationQuery } from '../models/pagination.model';
 import { toHttpParams } from './query-params.util';
 
@@ -15,6 +15,10 @@ export interface FieldsQuery extends PaginationQuery {
   // y "saltar a este campo puntual" (Diagnósticos/Programados, sin vista de detalle dedicada).
   userId?: string;
   fieldId?: string;
+  // Admin PR 5: estado real de uso/producto (/fields?status=attention, etc.) y monitoreo semanal
+  // (/fields?monitoring=active) — mismos filtros reales que agrega AdminService.listFields.
+  status?: FieldAnalysisStatus;
+  monitoring?: 'active' | 'inactive';
 }
 
 @Injectable({ providedIn: 'root' })

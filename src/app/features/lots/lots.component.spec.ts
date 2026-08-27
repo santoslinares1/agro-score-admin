@@ -124,4 +124,48 @@ describe('LotsComponent — trazabilidad (Admin PR 2)', () => {
     expect(el.textContent).not.toContain('undefined');
     expect(el.textContent).not.toContain('null');
   });
+
+  describe('Contexto mínimo del campo (Admin PR 5)', () => {
+    it('renderiza "Con diagnóstico" cuando el campo del lote tiene análisis', () => {
+      setup([buildLot({ fieldHasAnalysis: true })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Con diagnóstico');
+    });
+
+    it('renderiza "Sin diagnóstico" cuando el campo del lote no tiene análisis (o el dato no vino)', () => {
+      setup([buildLot({ fieldHasAnalysis: false })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Sin diagnóstico');
+    });
+
+    it('renderiza "Monitoreo activo"/"Monitoreo inactivo" según fieldHasActiveMonitoring', () => {
+      setup([
+        buildLot({ id: 'lot-1', fieldHasActiveMonitoring: true }),
+        buildLot({ id: 'lot-2', fieldHasActiveMonitoring: false }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Monitoreo activo');
+      expect(el.textContent).toContain('Monitoreo inactivo');
+    });
+
+    it('sigue linkeando campo y dueño (PR2) junto al contexto nuevo', () => {
+      setup([buildLot({ fieldHasAnalysis: true, fieldHasActiveMonitoring: true })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const fieldLink = el.querySelector('.entity-link') as HTMLAnchorElement;
+      expect(fieldLink.getAttribute('href')).toBe('/fields?fieldId=field-1');
+    });
+
+    it('no rompe el estado vacío ni la paginación existentes', () => {
+      setup([]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('.empty-state')?.textContent).toContain(
+        'No hay lotes para mostrar.',
+      );
+    });
+  });
 });

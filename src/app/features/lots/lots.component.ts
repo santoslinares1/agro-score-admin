@@ -5,13 +5,14 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminLot } from '../../core/models/lot.model';
 import { LotsService } from '../../core/services/lots.service';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
+import { StatusBadgeComponent, StatusTone } from '../../shared/components/status-badge/status-badge.component';
 
 const PAGE_LIMIT = 20;
 
 @Component({
   selector: 'app-lots',
   standalone: true,
-  imports: [DatePipe, RouterLink, PaginationControlsComponent],
+  imports: [DatePipe, RouterLink, PaginationControlsComponent, StatusBadgeComponent],
   templateUrl: './lots.component.html',
   styleUrl: '../shared-list.component.css',
 })
@@ -86,5 +87,25 @@ export class LotsComponent implements OnInit {
     this.userIdFilter.set(undefined);
     this.page.set(1);
     this.load();
+  }
+
+  // Admin PR 5: contexto mínimo del campo — solo dos booleanos (ver AdminLot en lot.model.ts), no
+  // el FieldAnalysisStatus completo de Campos. `undefined` (backend más viejo) se trata igual que
+  // `false` acá, a diferencia de Campos donde "sin dato" tiene su propio label ("Sin datos"): en
+  // Lotes el ticket pide contexto mínimo, no un tercer estado.
+  protected fieldHasAnalysisLabel(lot: AdminLot): string {
+    return lot.fieldHasAnalysis ? 'Con diagnóstico' : 'Sin diagnóstico';
+  }
+
+  protected fieldHasAnalysisTone(lot: AdminLot): StatusTone {
+    return lot.fieldHasAnalysis ? 'success' : 'neutral';
+  }
+
+  protected fieldMonitoringLabel(lot: AdminLot): string {
+    return lot.fieldHasActiveMonitoring ? 'Monitoreo activo' : 'Monitoreo inactivo';
+  }
+
+  protected fieldMonitoringTone(lot: AdminLot): StatusTone {
+    return lot.fieldHasActiveMonitoring ? 'info' : 'neutral';
   }
 }

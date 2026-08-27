@@ -2,17 +2,47 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { AdminField } from '../../core/models/field.model';
+import { AdminField, FieldAnalysisStatus } from '../../core/models/field.model';
 import { FieldsService } from '../../core/services/fields.service';
 import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
+import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import { DurationPipe } from '../../shared/pipes/duration.pipe';
+import {
+  confidenceLabel,
+  verdictLabel,
+  verdictTone,
+} from '../../shared/utils/technical-verdict-labels';
+import {
+  fieldAnalysisStatusLabel,
+  fieldAnalysisStatusTone,
+  fieldAttentionLabel,
+  fieldAttentionTone,
+  fieldMonitoringLabel,
+  fieldMonitoringTone,
+} from '../../shared/utils/field-status.util';
+import { scoreBandLabel, scoreBandTone } from '../../shared/utils/score-band.util';
 
 const PAGE_LIMIT = 20;
+const VALID_STATUS_FILTERS: FieldAnalysisStatus[] = [
+  'without_analysis',
+  'processing',
+  'completed',
+  'error',
+  'attention',
+];
 
 @Component({
   selector: 'app-fields',
   standalone: true,
-  imports: [DatePipe, RouterLink, PaginationControlsComponent, CopyableIdComponent],
+  imports: [
+    DatePipe,
+    DurationPipe,
+    RouterLink,
+    PaginationControlsComponent,
+    CopyableIdComponent,
+    StatusBadgeComponent,
+  ],
   templateUrl: './fields.component.html',
   styleUrl: '../shared-list.component.css',
 })
@@ -39,6 +69,23 @@ export class FieldsComponent implements OnInit {
   protected readonly userIdFilter = signal<string | undefined>(undefined);
   protected readonly fieldIdFilter = signal<string | undefined>(undefined);
 
+  // Admin PR 5: estado real de uso/producto (/fields?status=attention, etc.) y monitoreo semanal
+  // (/fields?monitoring=active|inactive).
+  protected readonly statusFilter = signal<FieldAnalysisStatus | undefined>(undefined);
+  protected readonly monitoringFilter = signal<'active' | 'inactive' | undefined>(undefined);
+
+  protected readonly fieldAnalysisStatusLabel = fieldAnalysisStatusLabel;
+  protected readonly fieldAnalysisStatusTone = fieldAnalysisStatusTone;
+  protected readonly fieldAttentionLabel = fieldAttentionLabel;
+  protected readonly fieldAttentionTone = fieldAttentionTone;
+  protected readonly fieldMonitoringLabel = fieldMonitoringLabel;
+  protected readonly fieldMonitoringTone = fieldMonitoringTone;
+  protected readonly scoreBandLabel = scoreBandLabel;
+  protected readonly scoreBandTone = scoreBandTone;
+  protected readonly verdictLabel = verdictLabel;
+  protected readonly verdictTone = verdictTone;
+  protected readonly confidenceLabel = confidenceLabel;
+
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
 
@@ -49,6 +96,16 @@ export class FieldsComponent implements OnInit {
 
     this.userIdFilter.set(params.get('userId') ?? undefined);
     this.fieldIdFilter.set(params.get('fieldId') ?? undefined);
+
+    const status = params.get('status');
+    if (status && (VALID_STATUS_FILTERS as string[]).includes(status)) {
+      this.statusFilter.set(status as FieldAnalysisStatus);
+    }
+
+    const monitoring = params.get('monitoring');
+    if (monitoring === 'active' || monitoring === 'inactive') {
+      this.monitoringFilter.set(monitoring);
+    }
 
     this.load();
   }
@@ -65,6 +122,8 @@ export class FieldsComponent implements OnInit {
         hasAnalysis: this.hasAnalysisFilter(),
         userId: this.userIdFilter(),
         fieldId: this.fieldIdFilter(),
+        status: this.statusFilter(),
+        monitoring: this.monitoringFilter(),
       })
       .subscribe({
         next: (result) => {
@@ -104,6 +163,18 @@ export class FieldsComponent implements OnInit {
 
   protected clearFieldIdFilter(): void {
     this.fieldIdFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearStatusFilter(): void {
+    this.statusFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearMonitoringFilter(): void {
+    this.monitoringFilter.set(undefined);
     this.page.set(1);
     this.load();
   }

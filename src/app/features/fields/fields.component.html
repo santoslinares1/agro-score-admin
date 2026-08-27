@@ -28,6 +28,18 @@
     <button type="button" class="link-button" (click)="clearFieldIdFilter()">Quitar filtro</button>
   </div>
 }
+@if (statusFilter(); as filteredStatus) {
+  <div class="filter-chip">
+    Filtro activo: estado = {{ fieldAnalysisStatusLabel(filteredStatus) }}
+    <button type="button" class="link-button" (click)="clearStatusFilter()">Quitar filtro</button>
+  </div>
+}
+@if (monitoringFilter(); as filteredMonitoring) {
+  <div class="filter-chip">
+    Filtro activo: monitoreo {{ filteredMonitoring === 'active' ? 'activo' : 'inactivo' }}
+    <button type="button" class="link-button" (click)="clearMonitoringFilter()">Quitar filtro</button>
+  </div>
+}
 
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
@@ -45,7 +57,10 @@
         <th>Nombre</th>
         <th>Dueño</th>
         <th>Lotes</th>
-        <th>Creado</th>
+        <th>Estado / Último análisis</th>
+        <th>Score / Veredicto</th>
+        <th>Monitoreo</th>
+        <th>Atención</th>
         <th>Actualizado</th>
         <th>Acciones</th>
       </tr>
@@ -67,7 +82,61 @@
             <span class="muted">({{ field.ownerEmail }})</span>
           </td>
           <td>{{ field.lotsCount }}</td>
-          <td>{{ field.createdAt | date: 'short' }}</td>
+          <td>
+            <app-status-badge
+              [label]="fieldAnalysisStatusLabel(field.analysisStatus)"
+              [tone]="fieldAnalysisStatusTone(field.analysisStatus)"
+            />
+            @if (field.latestAnalysis; as la) {
+              <p class="field-cell__meta">
+                <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: la.id }">
+                  {{ la.createdAt | date: 'short' }}
+                </a>
+                @if (la.durationMs) {
+                  <span class="muted"> · {{ la.durationMs | duration }}</span>
+                }
+              </p>
+            } @else {
+              <p class="field-cell__meta muted">Este campo todavía no tiene diagnósticos.</p>
+            }
+          </td>
+          <td>
+            @if (field.latestAnalysis?.score != null) {
+              <p class="field-cell__score">
+                <span class="field-cell__score-value">{{ field.latestAnalysis!.score }}</span>
+                <app-status-badge
+                  [label]="scoreBandLabel(field.latestAnalysis!.score!)"
+                  [tone]="scoreBandTone(field.latestAnalysis!.score!)"
+                />
+              </p>
+            } @else if (field.latestAnalysis) {
+              <p class="field-cell__meta muted">Score no disponible.</p>
+            }
+            @if (field.technicalVerdict?.status === 'generated') {
+              <p class="field-cell__meta">
+                <app-status-badge
+                  [label]="verdictLabel(field.technicalVerdict!.verdict)"
+                  [tone]="verdictTone(field.technicalVerdict!.verdict)"
+                />
+                <span class="muted"> · Confianza {{ confidenceLabel(field.technicalVerdict!.confidence) }}</span>
+              </p>
+            } @else if (field.latestAnalysis?.status === 'Finalizado') {
+              <p class="field-cell__meta muted">Veredicto no generado.</p>
+            }
+          </td>
+          <td>
+            <a class="entity-link" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: field.id }">
+              <app-status-badge [label]="fieldMonitoringLabel(field)" [tone]="fieldMonitoringTone(field)" />
+            </a>
+            @if (field.weeklyMonitoring?.active && field.weeklyMonitoring?.nextRunAt) {
+              <p class="field-cell__meta muted">
+                Próxima corrida: {{ field.weeklyMonitoring!.nextRunAt | date: 'short' }}
+              </p>
+            }
+          </td>
+          <td>
+            <app-status-badge [label]="fieldAttentionLabel(field)" [tone]="fieldAttentionTone(field)" />
+          </td>
           <td>{{ field.updatedAt | date: 'short' }}</td>
           <td class="actions">
             <a class="entity-link" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: field.id }">

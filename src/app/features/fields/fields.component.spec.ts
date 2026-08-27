@@ -179,4 +179,242 @@ describe('FieldsComponent (Admin PR 1 — deep link hasAnalysis)', () => {
       expect(el.textContent).not.toContain('null');
     });
   });
+
+  describe('Estado real de uso/producto (Admin PR 5)', () => {
+    it('renderiza el badge de Estado y "Sin diagnóstico" cuando el campo no tiene análisis', () => {
+      setup([buildField({ analysisStatus: 'without_analysis', latestAnalysis: null })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Sin diagnóstico');
+      expect(el.textContent).toContain('Este campo todavía no tiene diagnósticos.');
+    });
+
+    it('renderiza el badge "Error" cuando el último análisis está en Error', () => {
+      setup([
+        buildField({
+          analysisStatus: 'error',
+          requiresAttention: true,
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Error',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: null,
+            durationMs: null,
+            score: null,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const badges = Array.from(el.querySelectorAll('app-status-badge .badge')).map((b) =>
+        b.textContent?.trim(),
+      );
+      expect(badges).toContain('Error');
+    });
+
+    it('renderiza "Requiere atención" cuando requiresAttention=true', () => {
+      setup([
+        buildField({
+          analysisStatus: 'attention',
+          requiresAttention: true,
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Finalizado',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: '2026-08-10T01:00:00.000Z',
+            durationMs: 4000,
+            score: 35,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+      const badges = Array.from(el.querySelectorAll('app-status-badge .badge')).map((b) =>
+        b.textContent?.trim(),
+      );
+
+      expect(badges.filter((b) => b === 'Requiere atención').length).toBeGreaterThan(0);
+    });
+
+    it('el "Último análisis" linkea a /analysis?analysisId=<id>', () => {
+      setup([
+        buildField({
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Finalizado',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: '2026-08-10T01:00:00.000Z',
+            durationMs: 4000,
+            score: 72,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = Array.from(el.querySelectorAll('a')).find(
+        (a) => a.getAttribute('href') === '/analysis?analysisId=analysis-1',
+      );
+      expect(link).toBeTruthy();
+    });
+
+    it('renderiza el score cuando existe, con su banda visual', () => {
+      setup([
+        buildField({
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Finalizado',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: '2026-08-10T01:00:00.000Z',
+            durationMs: 4000,
+            score: 72,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('72');
+      expect(el.textContent).toContain('Favorable');
+    });
+
+    it('no muestra el score cuando el análisis todavía está Procesando (score=null)', () => {
+      setup([
+        buildField({
+          analysisStatus: 'processing',
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Procesando',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: null,
+            durationMs: null,
+            score: null,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Score no disponible.');
+    });
+
+    it('no muestra undefined/null/NaN con datos completos (score, veredicto, monitoreo, atención)', () => {
+      setup([
+        buildField({
+          analysisStatus: 'attention',
+          requiresAttention: true,
+          latestAnalysis: {
+            id: 'analysis-1',
+            status: 'Finalizado',
+            createdAt: '2026-08-10T00:00:00.000Z',
+            completedAt: '2026-08-10T01:00:00.000Z',
+            durationMs: 4000,
+            score: 41,
+          },
+          technicalVerdict: {
+            status: 'generated',
+            verdict: 'attention',
+            confidence: 'medium',
+            summary: 'Zona con variabilidad relevante.',
+            keyFindings: [],
+            possibleCauses: [],
+            recommendations: [],
+            limitations: [],
+            generatedAt: '2026-08-10T01:05:00.000Z',
+            generator: 'deterministic-v1',
+            promptVersion: null,
+            errorMessage: null,
+          },
+          weeklyMonitoring: {
+            active: true,
+            scheduleId: 'schedule-1',
+            nextRunAt: '2026-09-01T09:00:00.000Z',
+            lastRunAt: null,
+            hasRuns: false,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).not.toContain('undefined');
+      expect(el.textContent).not.toContain('null');
+      expect(el.textContent).not.toContain('NaN');
+    });
+
+    it('renderiza "Activo" y la próxima corrida cuando el monitoreo semanal está activo', () => {
+      setup([
+        buildField({
+          weeklyMonitoring: {
+            active: true,
+            scheduleId: 'schedule-1',
+            nextRunAt: '2026-09-01T09:00:00.000Z',
+            lastRunAt: null,
+            hasRuns: false,
+          },
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Activo');
+      expect(el.textContent).toContain('Próxima corrida');
+    });
+
+    it('renderiza "Inactivo" cuando no hay monitoreo semanal', () => {
+      setup([buildField()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Inactivo');
+    });
+
+    it('lee status=attention de la URL y lo reenvía a FieldsService.list', () => {
+      setup([], { status: 'attention' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ status: 'attention' }),
+      );
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.filter-chip')?.textContent).toContain(
+        'estado = Requiere atención',
+      );
+    });
+
+    it('lee monitoring=active de la URL y lo reenvía a FieldsService.list', () => {
+      setup([], { monitoring: 'active' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ monitoring: 'active' }),
+      );
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.querySelector('.filter-chip')?.textContent).toContain('monitoreo activo');
+    });
+
+    it('ignora un status que no sea uno de los 5 valores válidos', () => {
+      setup([], { status: 'bogus' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ status: undefined }),
+      );
+    });
+
+    it('sigue soportando hasAnalysis/userId/fieldId (PR1/PR2) junto a status/monitoring', () => {
+      setup([], { hasAnalysis: 'false', userId: 'user-1', fieldId: 'field-1' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          hasAnalysis: false,
+          userId: 'user-1',
+          fieldId: 'field-1',
+        }),
+      );
+    });
+
+    it('el link "Ver programados" (Acciones) y app-copyable-id del nombre siguen funcionando', () => {
+      setup([buildField({ id: 'abcd1234-5678-90ab-cdef-1234567890ab' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const scheduledLink = Array.from(el.querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Ver programados',
+      ) as HTMLAnchorElement;
+      expect(scheduledLink.getAttribute('href')).toBe(
+        '/scheduled-analysis?fieldId=abcd1234-5678-90ab-cdef-1234567890ab',
+      );
+      expect(el.querySelector('app-copyable-id')?.textContent).toContain('#abcd1234…');
+    });
+  });
 });

@@ -39,7 +39,7 @@
         <th>Nombre</th>
         <th>Campo</th>
         <th>Dueño</th>
-        <th>Creado</th>
+        <th>Estado del campo</th>
         <th>Actualizado</th>
       </tr>
     </thead>
@@ -62,7 +62,18 @@
               <span class="muted">—</span>
             }
           </td>
-          <td>{{ lot.createdAt | date: 'short' }}</td>
+          <td>
+            <app-status-badge
+              [label]="fieldHasAnalysisLabel(lot)"
+              [tone]="fieldHasAnalysisTone(lot)"
+            />
+            <p class="field-cell__meta">
+              <app-status-badge
+                [label]="fieldMonitoringLabel(lot)"
+                [tone]="fieldMonitoringTone(lot)"
+              />
+            </p>
+          </td>
           <td>{{ lot.updatedAt | date: 'short' }}</td>
         </tr>
       }

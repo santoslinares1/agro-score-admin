@@ -464,3 +464,120 @@ quien note la inconsistencia entre PRs: es deliberada, no un descuido.
   "errorMessage"`), no por patrón/categoría — no existe todavía una función de normalización segura
   en el repo, y el ticket explícitamente permite este fallback ("agrupar por mensaje exacto" si no
   hay función segura).
+
+## Admin PR 5 — Campos y Lotes con estado real
+
+### Objetivo
+
+Campos y Lotes eran tablas planas: nombre, dueño, cantidad/fecha, sin ningún estado de uso real.
+Este PR agrega, por campo, todo lo necesario para responder "¿qué campos están activos, cuáles
+generan valor, cuáles están abandonados, cuáles requieren atención?" sin saltar a Diagnósticos o
+Programados — y en Lotes, contexto mínimo del campo (sin convertir Lotes en una copia de Campos).
+
+### Campos nuevos en `/admin/fields`
+
+Por cada campo, además de lo que ya existía (`id/name/ownerId/ownerEmail/ownerFullName/lotsCount/
+createdAt/updatedAt`):
+
+- `analysisStatus`: `without_analysis | processing | completed | error | attention` — ver
+  definición exacta más abajo.
+- `requiresAttention`: booleano, señal operativa independiente de `analysisStatus`.
+- `latestAnalysis`: `{ id, status, createdAt, completedAt, durationMs, score }` del análisis MÁS
+  RECIENTE del campo, o `null` si no tiene ninguno. `score` (`Analysis.globalScore`, real, nunca
+  recalculado) solo viaja cuando `status === 'Finalizado'` — mientras procesa o si terminó en
+  error, `globalScore` sigue en su valor default (`0`) y mostrarlo sería un score falso, no
+  "ausente".
+- `technicalVerdict`: reusa `AdminAnalysisTechnicalVerdict` tal cual (PR 13A) — mismo shape que ya
+  viaja en Diagnósticos/Programados, la tabla de Campos solo pinta un subconjunto compacto
+  (`verdict` + `confidence`); `generator`/`promptVersion`/`errorMessage` quedan para Diagnósticos.
+- `weeklyMonitoring`: `{ active, scheduleId, nextRunAt, lastRunAt, hasRuns }` — `hasRuns` usa
+  existencia REAL de `ScheduledAnalysisRun` (mismo criterio que PR3), nunca `lastRunAt`.
+
+Todo resuelto en lote por los `fieldId`/`scheduleId` de la página actual (nunca una consulta por
+fila): 5 consultas totales para Campos sin importar cuántos campos traiga la página (verificado con
+un test dedicado de conteo de llamadas).
+
+### Campos nuevos en `/admin/lots`
+
+Contexto MÍNIMO, a propósito (prioridad mínima del ticket, "no convertir Lotes en una copia de
+Campos"): `fieldHasAnalysis` y `fieldHasActiveMonitoring` (booleanos), no el `analysisStatus`
+completo — evita resolver veredicto técnico por campo en una pantalla que no lo pidió. 2 consultas
+en lote por los `fieldId` distintos de la página.
+
+### Definición exacta de los 5 estados de `analysisStatus`
+
+| Estado             | Condición                                                                 |
+|---------------------|----------------------------------------------------------------------------|
+| `without_analysis`  | No existe ningún `Analysis` asociado al campo (mismo criterio que `hasAnalysis=false`, PR1). |
+| `processing`         | El análisis más reciente del campo está en `Procesando`.                  |
+| `error`              | El análisis más reciente del campo está en `Error`.                       |
+| `attention`          | El análisis más reciente está `Finalizado`, pero su veredicto técnico es `attention` o `critical`. |
+| `completed`          | El análisis más reciente está `Finalizado` y no requiere atención según el veredicto (o no hay veredicto todavía). |
+
+Es un estado **administrativo/producto**, nunca un diagnóstico agronómico nuevo — deriva
+exclusivamente de `Analysis.status` + `AnalysisTechnicalVerdict.verdict`, dos columnas que ya
+existían.
+
+### Definición exacta de `requiresAttention`
+
+```
+requiresAttention =
+  latestAnalysis?.status === 'Error'
+  OR technicalVerdict?.verdict IN ('attention', 'critical')
+  OR (weeklyMonitoring.active AND NOT weeklyMonitoring.hasRuns)
+```
+
+Es independiente de `analysisStatus`: puede ser `true` incluso con `analysisStatus='completed'`
+(ej. un campo con análisis Finalizado y veredicto favorable, pero cuyo monitoreo semanal está
+activo y todavía no registró ninguna corrida). **A propósito no usa umbrales de score** — se
+confirmó antes de escribir código que el admin no tiene ninguna banda de score propia (a diferencia
+de `agro-score-web/src/app/shared/utils/score-band.ts`), y el ticket pide explícitamente no
+inventar una acá si no existe: "si no hay score bands admin, usar veredicto/error/schedule".
+
+### Banda visual del score (solo presentación, no en `requiresAttention`)
+
+El admin no tenía ninguna banda de score. En vez de inventar una escala nueva, el frontend
+(`shared/utils/score-band.util.ts`) reusa los mismos umbrales que ya usa `scoreInterpretation` en
+`agro-score-web/src/app/features/app/analysis-result/analysis-result.component.ts` (score ≥ 70 →
+favorable, ≥ 40 → variabilidad interna, debajo → menor desempeño) — citados y adaptados a un label
+de tabla compacto (Favorable / Variable / Bajo desempeño), `agro-score-web` no se tocó. Es solo un
+acento visual sobre el número que ya trae el backend; nunca decide `analysisStatus` ni
+`requiresAttention`.
+
+### Filtros nuevos
+
+`/fields?status=without_analysis|processing|completed|error|attention` y
+`/fields?monitoring=active|inactive` — los 5 valores de `status` completos (no solo los 3 que el
+ticket marcaba como prioridad mínima: la maquinaria de subquery correlacionada ya la necesitaba
+`attention`, así que sumar `processing`/`error`/`completed` fue una extensión barata del mismo
+mecanismo, no un esfuerzo aparte). `status=without_analysis` reusa el mismo `NOT EXISTS` que
+`hasAnalysis=false` (misma pregunta, dos nombres por compatibilidad con PR1).
+
+### Compatibilidad con PR1/PR2
+
+`hasAnalysis`, `userId`, `fieldId` (Campos) y `fieldId`, `userId` (Lotes) siguen intactos — cubierto
+con tests explícitos que combinan los filtros viejos y los nuevos en la misma llamada. Todos los
+campos nuevos son opcionales en los modelos del frontend (`AdminField`/`AdminLot`), mismo criterio
+de compatibilidad hacia atrás que `AdminMetrics` desde PR1.
+
+### Links / IDs mantenidos o agregados
+
+- Mantenidos: nombre → `/analysis?fieldId=`, dueño → `/users?userId=`, "Ver programados" →
+  `/scheduled-analysis?fieldId=`, `app-copyable-id` del `fieldId` (todos de PR2).
+- Nuevos: "Último análisis" → `/analysis?analysisId=<id>` (filtro real, ya soportado por
+  `ListAnalysisQueryDto` desde PR2 y ya leído por `AnalysisComponent`), badge de Monitoreo →
+  `/scheduled-analysis?fieldId=<id>`.
+
+### Qué quedó fuera de este PR
+
+- **Vista de detalle de campo**: el ticket lo excluye explícitamente ("No crear una vista detalle
+  grande todavía") — este PR es estado resumido en tabla, no una pantalla nueva.
+- **`/fields?hasAnalysis=true` como link de la etapa "análisis finalizado"**: ese filtro existe
+  pero incluye cualquier estado de análisis (también Procesando/Error), no solo Finalizado — no se
+  usó como link de "Último análisis" por la misma razón que en PR4 (Product Analytics): mejor sin
+  link que uno que insinúe más precisión de la que tiene.
+- **Columna "Creado"**: se sacó de ambas tablas (Campos y Lotes) para hacerle lugar a las columnas
+  nuevas sin saturar — "Actualizado" se mantiene, que es la fecha más relevante para "¿qué campos
+  están activos?".
+- **`analysisStatus` completo en Lotes**: se limitó a dos booleanos (prioridad mínima del ticket),
+  ver "Campos nuevos en `/admin/lots`" arriba.

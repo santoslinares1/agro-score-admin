@@ -216,3 +216,23 @@
 .scheduled-summary__item--error .scheduled-summary__value {
   color: var(--color-error);
 }
+
+/* Admin PR 5: celdas compactas de Campos (Estado/Último análisis, Score/Veredicto, Monitoreo) —
+   un app-status-badge arriba + una línea chica de contexto debajo, mismo patrón repetido 3 veces
+   en la tabla en vez de 3 estilos distintos. */
+.field-cell__meta {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+}
+
+.field-cell__score {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.field-cell__score-value {
+  font-weight: 700;
+  font-size: 1rem;
+}
