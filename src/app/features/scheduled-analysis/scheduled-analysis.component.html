@@ -24,6 +24,56 @@
     <button type="button" class="link-button" (click)="clearEnabledFilter()">Quitar filtro</button>
   </div>
 }
+@if (hasRunsFilter() !== undefined) {
+  <div class="filter-chip">
+    Filtro activo: {{ hasRunsFilter() ? 'con corridas registradas' : 'sin ninguna corrida registrada' }}
+    <button type="button" class="link-button" (click)="clearHasRunsFilter()">Quitar filtro</button>
+  </div>
+}
+
+@if (summary(); as s) {
+  <div class="scheduled-summary">
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.total }}</span>
+      <span class="scheduled-summary__label">Programaciones</span>
+    </div>
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.active }}</span>
+      <span class="scheduled-summary__label">Activas</span>
+    </div>
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.inactive }}</span>
+      <span class="scheduled-summary__label">Inactivas</span>
+    </div>
+    <div class="scheduled-summary__item" [class.scheduled-summary__item--warning]="s.withoutRuns > 0">
+      <span class="scheduled-summary__value">{{ s.withoutRuns }}</span>
+      <span class="scheduled-summary__label">Sin corridas</span>
+    </div>
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.lastRunOk }}</span>
+      <span class="scheduled-summary__label">Última corrida OK</span>
+    </div>
+    <div class="scheduled-summary__item" [class.scheduled-summary__item--error]="s.lastRunFailed > 0">
+      <span class="scheduled-summary__value">{{ s.lastRunFailed }}</span>
+      <span class="scheduled-summary__label">Última corrida fallida</span>
+    </div>
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.mailSentLast7Days }}</span>
+      <span class="scheduled-summary__label">Mails enviados (7 días)</span>
+    </div>
+    <div class="scheduled-summary__item">
+      <span class="scheduled-summary__value">{{ s.mailSentLast30Days }}</span>
+      <span class="scheduled-summary__label">Mails enviados (30 días)</span>
+    </div>
+    <div
+      class="scheduled-summary__item"
+      [class.scheduled-summary__item--warning]="s.mailPendingOrFailed > 0"
+    >
+      <span class="scheduled-summary__value">{{ s.mailPendingOrFailed }}</span>
+      <span class="scheduled-summary__label">Mails pendientes / fallidos</span>
+    </div>
+  </div>
+}
 
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
@@ -46,6 +96,7 @@
         <th>Análisis</th>
         <th>Veredicto técnico</th>
         <th>Mail</th>
+        <th>Estado del flujo</th>
         <th>Detalle</th>
       </tr>
     </thead>
@@ -124,6 +175,15 @@
               <span class="muted">{{ emailSentAt | date: 'short' }}</span>
             }
           </td>
+          <td class="flow-state-cell">
+            @if (resolveFlowState(item); as flow) {
+              <app-status-badge
+                [label]="flowStateBadgeLabel(flow.blockingState)"
+                [tone]="flowStageTone(flow.blockingState)"
+              />
+              <p class="flow-state-cell__reason">{{ flow.blockingReason }}</p>
+            }
+          </td>
           <td>
             <button type="button" class="link-button detail-toggle" (click)="toggleExpanded(item.id)">
               {{ isExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
@@ -132,8 +192,46 @@
         </tr>
         @if (isExpanded(item.id)) {
           <tr class="verdict-detail-row">
-            <td colspan="9">
+            <td colspan="10">
               <div class="verdict-panel scheduled-detail">
+                @if (resolveFlowState(item); as flow) {
+                  <section class="flow-summary">
+                    <h3>Estado del flujo</h3>
+                    <p class="flow-summary__reason">{{ flow.blockingReason }}</p>
+                    <ul class="flow-summary__stages">
+                      <li>
+                        <app-status-badge [label]="flow.run.text" [tone]="flowStageTone(flow.run.state)" />
+                        <span class="flow-summary__stage-label">Corrida</span>
+                      </li>
+                      <li>
+                        <app-status-badge
+                          [label]="flow.analysis.text"
+                          [tone]="flowStageTone(flow.analysis.state)"
+                        />
+                        <span class="flow-summary__stage-label">Análisis</span>
+                      </li>
+                      <li>
+                        <app-status-badge
+                          [label]="flow.technicalVerdict.text"
+                          [tone]="flowStageTone(flow.technicalVerdict.state)"
+                        />
+                        <span class="flow-summary__stage-label">Veredicto técnico</span>
+                      </li>
+                      <li>
+                        <app-status-badge
+                          [label]="flow.weeklyVerdict.text"
+                          [tone]="flowStageTone(flow.weeklyVerdict.state)"
+                        />
+                        <span class="flow-summary__stage-label">Diagnóstico semanal</span>
+                      </li>
+                      <li>
+                        <app-status-badge [label]="flow.mail.text" [tone]="flowStageTone(flow.mail.state)" />
+                        <span class="flow-summary__stage-label">Mail</span>
+                      </li>
+                    </ul>
+                  </section>
+                }
+
                 <section>
                   <h3>Schedule</h3>
                   <ul class="verdict-panel__tech-data">

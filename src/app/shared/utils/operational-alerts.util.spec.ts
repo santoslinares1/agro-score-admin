@@ -58,7 +58,7 @@ describe('buildOperationalAlerts (Admin PR 1)', () => {
     );
   });
 
-  it('muestra la alerta de schedules activos sin corridas cuando activeSchedulesWithoutRuns > 0', () => {
+  it('muestra la alerta de schedules activos sin corridas cuando activeSchedulesWithoutRuns > 0, con link filtrado (Admin PR 3)', () => {
     const alerts = buildOperationalAlerts(buildMetrics({ activeSchedulesWithoutRuns: 2 }));
 
     expect(alerts.length).toBe(1);
@@ -68,9 +68,9 @@ describe('buildOperationalAlerts (Admin PR 1)', () => {
         severity: 'critical',
         count: 2,
         route: '/scheduled-analysis',
+        queryParams: { enabled: true, hasRuns: false },
       }),
     );
-    expect(alerts[0].queryParams).toBeUndefined();
   });
 
   it('muestra la alerta de no revisados hace más de 7 días combinando status=Error + onlyUnreviewed=true', () => {

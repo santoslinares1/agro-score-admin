@@ -128,3 +128,91 @@
 .scheduled-detail .verdict-panel__tech-data li {
   word-break: break-word;
 }
+
+/* Admin PR 3: "Estado del flujo" — ocupa todo el ancho del grid, arriba de las 4 secciones
+   técnicas existentes (Schedule/Última corrida/Veredicto técnico/Mail), para que la cadena
+   completa (Corrida → Análisis → Veredicto → Diagnóstico semanal → Mail) se lea de un vistazo
+   antes del detalle técnico de cada etapa. */
+.flow-summary {
+  grid-column: 1 / -1;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.flow-summary__reason {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.flow-summary__stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.flow-summary__stages li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.flow-summary__stage-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* Admin PR 3: columna compacta "Estado del flujo" en la fila principal — badge + primer punto
+   bloqueante en una línea corta, sin necesitar expandir el detalle. */
+.flow-state-cell {
+  max-width: 220px;
+}
+
+.flow-state-cell__reason {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* Admin PR 3: resumen operativo global de Programados — mismo espíritu que .metrics-grid del
+   Dashboard pero deliberadamente más compacto/lineal para no duplicarlo visualmente (esto es un
+   resumen de UNA pantalla puntual, no el panorama general). */
+.scheduled-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.scheduled-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 100px;
+}
+
+.scheduled-summary__value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.scheduled-summary__label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.scheduled-summary__item--warning .scheduled-summary__value {
+  color: var(--color-warning);
+}
+
+.scheduled-summary__item--error .scheduled-summary__value {
+  color: var(--color-error);
+}

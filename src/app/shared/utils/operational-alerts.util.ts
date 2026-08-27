@@ -29,9 +29,9 @@ export function buildOperationalAlerts(metrics: AdminMetrics): OperationalAlert[
 
   // Alerta 1 (P0 según la auditoría): schedules semanales activos que todavía no registraron
   // ninguna corrida — sin esto no hay evidencia de que el flujo semanal funcione end-to-end.
-  // No hay filtro real en /admin/scheduled-analysis para esto todavía (ver
-  // AdminService.listScheduledAnalysis en agro-score-api), así que el link va a la pantalla
-  // completa, no a una vista filtrada — limitación documentada en docs/admin-ux-notes.md.
+  // Admin PR 3: enabled=true&hasRuns=false ya filtra de verdad (existencia real de
+  // ScheduledAnalysisRun, no lastRunAt — ver AdminService.listScheduledAnalysis) — antes el link
+  // iba a la pantalla completa sin filtro, documentado como limitación en PR 1/PR 2.
   const activeSchedulesWithoutRuns = metrics.activeSchedulesWithoutRuns ?? 0;
   if (activeSchedulesWithoutRuns > 0) {
     alerts.push({
@@ -46,6 +46,7 @@ export function buildOperationalAlerts(metrics: AdminMetrics): OperationalAlert[
       count: activeSchedulesWithoutRuns,
       actionLabel: 'Ver programados',
       route: '/scheduled-analysis',
+      queryParams: { enabled: true, hasRuns: false },
     });
   }
 

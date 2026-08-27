@@ -6,10 +6,13 @@ import { AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
 import {
   AdminScheduledAnalysisItem,
   AdminScheduledAnalysisRun,
+  AdminScheduledAnalysisSummary,
   AdminWeeklyTechnicalVerdict,
 } from '../../core/models/scheduled-analysis.model';
-import { PaginatedResult } from '../../core/models/pagination.model';
-import { ScheduledAnalysisService } from '../../core/services/scheduled-analysis.service';
+import {
+  ScheduledAnalysisListResult,
+  ScheduledAnalysisService,
+} from '../../core/services/scheduled-analysis.service';
 import { ScheduledAnalysisComponent } from './scheduled-analysis.component';
 
 function buildRun(overrides: Partial<AdminScheduledAnalysisRun> = {}): AdminScheduledAnalysisRun {
@@ -93,8 +96,25 @@ function buildItem(overrides: Partial<AdminScheduledAnalysisItem> = {}): AdminSc
   };
 }
 
-function buildResult(items: AdminScheduledAnalysisItem[]): PaginatedResult<AdminScheduledAnalysisItem> {
-  return { items, total: items.length, page: 1, limit: 20 };
+function buildSummary(
+  overrides: Partial<AdminScheduledAnalysisSummary> = {},
+): AdminScheduledAnalysisSummary {
+  return {
+    total: 1,
+    active: 1,
+    inactive: 0,
+    withoutRuns: 0,
+    lastRunOk: 1,
+    lastRunFailed: 0,
+    mailSentLast7Days: 1,
+    mailSentLast30Days: 1,
+    mailPendingOrFailed: 0,
+    ...overrides,
+  };
+}
+
+function buildResult(items: AdminScheduledAnalysisItem[]): ScheduledAnalysisListResult {
+  return { items, total: items.length, page: 1, limit: 20, summary: buildSummary() };
 }
 
 describe('ScheduledAnalysisComponent (PR 13B)', () => {
@@ -588,6 +608,124 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
       const el = fixture.nativeElement as HTMLElement;
 
       expect(el.querySelector('app-pagination-controls')).toBeTruthy();
+    });
+  });
+
+  describe('Programados end-to-end + estado de mail (Admin PR 3)', () => {
+    it('lee hasRuns=false de la URL y lo reenvía a ScheduledAnalysisService.list', () => {
+      setup([], { hasRuns: 'false' });
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ hasRuns: false }),
+      );
+    });
+
+    it('lee hasRuns=true de la URL y lo reenvía a ScheduledAnalysisService.list', () => {
+      setup([], { hasRuns: 'true' });
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ hasRuns: true }),
+      );
+    });
+
+    it('muestra un chip de filtro activo cuando hasRuns viene de la URL, con botón para quitarlo', () => {
+      setup([], { hasRuns: 'false' });
+      const el = fixture.nativeElement as HTMLElement;
+
+      const chip = Array.from(el.querySelectorAll('.filter-chip')).find((c) =>
+        c.textContent?.includes('sin ninguna corrida registrada'),
+      );
+      expect(chip).toBeTruthy();
+
+      serviceSpy.list.calls.reset();
+      serviceSpy.list.and.returnValue(of(buildResult([])));
+      (chip?.querySelector('button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ hasRuns: undefined }),
+      );
+    });
+
+    it('renderiza el resumen superior con los números del summary devuelto por la API', () => {
+      configureTestBed();
+      serviceSpy.list.and.returnValue(
+        of({
+          ...buildResult([buildItem()]),
+          summary: buildSummary({ total: 12, active: 9, withoutRuns: 2 }),
+        }),
+      );
+      fixture = TestBed.createComponent(ScheduledAnalysisComponent);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+
+      const strip = el.querySelector('.scheduled-summary') as HTMLElement;
+      expect(strip).toBeTruthy();
+      expect(strip.textContent).toContain('12');
+      expect(strip.textContent).toContain('9');
+      expect(strip.textContent).toContain('2');
+      expect(strip.textContent).toContain('Programaciones');
+    });
+
+    it('renderiza la columna "Estado del flujo" con el motivo determinístico para un schedule sin corridas', () => {
+      setup([buildItem({ latestRun: null, technicalVerdict: null, weeklyTechnicalVerdict: null })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const cell = el.querySelector('.flow-state-cell') as HTMLElement;
+      expect(cell.textContent).toContain('Este monitoreo todavía no registra corridas.');
+    });
+
+    it('renderiza "Estado del flujo" cuando la última corrida falló antes de generar análisis', () => {
+      setup([
+        buildItem({
+          latestRun: buildRun({ status: 'failed', failedAt: '2026-08-24T09:03:00.000Z', emailSentAt: null }),
+          technicalVerdict: null,
+          weeklyTechnicalVerdict: null,
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const cell = el.querySelector('.flow-state-cell') as HTMLElement;
+      expect(cell.textContent).toContain('La última corrida falló antes de generar análisis.');
+    });
+
+    it('renderiza "Estado del flujo" confirmando el envío correcto cuando todo salió bien', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const cell = el.querySelector('.flow-state-cell') as HTMLElement;
+      expect(cell.textContent).toContain('El mail fue enviado correctamente.');
+    });
+
+    it('el detalle expandido muestra las 5 etapas del flujo (Corrida/Análisis/Veredicto/Diagnóstico semanal/Mail)', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const flowSummary = el.querySelector('.flow-summary') as HTMLElement;
+      expect(flowSummary.textContent).toContain('Corrida');
+      expect(flowSummary.textContent).toContain('Análisis');
+      expect(flowSummary.textContent).toContain('Veredicto técnico');
+      expect(flowSummary.textContent).toContain('Diagnóstico semanal');
+      expect(flowSummary.textContent).toContain('Mail');
+    });
+
+    it('los links a campo/usuario/análisis y los IDs copiables de PR 2 siguen intactos', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelectorAll('.entity-link').length).toBeGreaterThanOrEqual(2);
+      expect(el.querySelector('app-copyable-id')).toBeTruthy();
+    });
+
+    it('no muestra undefined/null en ningún lado, incluyendo el resumen y la columna nueva', () => {
+      setup([buildItem({ latestRun: null, technicalVerdict: null, weeklyTechnicalVerdict: null })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).not.toContain('undefined');
+      expect(el.textContent).not.toContain('null');
     });
   });
 });

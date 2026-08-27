@@ -87,6 +87,14 @@ describe('DashboardComponent', () => {
       expect(el.textContent).not.toContain('null');
     });
 
+    it('Admin PR 3: la alerta "schedules activos sin corridas" linkea a /scheduled-analysis?enabled=true&hasRuns=false', () => {
+      const fixture = createComponent(buildMetrics({ activeSchedulesWithoutRuns: 2 }));
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = el.querySelector('.alert-card__action') as HTMLAnchorElement;
+      expect(link.getAttribute('href')).toBe('/scheduled-analysis?enabled=true&hasRuns=false');
+    });
+
     it('sigue renderizando las cards existentes (Usuarios/Campos/Diagnósticos) junto con las alertas', () => {
       const fixture = createComponent(
         buildMetrics({ totalUsers: 10, totalFields: 78, activeSchedulesWithoutRuns: 2 }),

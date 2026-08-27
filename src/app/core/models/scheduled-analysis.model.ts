@@ -90,3 +90,20 @@ export interface AdminScheduledAnalysisItem {
    */
   weeklyTechnicalVerdict: AdminWeeklyTechnicalVerdict | null;
 }
+
+/**
+ * Admin PR 3: resumen agregado de TODOS los schedules — no acotado a la página/filtros actuales
+ * (ver AdminService.getScheduledAnalysisSummary en agro-score-api, mismo comentario ahí con el
+ * detalle de cada número). Viaja junto a la respuesta paginada de siempre.
+ */
+export interface AdminScheduledAnalysisSummary {
+  total: number;
+  active: number;
+  inactive: number;
+  withoutRuns: number;
+  lastRunOk: number;
+  lastRunFailed: number;
+  mailSentLast7Days: number;
+  mailSentLast30Days: number;
+  mailPendingOrFailed: number;
+}

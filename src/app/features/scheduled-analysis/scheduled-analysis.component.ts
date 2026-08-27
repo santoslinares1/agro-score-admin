@@ -2,15 +2,21 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { AdminScheduledAnalysisItem } from '../../core/models/scheduled-analysis.model';
+import {
+  AdminScheduledAnalysisItem,
+  AdminScheduledAnalysisSummary,
+} from '../../core/models/scheduled-analysis.model';
 import { ScheduledAnalysisService } from '../../core/services/scheduled-analysis.service';
 import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
+  flowStageTone,
+  flowStateBadgeLabel,
   mailStatusLabel,
   mailStatusTone,
+  resolveFlowState,
   runStatusLabel,
   runStatusTone,
   scheduleTone,
@@ -62,6 +68,9 @@ export class ScheduledAnalysisComponent implements OnInit {
   protected readonly runStatusTone = runStatusTone;
   protected readonly mailStatusLabel = mailStatusLabel;
   protected readonly mailStatusTone = mailStatusTone;
+  protected readonly resolveFlowState = resolveFlowState;
+  protected readonly flowStageTone = flowStageTone;
+  protected readonly flowStateBadgeLabel = flowStateBadgeLabel;
   protected readonly verdictLabel = verdictLabel;
   protected readonly confidenceLabel = confidenceLabel;
   protected readonly generationStatusLabel = generationStatusLabel;
@@ -77,13 +86,21 @@ export class ScheduledAnalysisComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
 
+  // Admin PR 3: resumen global (todos los schedules, no acotado a filtros/página) — ver
+  // AdminService.getScheduledAnalysisSummary en agro-score-api.
+  protected readonly summary = signal<AdminScheduledAnalysisSummary | null>(null);
+
   private readonly expandedIds = signal<ReadonlySet<string>>(new Set());
 
   // Admin PR 2: trazabilidad — "ver programados de este campo/usuario" desde Campos/Usuarios
   // (/scheduled-analysis?fieldId=<uuid>, ?userId=<uuid>, ?enabled=true).
+  // Admin PR 3: hasRuns=false es el link real detrás de la alerta "Schedules activos sin
+  // corridas" del Dashboard (?enabled=true&hasRuns=false) — usa existencia real de corridas, no
+  // lastRunAt.
   protected readonly fieldIdFilter = signal<string | undefined>(undefined);
   protected readonly userIdFilter = signal<string | undefined>(undefined);
   protected readonly enabledFilter = signal<boolean | undefined>(undefined);
+  protected readonly hasRunsFilter = signal<boolean | undefined>(undefined);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -93,6 +110,11 @@ export class ScheduledAnalysisComponent implements OnInit {
     const enabled = params.get('enabled');
     if (enabled === 'true' || enabled === 'false') {
       this.enabledFilter.set(enabled === 'true');
+    }
+
+    const hasRuns = params.get('hasRuns');
+    if (hasRuns === 'true' || hasRuns === 'false') {
+      this.hasRunsFilter.set(hasRuns === 'true');
     }
 
     this.load();
@@ -109,11 +131,13 @@ export class ScheduledAnalysisComponent implements OnInit {
         fieldId: this.fieldIdFilter(),
         userId: this.userIdFilter(),
         enabled: this.enabledFilter(),
+        hasRuns: this.hasRunsFilter(),
       })
       .subscribe({
         next: (result) => {
           this.items.set(result.items);
           this.total.set(result.total);
+          this.summary.set(result.summary);
           this.loading.set(false);
         },
         error: (err) => {
@@ -144,6 +168,12 @@ export class ScheduledAnalysisComponent implements OnInit {
 
   protected clearEnabledFilter(): void {
     this.enabledFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearHasRunsFilter(): void {
+    this.hasRunsFilter.set(undefined);
     this.page.set(1);
     this.load();
   }
