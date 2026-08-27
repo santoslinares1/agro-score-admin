@@ -69,6 +69,19 @@ describe('UsersComponent — trazabilidad (Admin PR 2)', () => {
     expect(link.getAttribute('href')).toBe('/fields?userId=user-1');
   });
 
+  // Admin PR 7: el email ahora abre el detalle de usuario, no solo texto plano.
+  it('linkea el email al detalle de usuario (/users/:userId)', () => {
+    setup([buildUser({ id: 'user-1', email: 'ana@example.com' })]);
+    const el = fixture.nativeElement as HTMLElement;
+
+    const link = Array.from(el.querySelectorAll('a')).find(
+      (a) => a.textContent?.trim() === 'ana@example.com',
+    ) as HTMLAnchorElement;
+
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe('/users/user-1');
+  });
+
   it('renderiza el link "Ver diagnósticos" con queryParams userId', () => {
     setup([buildUser()]);
     const el = fixture.nativeElement as HTMLElement;

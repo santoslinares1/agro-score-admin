@@ -1,0 +1,40 @@
+.ud-back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.ud-header__name {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.ud-header__badges {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.ud-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Las cards de resumen que sí tienen filtro real son <a> en vez de <div> — mismo aspecto visual
+   que .fd-summary-card (PR6), sin el subrayado/color de link por defecto del navegador. */
+.ud-summary-card--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ud-summary-card--link:hover {
+  border-color: var(--color-text-muted);
+}
+
+.ud-summary-note {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}

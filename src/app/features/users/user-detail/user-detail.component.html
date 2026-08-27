@@ -1,0 +1,322 @@
+@if (loading()) {
+  <div class="loading-state">Cargando usuario...</div>
+} @else if (notFound()) {
+  <div class="page-header">
+    <h1>Usuario no encontrado</h1>
+  </div>
+  <p class="empty-state">No encontramos un usuario con ese ID — puede que haya sido eliminado.</p>
+  <a class="link-button" routerLink="/users">← Volver a Usuarios</a>
+} @else if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+  <a class="link-button" routerLink="/users">← Volver a Usuarios</a>
+} @else {
+@if (detail(); as d) {
+  <a class="link-button ud-back" routerLink="/users">← Volver a Usuarios</a>
+
+  <div class="page-header">
+    <div>
+      <h1>{{ d.user.email }}</h1>
+      <p class="ud-header__name">{{ d.user.fullName }}</p>
+      <app-copyable-id [value]="d.user.id" />
+    </div>
+    <div class="ud-header__badges">
+      <app-status-badge [label]="roleLabel(d.user.role)" [tone]="roleTone(d.user.role)" />
+      <app-status-badge
+        [label]="d.user.isActive ? 'Activo' : 'Inactivo'"
+        [tone]="activeTone(d.user.isActive)"
+      />
+    </div>
+  </div>
+
+  <div class="ud-header__actions">
+    <a class="link-button" routerLink="/fields" [queryParams]="{ userId: d.user.id }">Ver campos</a>
+    <a class="link-button" routerLink="/analysis" [queryParams]="{ userId: d.user.id }">Ver diagnósticos</a>
+    <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ userId: d.user.id }">
+      Ver programados
+    </a>
+  </div>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Resumen de cuenta</h2>
+    <div class="fd-summary-grid">
+      <a class="fd-summary-card ud-summary-card--link" routerLink="/fields" [queryParams]="{ userId: d.user.id }">
+        <span class="fd-summary-card__label">Campos</span>
+        <span class="fd-summary-card__value">{{ d.summary.fieldsCount }}</span>
+      </a>
+      <a class="fd-summary-card ud-summary-card--link" routerLink="/lots" [queryParams]="{ userId: d.user.id }">
+        <span class="fd-summary-card__label">Lotes</span>
+        <span class="fd-summary-card__value">{{ d.summary.lotsCount }}</span>
+      </a>
+      <a class="fd-summary-card ud-summary-card--link" routerLink="/analysis" [queryParams]="{ userId: d.user.id }">
+        <span class="fd-summary-card__label">Diagnósticos</span>
+        <span class="fd-summary-card__value">{{ d.summary.analysesCount }}</span>
+      </a>
+      <a
+        class="fd-summary-card ud-summary-card--link"
+        routerLink="/analysis"
+        [queryParams]="{ userId: d.user.id, status: 'Error' }"
+      >
+        <span class="fd-summary-card__label">Fallidos</span>
+        <span class="fd-summary-card__value">{{ d.summary.failedAnalysesCount }}</span>
+      </a>
+      <a
+        class="fd-summary-card ud-summary-card--link"
+        routerLink="/fields"
+        [queryParams]="{ userId: d.user.id, hasAnalysis: false }"
+      >
+        <span class="fd-summary-card__label">Campos sin diagnóstico</span>
+        <span class="fd-summary-card__value">{{ d.summary.fieldsWithoutAnalysisCount }}</span>
+      </a>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Requieren atención</span>
+        <span class="fd-summary-card__value">{{ d.summary.fieldsRequiringAttentionCount }}</span>
+      </div>
+      <a
+        class="fd-summary-card ud-summary-card--link"
+        routerLink="/scheduled-analysis"
+        [queryParams]="{ userId: d.user.id, enabled: true }"
+      >
+        <span class="fd-summary-card__label">Monitoreo activo</span>
+        <span class="fd-summary-card__value">{{ d.summary.activeSchedulesCount }}</span>
+      </a>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Mails enviados</span>
+        <span class="fd-summary-card__value">{{ d.summary.sentEmailsCount }}</span>
+      </div>
+    </div>
+    <p class="muted ud-summary-note">
+      "Requieren atención" y "Mails enviados" no tienen un filtro dedicado todavía en Campos /
+      Programados — se muestran como número, sin link, para no insinuar más precisión de la que hay.
+    </p>
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Campos del usuario ({{ d.summary.fieldsCount }})</h2>
+    @if (d.fields.length) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Lotes</th>
+              <th>Estado / Último análisis</th>
+              <th>Score / Veredicto</th>
+              <th>Monitoreo</th>
+              <th>Atención</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (field of d.fields; track field.id) {
+              <tr>
+                <td>
+                  <a class="entity-link" routerLink="/fields/{{ field.id }}">{{ field.name }}</a>
+                </td>
+                <td>{{ field.lotsCount }}</td>
+                <td>
+                  <app-status-badge
+                    [label]="fieldAnalysisStatusLabel(field.analysisStatus)"
+                    [tone]="fieldAnalysisStatusTone(field.analysisStatus)"
+                  />
+                  @if (field.latestAnalysis; as la) {
+                    <p class="field-cell__meta muted">{{ la.createdAt | date: 'short' }}</p>
+                  } @else {
+                    <p class="field-cell__meta muted">Sin diagnóstico</p>
+                  }
+                </td>
+                <td>
+                  @if (field.latestAnalysis?.score != null) {
+                    <p class="field-cell__score">
+                      <span class="field-cell__score-value">{{ field.latestAnalysis!.score }}</span>
+                      <app-status-badge
+                        [label]="scoreBandLabel(field.latestAnalysis!.score!)"
+                        [tone]="scoreBandTone(field.latestAnalysis!.score!)"
+                      />
+                    </p>
+                  } @else if (field.technicalVerdict?.status === 'generated') {
+                    <app-status-badge
+                      [label]="verdictLabel(field.technicalVerdict!.verdict)"
+                      [tone]="verdictTone(field.technicalVerdict!.verdict)"
+                    />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>
+                  <app-status-badge
+                    [label]="field.weeklyMonitoring.active ? 'Activo' : 'Inactivo'"
+                    [tone]="field.weeklyMonitoring.active ? 'info' : 'neutral'"
+                  />
+                </td>
+                <td>
+                  <app-status-badge [label]="fieldAttentionLabel(field)" [tone]="fieldAttentionTone(field)" />
+                </td>
+                <td class="actions">
+                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ fieldId: field.id }">
+                    Diagnósticos
+                  </a>
+                  <a class="entity-link" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: field.id }">
+                    Programados
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (d.summary.fieldsCount > d.fields.length) {
+        <p class="muted ud-summary-note">
+          Mostrando {{ d.fields.length }} de {{ d.summary.fieldsCount }} campos —
+          <a class="entity-link" routerLink="/fields" [queryParams]="{ userId: d.user.id }">
+            ver todos en Campos →
+          </a>
+        </p>
+      }
+    } @else {
+      <p class="empty-state">Este usuario todavía no tiene campos cargados.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Diagnósticos recientes (últimos {{ d.recentAnalyses.length }})</h2>
+    @if (d.recentAnalyses.length) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Campo</th>
+              <th>Estado</th>
+              <th>Score</th>
+              <th>Duración</th>
+              <th>Revisado</th>
+              <th>Error</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of d.recentAnalyses; track row.id) {
+              <tr>
+                <td>{{ row.createdAt | date: 'short' }}</td>
+                <td>
+                  @if (row.fieldId) {
+                    <a class="entity-link" routerLink="/fields/{{ row.fieldId }}">
+                      {{ row.fieldName ?? '—' }}
+                    </a>
+                  } @else {
+                    {{ row.fieldName ?? '—' }}
+                  }
+                </td>
+                <td><app-status-badge [label]="row.status" [tone]="analysisStatusTone(row.status)" /></td>
+                <td>
+                  @if (row.score != null) {
+                    {{ row.score }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>{{ row.durationMs | duration }}</td>
+                <td>
+                  @if (row.reviewedAt) {
+                    {{ row.reviewedAt | date: 'short' }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="muted">{{ row.errorMessage ?? '—' }}</td>
+                <td>
+                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: row.id }">
+                    Ver →
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">Este usuario todavía no tiene diagnósticos.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Monitoreo semanal ({{ d.scheduledAnalysis.length }})</h2>
+    @if (d.scheduledAnalysis.length) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Estado</th>
+              <th>Frecuencia</th>
+              <th>Próxima corrida</th>
+              <th>Última corrida</th>
+              <th>Tiene corridas</th>
+              <th>Mail</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of d.scheduledAnalysis; track item.scheduleId) {
+              <tr>
+                <td>
+                  <a class="entity-link" routerLink="/fields/{{ item.fieldId }}">{{ item.fieldName ?? '—' }}</a>
+                </td>
+                <td>
+                  <app-status-badge
+                    [label]="item.enabled ? 'Activo' : 'Inactivo'"
+                    [tone]="item.enabled ? 'info' : 'neutral'"
+                  />
+                </td>
+                <td>{{ item.frequency === 'weekly' ? 'Semanal' : item.frequency }}</td>
+                <td>{{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</td>
+                <td>{{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</td>
+                <td>{{ item.hasRuns ? 'Sí' : 'No' }}</td>
+                <td>
+                  @if (item.latestRun; as run) {
+                    <app-status-badge [label]="runMailStatusLabel(run)" [tone]="runMailStatusTone(run)" />
+                  } @else {
+                    <span class="muted">Sin corridas</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">Este usuario no tiene monitoreo semanal configurado.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Actividad administrativa relacionada</h2>
+    @if (d.recentAuditLogs.length) {
+      <div class="table-scroll table-scroll--plain">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Acción</th>
+              <th>Actor</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of d.recentAuditLogs; track log.id) {
+              <tr>
+                <td>{{ log.createdAt | date: 'short' }}</td>
+                <td>{{ auditActionLabel(log.action) }}</td>
+                <td>{{ log.actorEmail ?? log.actorUserId ?? '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <a class="link-button" routerLink="/audit-logs" [queryParams]="{ targetType: 'user', targetId: d.user.id }">
+        Ver en Auditoría →
+      </a>
+    } @else {
+      <p class="empty-state">No hay actividad administrativa relacionada disponible en esta vista.</p>
+    }
+  </section>
+}
+}

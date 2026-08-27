@@ -31,6 +31,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/users/users.component').then((m) => m.UsersComponent),
       },
+      // Admin PR 7: vista de detalle de usuario — ruta hermana de 'users', mismo patrón "leaf
+      // route" que 'fields/:fieldId' (PR6). Va DESPUÉS de 'users' por agrupación, aunque el orden
+      // no importa acá (segmentos distintos, sin ambigüedad para Angular).
+      {
+        path: 'users/:userId',
+        loadComponent: () =>
+          import('./features/users/user-detail/user-detail.component').then(
+            (m) => m.UserDetailComponent,
+          ),
+      },
       {
         path: 'fields',
         loadComponent: () =>

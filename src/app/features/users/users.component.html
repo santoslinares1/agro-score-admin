@@ -63,7 +63,7 @@
       @for (user of visibleUsers(); track user.id) {
         <tr [class.row--inactive]="!user.isActive">
           <td>
-            {{ user.email }}
+            <a class="entity-link" routerLink="/users/{{ user.id }}">{{ user.email }}</a>
             <br />
             <app-copyable-id [value]="user.id" />
           </td>

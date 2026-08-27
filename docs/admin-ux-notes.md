@@ -660,3 +660,109 @@ pending/processing             → No aplica (todavía no llega a esa etapa)
   saber si CADA corrida individual del historial ya tiene su technicalVerdict resuelto — el
   detalle solo resuelve el veredicto del análisis MÁS RECIENTE, no de cada análisis histórico, así
   que `resolveRunMailStatus` colapsa ambos casos en un único estado "Pendiente".
+
+## Admin PR 7 — Vista detalle de Usuario
+
+### Objetivo
+
+Cerrar la trazabilidad desde el otro extremo de PR6: consolidar en una sola pantalla "¿qué tiene,
+qué hizo y qué problemas tiene este usuario?" — hoy eso exige saltar entre Usuarios/Campos/Lotes/
+Diagnósticos/Programados/Auditoría.
+
+### Ruta agregada
+
+`/users/:userId` — ruta hermana de `/users`, mismo patrón "leaf route" que `/fields/:fieldId`
+(PR6). El email del usuario en `/users` ahora linkea acá.
+
+### Endpoint usado
+
+`GET /admin/users/:userId` (nuevo, solo lectura, 404 si el usuario no existe) — Opción B del
+ticket. Estructuralmente es "la composición batched de PR5 con `userId` en vez de
+`fieldIds=[fieldId]`": reusa `countLotsByFieldId`, `getLatestAnalysisByFieldId`,
+`getSchedulesByFieldId`, `getScheduleIdsWithRuns`, `getTechnicalVerdictsByAnalysisId`,
+`deriveFieldAnalysisStatus`, `fieldRequiresAttention` (PR5), `getLatestRunsByScheduleId`,
+`toAdminScheduledAnalysisRun` (PR13B) y `WeeklyTechnicalVerdictService.
+findResponsesByScheduledRunIds` (PR16D) — sin divergir en ninguna regla. 3 piezas nuevas:
+`getAnalysisCountsForUser` (total/completados/fallidos en una query agregada `COUNT... FILTER`),
+`getRecentAnalysesForUser` (últimos N análisis de cualquier campo del usuario) y
+`getAuditLogsForUser` (reusa `AuditLogService.list()` tal cual + resuelve el email del actor en
+una consulta batched nueva, `UsersService.findByIds`).
+
+`fields` se trae COMPLETO del lado del backend (sin paginar) porque los conteos de `summary`
+(`fieldsWithoutAnalysisCount`, `fieldsRequiringAttentionCount`, `lotsCount`) tienen que cubrir
+TODOS los campos del usuario, no solo los que se muestran — sigue siendo O(1) queries (nunca una
+por campo), solo que el array de entrada a los helpers batched es más grande. El array `fields`
+que viaja al frontend sí se acota a `USER_DETAIL_FIELDS_LIMIT`.
+
+### Datos consolidados
+
+Usuario (sin `passwordHash`, vía `UsersService.toPublicUser`), resumen de cuenta (10 conteos),
+campos del usuario con su mismo estado operativo que PR5/PR6, diagnósticos recientes de cualquier
+campo del usuario, monitoreo semanal de los campos del usuario (con última corrida y diagnóstico
+semanal correlacionados), auditoría administrativa relacionada.
+
+### Límites de historial
+
+`USER_DETAIL_FIELDS_LIMIT = 50`, `USER_DETAIL_ANALYSES_LIMIT = 20`,
+`USER_DETAIL_SCHEDULES_LIMIT = 50`, `USER_DETAIL_AUDIT_LOGS_LIMIT = 20` (constantes en
+`admin-user-detail.dto.ts`, agro-score-api) — las 4 listas orden DESC.
+
+### Reglas de estado reutilizadas
+
+`analysisStatus` y `requiresAttention` de cada campo son EXACTAMENTE las mismas funciones que usa
+`listFields`/`getFieldDetail` (PR5/PR6) — cero divergencia. Del lado del frontend,
+`fieldAttentionLabel/Tone` y `fieldMonitoringLabel/Tone` (`field-status.util.ts`) se angostaron de
+`AdminField` completo a un `Pick` puntual (solo `analysisStatus`/`requiresAttention`/
+`weeklyMonitoring`, que es todo lo que esas 4 funciones leen) para que `UserDetailField` — que no
+tiene `ownerId`/`ownerEmail`/`ownerFullName` porque el detalle de usuario ya está scopeado a un
+solo dueño — también las satisfaga sin un adaptador. Cambio de tipo puro, sin tocar ningún cuerpo
+de función; los callers existentes (`fields.component.html`, `field-detail.component.ts`) siguen
+compilando sin cambios.
+
+### Interpretación de mails/corridas
+
+Igual que el bloque "Corridas y mails" de PR6: `runMailStatusLabel`/`Tone`
+(`resolveRunMailStatus`, PR6) sobre `latestRun` de cada schedule del usuario — mismo criterio real
+de PR3 (`failedAt` distingue falla de pipeline de mail omitido). Sin corridas todavía, la tabla
+muestra "Sin corridas" en vez de llamar a la función (evita pasarle `null`).
+
+### Auditoría incluida y por qué
+
+Se incluye, pero acotada a la ÚNICA correlación honesta que el modelo permite hoy:
+`targetType='user' AND targetId=<userId>` — eventos `admin.user.created/updated/deactivated/
+role_changed` y `admin.password_reset.created/email_sent`, todos con `targetId` = el id del propio
+usuario (ver `AuditLogService.record` en cada uno de esos call sites, `agro-score-api`). Eventos de
+invitación o solicitud de acceso quedan explícitamente AFUERA: su `targetId` apunta a la
+invitación/solicitud, no al usuario, y cruzarlos por email no sería una correlación real, sería
+adivinar. Sin eventos, la pantalla muestra el mensaje honesto pedido por el ticket: *"No hay
+actividad administrativa relacionada disponible en esta vista."*
+
+### Links agregados o actualizados
+
+- Email del usuario en `/users` → ahora `/users/:userId` (antes texto plano).
+- Header del detalle: "Ver campos" (`/fields?userId=`), "Ver diagnósticos" (`/analysis?userId=`),
+  "Ver programados" (`/scheduled-analysis?userId=`), "Volver a Usuarios" (`/users`).
+- Resumen de cuenta: cada card con filtro real existente es un link (Campos, Lotes, Diagnósticos,
+  Fallidos → `/analysis?userId=&status=Error`, Campos sin diagnóstico →
+  `/fields?userId=&hasAnalysis=false`, Monitoreo activo → `/scheduled-analysis?userId=&enabled=true`).
+  "Requieren atención" y "Mails enviados" se muestran SIN link — no existe un filtro dedicado para
+  ninguna de las dos preguntas todavía (mismo criterio honesto que varias etapas del funnel de PR4).
+- Campos del usuario: nombre del campo → `/fields/:fieldId`; "Diagnósticos"/"Programados" por fila
+  → `/analysis?fieldId=`/`/scheduled-analysis?fieldId=`.
+- Diagnósticos recientes: cada fila → `/analysis?analysisId=<id>`, y el nombre del campo →
+  `/fields/:fieldId` cuando el análisis todavía referencia un campo existente.
+- Auditoría relacionada: "Ver en Auditoría →" → `/audit-logs?targetType=user&targetId=<userId>`.
+
+### Qué quedó fuera de este PR
+
+- **Edición de usuario / botones mutantes**: excluidos explícitamente por el ticket — sin
+  "Editar", "Generar reset" ni "Desactivar" en esta pantalla (esas acciones siguen solo en
+  `/users`).
+- **`lastLoginAt`**: la ficha sugería mostrarlo, pero `User` (agro-score-api) no tiene esa columna
+  — no se inventó ni se agregó una migración para esto (fuera de scope: "no crear migraciones
+  salvo inevitable").
+- **Auditoría de invitaciones/solicitudes de acceso ligadas a este usuario**: ver sección de
+  arriba — no hay una correlación real sin adivinar por email.
+- **Paginación de `fields`/`scheduledAnalysis` en el detalle**: se listan hasta el límite fijo
+  (50), sin controles de paginación — un usuario con más de 50 campos vería un aviso ("Mostrando
+  X de Y campos") con link a la vista completa filtrada, no una segunda página dentro del detalle.
