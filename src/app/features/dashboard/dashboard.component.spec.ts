@@ -3,7 +3,9 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AdminMetrics } from '../../core/models/metrics.model';
+import { AdminProductAnalytics } from '../../core/models/product-analytics.model';
 import { MetricsService } from '../../core/services/metrics.service';
+import { ProductAnalyticsService } from '../../core/services/product-analytics.service';
 import { DashboardComponent } from './dashboard.component';
 
 function buildMetrics(overrides: Partial<AdminMetrics> = {}): AdminMetrics {
@@ -22,6 +24,26 @@ function buildMetrics(overrides: Partial<AdminMetrics> = {}): AdminMetrics {
   };
 }
 
+// Admin PR 4: app-product-analytics (dentro del Dashboard) inyecta su propio
+// ProductAnalyticsService — sin este mock, TestBed intenta resolver HttpClient real. Todos los
+// tests de este describe usan el mismo fixture "vacío": lo que le pasa a product-analytics no es
+// lo que están cubriendo, eso vive en product-analytics.component.spec.ts.
+function buildEmptyProductAnalytics(): AdminProductAnalytics {
+  return {
+    generatedAt: new Date().toISOString(),
+    funnel: [],
+    insights: [],
+    weeklyMonitoring: {
+      totalFields: 0,
+      activeSchedules: 0,
+      activeSchedulesWithoutRuns: 0,
+      schedulesWithRuns: 0,
+      sentEmails: 0,
+    },
+    topAnalysisErrorsLast30Days: [],
+  };
+}
+
 describe('DashboardComponent', () => {
   function createComponent(metrics: AdminMetrics): ComponentFixture<DashboardComponent> {
     const metricsServiceSpy: jasmine.SpyObj<MetricsService> = jasmine.createSpyObj('MetricsService', [
@@ -29,9 +51,19 @@ describe('DashboardComponent', () => {
     ]);
     metricsServiceSpy.getMetrics.and.returnValue(of(metrics));
 
+    const productAnalyticsServiceSpy: jasmine.SpyObj<ProductAnalyticsService> = jasmine.createSpyObj(
+      'ProductAnalyticsService',
+      ['getProductAnalytics'],
+    );
+    productAnalyticsServiceSpy.getProductAnalytics.and.returnValue(of(buildEmptyProductAnalytics()));
+
     TestBed.configureTestingModule({
       imports: [DashboardComponent],
-      providers: [provideRouter([]), { provide: MetricsService, useValue: metricsServiceSpy }],
+      providers: [
+        provideRouter([]),
+        { provide: MetricsService, useValue: metricsServiceSpy },
+        { provide: ProductAnalyticsService, useValue: productAnalyticsServiceSpy },
+      ],
     });
 
     const fixture = TestBed.createComponent(DashboardComponent);
@@ -105,6 +137,15 @@ describe('DashboardComponent', () => {
       expect(el.textContent).toContain('Usuarios');
       expect(el.textContent).toContain('Campos');
       expect(el.textContent).toContain('Diagnósticos');
+    });
+  });
+
+  describe('Embudo de uso (Admin PR 4)', () => {
+    it('el Dashboard incluye la sección de Product Analytics (app-product-analytics)', () => {
+      const fixture = createComponent(buildMetrics());
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-product-analytics')).toBeTruthy();
     });
   });
 });

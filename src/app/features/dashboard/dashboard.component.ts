@@ -9,6 +9,7 @@ import { MetricsService } from '../../core/services/metrics.service';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { OperationalAlertsComponent } from '../../shared/components/operational-alerts/operational-alerts.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
+import { ProductAnalyticsComponent } from './product-analytics/product-analytics.component';
 import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
   ACCESS_REQUEST_STATUS_LABELS,
@@ -34,6 +35,7 @@ const ACCESS_REQUEST_STATUS_ORDER: AccessRequestStatus[] = [
     DurationPipe,
     StatusBadgeComponent,
     OperationalAlertsComponent,
+    ProductAnalyticsComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',

@@ -340,3 +340,127 @@ confirman) y no duplica nada.
   Programados.
 - **BI/dashboard de mails separado**: explícitamente fuera de alcance del ticket — el resumen de
   Programados ya responde "¿cómo está el flujo semanal?" sin agregar una pantalla nueva.
+
+## Admin PR 4 — Product analytics básico
+
+### Objetivo
+
+Responder "de los usuarios/campos creados, ¿cuántos llegan a generar valor real?" con un funnel
+simple de 9 etapas + lecturas rápidas determinísticas, dentro del Dashboard (sección "Embudo de
+uso"), sin crear una plataforma BI ni depender de analytics externo (Mixpanel/PostHog/GA).
+
+### Endpoint
+
+`GET /admin/product-analytics` — nuevo, no extiende `/admin/metrics` (que ya es grande y responde
+una pregunta distinta: salud operativa actual, no adopción). Mismos guards de controller
+(`JwtAuthGuard` + `RolesGuard` + `@Roles(owner, admin)`) que el resto de `/admin/*`, automático por
+estar declarados a nivel de clase. Solo lectura — ninguna query dispara cron, mail, análisis ni
+veredictos, y no crea migraciones (ver `AdminService.getProductAnalytics`).
+
+### Etapas del funnel (orden fijo)
+
+| # | Etapa                                        | Cálculo                                                                                  | Link                                         |
+|---|-----------------------------------------------|-------------------------------------------------------------------------------------------|-----------------------------------------------|
+| 1 | Usuarios totales                             | `UsersService.count()`                                                                    | `/users`                                      |
+| 2 | Usuarios con al menos un campo               | `COUNT(DISTINCT field."userId")`                                                          | — (sin filtro exacto en Usuarios todavía)     |
+| 3 | Campos totales                               | `Field.count()`                                                                            | `/fields`                                     |
+| 4 | Campos con al menos un lote                  | `COUNT(DISTINCT lot."fieldId")`                                                            | — (sin filtro exacto en Campos todavía)       |
+| 5 | Campos con al menos un análisis finalizado   | join manual `analysis.status='Finalizado'` (mismo criterio scope/lotId que PR1)           | — (ver nota abajo)                            |
+| 6 | Campos con veredicto técnico generado        | join `analysis` → `analysis_technical_verdicts.status='generated'`                        | — (sin filtro exacto todavía)                 |
+| 7 | Campos con monitoreo semanal activo          | `FieldAnalysisSchedule.count({enabled:true})` (fieldId es `unique`, ya es "campos")       | `/scheduled-analysis?enabled=true`            |
+| 8 | Campos con al menos una corrida semanal      | `COUNT(DISTINCT run."fieldId")` — existencia real, mismo criterio que `hasRuns` (PR3)     | `/scheduled-analysis?enabled=true&hasRuns=true` |
+| 9 | Campos con mail semanal enviado              | `COUNT(DISTINCT run."fieldId") WHERE run."emailSentAt" IS NOT NULL`                       | — (sin filtro `mailStatus` en el listado, deuda de PR3) |
+
+**Nota sobre la etapa 5 (link deliberadamente omitido):** `/fields?hasAnalysis=true` existe (Admin
+PR 1) pero incluye análisis en *cualquier* estado (también Procesando/Error), no solo Finalizado —
+no se linkeó desde el embudo para no insinuar una precisión que el filtro no tiene. Mismo criterio
+para las etapas 2, 4 y 6: no existe todavía una vista filtrada exacta para esas preguntas en
+ninguna pantalla admin — se documenta la ausencia en vez de forzar un link aproximado.
+
+**Advertencia explícita en el copy de la sección:** "Se calcula sobre entidades actuales, no sobre
+cohortes por fecha de alta" — nunca se llama "conversión real" en ningún lado del producto. Varias
+transiciones del funnel cambian de tipo de entidad (usuarios → campos), así que
+`dropoffFromPrevious` puede ser **negativo** (la etapa siguiente creció respecto de la anterior) —
+el frontend lo pinta como "+N vs. etapa anterior", nunca como una caída fija.
+`conversionFromPrevious` queda `undefined` (no `0`) cuando `previousCount` es 0, para no leerse
+como "0% de conversión".
+
+### Cálculo de conversión/dropoff
+
+`AdminService.buildFunnelStage()`: `conversionFromPrevious = previousCount > 0 ? count/previousCount
+: undefined`; `dropoffFromPrevious = previousCount - count` (siempre definido una vez que existe
+`previousCount`, nunca `NaN`/`Infinity`). Cubierto en `admin.service.spec.ts` con
+`previousCount=0`.
+
+### Insights determinísticos ("Qué mirar")
+
+Reglas simples sobre los mismos números — sin IA, cada uno solo aparece si su condición es
+verdadera (nunca "0 campos sin diagnóstico" a modo de card vacía):
+
+1. **Campos sin diagnóstico** (warning) — `fieldsWithNoAnalysis > 0` → `/fields?hasAnalysis=false`.
+2. **Adopción de monitoreo baja** (opportunity) — `activeSchedules/totalFields < 0.5` → `/scheduled-analysis?enabled=true`.
+3. **Schedules activos sin corridas** (critical) — mismo criterio `EXISTS` que PR3, no `lastRunAt`
+   → `/scheduled-analysis?enabled=true&hasRuns=false`.
+4. **Diagnósticos fallidos (30 días)** (critical) → `/analysis?status=Error`.
+5. **Mail pendiente/fallido** (warning) — reusa `mailPendingOrFailed` del resumen de Programados
+   (PR3, distingue mail omitido de falla real de pipeline vía `failedAt`) → `/scheduled-analysis?enabled=true`.
+
+### Monitoreo semanal (bloque chico, linkea a Programados)
+
+`weeklyMonitoring` trae `totalFields`/`activeSchedules`/`activeSchedulesWithoutRuns`/
+`schedulesWithRuns`/`sentEmails`. **A propósito NO reusa** `activeSchedulesWithoutRuns` de
+`/admin/metrics` (ese usa `lastRunAt IS NULL`, PR1) — acá se recalcula con el criterio real de PR3
+(`EXISTS`/`NOT EXISTS`). `sentEmails` es histórico completo (corridas con `emailSentAt` seteado,
+sin ventana de días) — distinto de `mailSentLast7/30Days` del resumen de Programados, que sí están
+acotados a una ventana. El bloque no repite la tabla de Programados, solo dos CTAs reales:
+`/scheduled-analysis?enabled=true` y `/scheduled-analysis?enabled=true&hasRuns=false`.
+
+### Top errores (30 días)
+
+`topAnalysisErrorsLast30Days`: agrupa `Analysis.errorMessage` tal cual (ya viene truncado/resumido
+desde `AnalysisService`, nunca stack trace completo — mismo campo que usa la tabla de
+Diagnósticos), `status='Error'`, últimos 30 días, top 3 por cantidad. CTA único a
+`/analysis?status=Error` (no hay forma de filtrar por mensaje exacto en el listado, así que no se
+linkea por fila individual).
+
+### Qué se tocó en `agro-score-api`
+
+`admin.controller.ts` (ruta nueva), `admin.service.ts` (`getProductAnalytics` +
+`buildFunnelStage`/`pluralize`), `admin.service.spec.ts` (16 tests nuevos),
+`admin.guards.spec.ts` (1 test nuevo), `dto/admin-product-analytics.dto.ts` (nuevo). Sin
+migraciones — todas las queries son agregados de solo lectura sobre columnas ya indexadas.
+
+### Qué se tocó en `agro-score-admin`
+
+`core/models/product-analytics.model.ts` y `core/services/product-analytics.service.ts` (nuevos,
+mismo shape que la API), `features/dashboard/product-analytics/` (componente nuevo,
+autocontenido — carga su propio `/admin/product-analytics`, no recibe datos por `@Input()` del
+Dashboard, así que un error acá nunca tumba el resto del Dashboard), `dashboard.component.ts/html`
+(agrega `<app-product-analytics />` debajo de las secciones de KPIs existentes, antes de "Últimos
+diagnósticos"), `dashboard.component.spec.ts` (mock de `ProductAnalyticsService` agregado a todos
+los tests existentes + 1 test nuevo de integración).
+
+### Decisión de responsabilidades (distinta de PR1, a propósito)
+
+En PR1, el copy de las alertas vive en el frontend (`operational-alerts.util.ts`) y la API solo
+agrega números crudos. Acá el copy básico (`label`/`description` de cada etapa, `title`/
+`description` de cada insight) vive en la API, porque el shape que pidió la ficha ya lo incluye a
+nivel de DTO — el frontend de este PR solo pinta lo que recibe, no arma texto. Documentado acá para
+quien note la inconsistencia entre PRs: es deliberada, no un descuido.
+
+### Qué quedó fuera de este PR
+
+- **Links exactos para las etapas 2, 4, 5 y 6 del funnel** ("usuarios con campo", "campos con
+  lote", "campos con análisis finalizado", "campos con veredicto"): no existe todavía un filtro
+  dedicado en ninguna pantalla admin para esas preguntas puntuales. Mejor sin link que uno
+  impreciso — ver nota en la tabla de etapas arriba.
+- **Ruta `/product-analytics` separada**: el Dashboard no quedó sobrecargado (el bundle del chunk
+  `dashboard-component` pasó de ~20 kB a ~24.5 kB, sin ninguna librería de charts nueva), así que
+  se mantuvo la preferencia del ticket de integrarlo ahí en vez de una ruta aparte.
+- **Cohortes por fecha de alta**: el funnel es sobre entidades actuales, no "de los usuarios que se
+  registraron esta semana, cuántos...". Documentado explícitamente en el copy de la sección para no
+  sobre-prometer precisión estadística que este PR no construye.
+- **Normalización de mensajes de error**: se agrupan por mensaje exacto (`GROUP BY
+  "errorMessage"`), no por patrón/categoría — no existe todavía una función de normalización segura
+  en el repo, y el ticket explícitamente permite este fallback ("agrupar por mensaje exacto" si no
+  hay función segura).

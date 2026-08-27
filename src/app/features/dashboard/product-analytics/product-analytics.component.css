@@ -1,0 +1,196 @@
+.pa-section {
+  margin-bottom: 1.75rem;
+}
+
+.pa-section__title {
+  font-size: 1rem;
+  margin: 0 0 0.35rem;
+}
+
+.pa-section__subcopy {
+  margin: 0 0 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  max-width: 60ch;
+}
+
+.pa-subsection__title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* Embudo */
+
+.pa-funnel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pa-funnel__stage {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.pa-funnel__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.pa-funnel__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pa-funnel__count {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.pa-funnel__bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-surface-hover);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.pa-funnel__bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+
+.pa-funnel__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.pa-funnel__delta--down {
+  color: var(--color-error);
+}
+
+.pa-funnel__delta--up {
+  color: var(--color-text-muted);
+}
+
+.pa-funnel__link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: auto;
+}
+
+.pa-funnel__description {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* Insights ("Qué mirar") — mismo lenguaje visual que .alert-card (Admin PR 1), clases propias
+   porque son componentes distintos (estilos con encapsulation por componente, no compartidos). */
+
+.pa-insights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.insight-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+}
+
+.insight-card--critical {
+  border-left-color: var(--color-error);
+}
+
+.insight-card--warning {
+  border-left-color: var(--color-warning);
+}
+
+.insight-card--opportunity,
+.insight-card--info {
+  border-left-color: var(--color-info);
+}
+
+.insight-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.insight-card__title {
+  font-weight: 700;
+}
+
+.insight-card__description {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.insight-card__action {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Monitoreo semanal */
+
+.pa-monitoring__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pa-monitoring__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pa-monitoring__value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.pa-monitoring__value--warning {
+  color: var(--color-warning);
+}
+
+.pa-monitoring__label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.pa-monitoring__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}

@@ -1,0 +1,132 @@
+<section class="pa-section">
+  <h2 class="pa-section__title">Embudo de uso</h2>
+  <p class="pa-section__subcopy">
+    Estado actual del uso: cuántos usuarios y campos llegan a generar valor real. Se calcula sobre
+    entidades actuales, no sobre cohortes por fecha de alta — no es una tasa de conversión real.
+  </p>
+
+  @if (loading()) {
+    <p class="loading-state">Cargando embudo de uso...</p>
+  } @else if (errorMessage()) {
+    <p class="error-banner">{{ errorMessage() }}</p>
+  } @else {
+  @if (analytics(); as a) {
+    @if (a.funnel.length) {
+      <ol class="pa-funnel">
+        @for (stage of a.funnel; track stage.id) {
+          <li class="pa-funnel__stage">
+            <div class="pa-funnel__row">
+              <span class="pa-funnel__label">{{ stage.label }}</span>
+              <span class="pa-funnel__count">{{ stage.count }}</span>
+            </div>
+            <div class="pa-funnel__bar-track">
+              <div class="pa-funnel__bar" [style.width.%]="barWidthPercent(stage, a.funnel)"></div>
+            </div>
+            <div class="pa-funnel__meta">
+              @if (stage.conversionFromPrevious != null) {
+                <span>{{ stage.conversionFromPrevious * 100 | number: '1.0-1' }}% de la etapa anterior</span>
+              }
+              @if (stage.dropoffFromPrevious != null && stage.dropoffFromPrevious !== 0) {
+                @if (stage.dropoffFromPrevious > 0) {
+                  <span class="pa-funnel__delta pa-funnel__delta--down">Caída: -{{ stage.dropoffFromPrevious }}</span>
+                } @else {
+                  <span class="pa-funnel__delta pa-funnel__delta--up">+{{ -stage.dropoffFromPrevious }} vs. etapa anterior</span>
+                }
+              }
+              @if (stage.route) {
+                <a class="pa-funnel__link" [routerLink]="stage.route" [queryParams]="stage.queryParams">Ver →</a>
+              }
+            </div>
+            @if (stage.description) {
+              <p class="pa-funnel__description">{{ stage.description }}</p>
+            }
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="empty-state">Todavía no hay datos suficientes para armar el embudo.</p>
+    }
+
+    <h3 class="pa-subsection__title">Qué mirar</h3>
+    @if (a.insights.length) {
+      <ul class="pa-insights">
+        @for (insight of a.insights; track insight.id) {
+          <li class="insight-card" [class]="'insight-card--' + insight.severity">
+            <div class="insight-card__header">
+              <app-status-badge [label]="severityLabel(insight.severity)" [tone]="severityTone(insight.severity)" />
+              <span class="insight-card__title">{{ insight.title }}</span>
+            </div>
+            <p class="insight-card__description">{{ insight.description }}</p>
+            @if (insight.route) {
+              <a class="insight-card__action" [routerLink]="insight.route" [queryParams]="insight.queryParams">
+                Ver detalle →
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="empty-state">No hay lecturas rápidas para mostrar en este momento.</p>
+    }
+
+    <h3 class="pa-subsection__title">Monitoreo semanal</h3>
+    <div class="pa-monitoring card">
+      <div class="pa-monitoring__stats">
+        <div class="pa-monitoring__stat">
+          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.totalFields }}</span>
+          <span class="pa-monitoring__label">Campos totales</span>
+        </div>
+        <div class="pa-monitoring__stat">
+          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.activeSchedules }}</span>
+          <span class="pa-monitoring__label">Con schedule activo</span>
+        </div>
+        <div class="pa-monitoring__stat">
+          <span class="pa-monitoring__value pa-monitoring__value--warning">{{ a.weeklyMonitoring.activeSchedulesWithoutRuns }}</span>
+          <span class="pa-monitoring__label">Activos sin corridas</span>
+        </div>
+        <div class="pa-monitoring__stat">
+          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.schedulesWithRuns }}</span>
+          <span class="pa-monitoring__label">Con corridas</span>
+        </div>
+        <div class="pa-monitoring__stat">
+          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.sentEmails }}</span>
+          <span class="pa-monitoring__label">Mails enviados</span>
+        </div>
+      </div>
+      <div class="pa-monitoring__actions">
+        <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ enabled: true }">
+          Ver programados activos →
+        </a>
+        <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ enabled: true, hasRuns: false }">
+          Ver activos sin corridas →
+        </a>
+      </div>
+    </div>
+
+    <h3 class="pa-subsection__title">Errores frecuentes (30 días)</h3>
+    @if (a.topAnalysisErrorsLast30Days.length) {
+      <div class="table-scroll table-scroll--plain">
+        <table>
+          <thead>
+            <tr>
+              <th>Mensaje</th>
+              <th>Cantidad</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (bucket of a.topAnalysisErrorsLast30Days; track bucket.message) {
+              <tr>
+                <td>{{ bucket.message }}</td>
+                <td>{{ bucket.count }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <a class="link-button" routerLink="/analysis" [queryParams]="{ status: 'Error' }">Ver diagnósticos fallidos →</a>
+    } @else {
+      <p class="empty-state">No hubo diagnósticos fallidos con mensaje de error en los últimos 30 días.</p>
+    }
+  }
+  }
+</section>
