@@ -9,6 +9,7 @@ import {
   mailStatusTone,
   resolveFlowState,
   resolveMailStatus,
+  resolveRunMailStatus,
 } from './scheduled-analysis-status.util';
 
 function buildRun(overrides: Partial<AdminScheduledAnalysisRun> = {}): AdminScheduledAnalysisRun {
@@ -91,6 +92,43 @@ function buildItem(overrides: Partial<AdminScheduledAnalysisItem> = {}): AdminSc
     ...overrides,
   };
 }
+
+describe('resolveRunMailStatus (Admin PR 6 — historial de corridas)', () => {
+  it('emailSentAt seteado → sent', () => {
+    expect(resolveRunMailStatus(buildRun({ emailSentAt: '2026-08-24T09:06:00.000Z' }))).toBe(
+      'sent',
+    );
+  });
+
+  it('completed sin emailSentAt → pending', () => {
+    expect(
+      resolveRunMailStatus(buildRun({ status: 'completed', emailSentAt: null })),
+    ).toBe('pending');
+  });
+
+  it('failed con failedAt (falla de pipeline) → not_applicable', () => {
+    expect(
+      resolveRunMailStatus(
+        buildRun({ status: 'failed', failedAt: '2026-08-24T09:03:00.000Z', emailSentAt: null }),
+      ),
+    ).toBe('not_applicable');
+  });
+
+  it('failed sin failedAt (mail omitido, schedule desactivado) → failed', () => {
+    expect(
+      resolveRunMailStatus(buildRun({ status: 'failed', failedAt: null, emailSentAt: null })),
+    ).toBe('failed');
+  });
+
+  it('pending/processing → not_applicable (todavía no llegó a la etapa de mail)', () => {
+    expect(
+      resolveRunMailStatus(buildRun({ status: 'pending', emailSentAt: null })),
+    ).toBe('not_applicable');
+    expect(
+      resolveRunMailStatus(buildRun({ status: 'processing', emailSentAt: null })),
+    ).toBe('not_applicable');
+  });
+});
 
 describe('resolveMailStatus / mailStatusLabel / mailStatusTone (Admin PR 3)', () => {
   it('sin corridas → no_runs', () => {

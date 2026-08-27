@@ -69,7 +69,7 @@
       @for (field of items(); track field.id) {
         <tr>
           <td>
-            <a class="entity-link" routerLink="/analysis" [queryParams]="{ fieldId: field.id }">
+            <a class="entity-link" [routerLink]="['/fields', field.id]">
               {{ field.name }}
             </a>
             <br />

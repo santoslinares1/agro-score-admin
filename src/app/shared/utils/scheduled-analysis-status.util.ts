@@ -125,6 +125,64 @@ export function mailStatusTone(item: AdminScheduledAnalysisItem): StatusTone {
   return MAIL_STATUS_TONES[resolveMailStatus(item)];
 }
 
+// ── Admin PR 6: interpretación de mail POR CORRIDA (historial) ──────────────────────────────
+
+/**
+ * Admin PR 6: versión por-corrida de resolveMailStatus — esa opera a nivel de SCHEDULE (la corrida
+ * más reciente + su veredicto técnico, para poder distinguir "esperando veredicto" de "atascado").
+ * Acá, para el historial de corridas del detalle de campo, se simplifica a 4 baldes (mismo pedido
+ * de la ficha): sin necesitar el veredicto de cada corrida individual.
+ *
+ * - emailSentAt seteado → 'sent'.
+ * - `failed` con `failedAt` seteado → falla de PIPELINE (el análisis falló, nunca llegó a la
+ *   etapa de mail) → 'not_applicable', mismo criterio que analysis_failed en resolveMailStatus.
+ * - `failed` sin `failedAt` → el análisis sí terminó bien, el mail se omitió (schedule
+ *   desactivado antes de enviar) → 'failed', caso real y distinguible (PR3).
+ * - `completed` sin emailSentAt → 'pending' (todavía no se envió, sea porque está en la ventana
+ *   de espera del veredicto o porque quedó trabado — el detalle de campo no distingue esos dos
+ *   casos por corrida, ver Programados para ese nivel de detalle).
+ * - cualquier otro estado (pending/processing) → 'not_applicable' (todavía no llegó a esa etapa).
+ */
+export type RunMailStatus = 'sent' | 'pending' | 'failed' | 'not_applicable';
+
+const RUN_MAIL_STATUS_LABELS: Record<RunMailStatus, string> = {
+  sent: 'Enviado',
+  pending: 'Pendiente',
+  failed: 'Mail omitido',
+  not_applicable: 'No aplica',
+};
+
+const RUN_MAIL_STATUS_TONES: Record<RunMailStatus, StatusTone> = {
+  sent: 'success',
+  pending: 'warning',
+  failed: 'error',
+  not_applicable: 'neutral',
+};
+
+export function resolveRunMailStatus(run: AdminScheduledAnalysisRun): RunMailStatus {
+  if (run.emailSentAt) {
+    return 'sent';
+  }
+
+  if (run.status === 'failed') {
+    return run.failedAt ? 'not_applicable' : 'failed';
+  }
+
+  if (run.status === 'completed') {
+    return 'pending';
+  }
+
+  return 'not_applicable';
+}
+
+export function runMailStatusLabel(run: AdminScheduledAnalysisRun): string {
+  return RUN_MAIL_STATUS_LABELS[resolveRunMailStatus(run)];
+}
+
+export function runMailStatusTone(run: AdminScheduledAnalysisRun): StatusTone {
+  return RUN_MAIL_STATUS_TONES[resolveRunMailStatus(run)];
+}
+
 // ── Admin PR 3: estado del flujo end-to-end ──────────────────────────────────────────────────
 
 export type FlowStageState = 'ok' | 'pending' | 'missing' | 'failed' | 'not_applicable';

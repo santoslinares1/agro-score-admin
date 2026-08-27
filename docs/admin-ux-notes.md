@@ -581,3 +581,82 @@ de compatibilidad hacia atrás que `AdminMetrics` desde PR1.
   están activos?".
 - **`analysisStatus` completo en Lotes**: se limitó a dos booleanos (prioridad mínima del ticket),
   ver "Campos nuevos en `/admin/lots`" arriba.
+
+## Admin PR 6 — Vista detalle de Campo
+
+### Objetivo
+
+Consolidar en una sola pantalla lo que hoy exige saltar entre Campos/Lotes/Diagnósticos/
+Programados para entender "¿qué pasó y qué está pasando con este campo?".
+
+### Ruta agregada
+
+`/fields/:fieldId` — ruta hermana de `/fields` (no anidada como hijo: mismo patrón "leaf route"
+que el resto del router, sin `<router-outlet>` dentro de `FieldsComponent`). El nombre del campo en
+`/fields` ahora linkea acá (antes iba a `/analysis?fieldId=`, ese acceso rápido a Diagnósticos sigue
+disponible como acción del header del detalle).
+
+### Endpoint usado
+
+`GET /admin/fields/:fieldId` (nuevo, solo lectura, 404 si el campo no existe) — Opción B del
+ticket. Reusa el 90% de los helpers batched de PR5 (`getLatestAnalysisByFieldId`,
+`getSchedulesByFieldId`, `getScheduleIdsWithRuns`, `countLotsByFieldId`,
+`getTechnicalVerdictsByAnalysisId`, `deriveFieldAnalysisStatus`, `fieldRequiresAttention`) con
+`fieldIds=[fieldId]`, más los de PR13B/16D (`toAdminScheduledAnalysisRun`,
+`WeeklyTechnicalVerdictService.findResponsesByScheduledRunIds`). Solo 2 helpers nuevos:
+`getAnalysesForField` (historial de análisis de UN campo) y `getRecentRunsForSchedule` (últimas
+corridas de UN schedule) — ninguno duplica lógica que ya existía.
+
+### Datos consolidados
+
+Campo + dueño, estado operativo (`analysisStatus`/`requiresAttention`), lotes, último análisis,
+veredicto técnico del último análisis, historial de análisis, monitoreo semanal (con frecuencia),
+últimas corridas programadas con su diagnóstico semanal y estado de mail correlacionados.
+
+### Límites de historial
+
+`FIELD_DETAIL_ANALYSES_LIMIT = 20` y `FIELD_DETAIL_RUNS_LIMIT = 20` (constantes en
+`admin-field-detail.dto.ts`, agro-score-api) — ambas listas orden DESC por `createdAt`.
+
+### Reglas de estado reutilizadas
+
+`analysisStatus` y `requiresAttention` son EXACTAMENTE las mismas funciones que usa `listFields`
+(PR5) — cero divergencia, cero duplicación. El detalle nunca calcula su propia versión de estas
+reglas.
+
+### Interpretación de mails/corridas
+
+El bloque "Corridas y mails" necesita el estado de mail POR CADA corrida del historial, no solo la
+más reciente — `resolveMailStatus` (PR3) opera a nivel de SCHEDULE (la corrida más reciente + su
+veredicto, para distinguir "esperando veredicto" de "atascado"). Se agregó `resolveRunMailStatus`
+(nuevo, `scheduled-analysis-status.util.ts`), una versión simplificada a 4 estados por corrida,
+mismo criterio real que PR3 (`failedAt` distingue falla de pipeline de mail omitido):
+
+```txt
+emailSentAt presente           → Enviado
+completed sin emailSentAt      → Pendiente
+failed con failedAt (pipeline) → No aplica
+failed sin failedAt (omitido)  → Mail omitido
+pending/processing             → No aplica (todavía no llega a esa etapa)
+```
+
+### Links agregados o actualizados
+
+- Nombre del campo en `/fields` → ahora `/fields/:fieldId` (antes `/analysis?fieldId=`).
+- Header del detalle: "Ver diagnósticos" (`/analysis?fieldId=`), "Ver lotes" (`/lots?fieldId=`),
+  "Ver programados" (`/scheduled-analysis?fieldId=`), "Volver a Campos" (`/fields`).
+- Último análisis → `/analysis?analysisId=<id>`; cada fila del historial de análisis →
+  `/analysis?analysisId=<id>`; cada corrida con análisis → `/analysis?analysisId=<run.analysisId>`.
+
+### Qué quedó fuera de este PR
+
+- **Edición del campo**: excluido explícitamente por el ticket — vista de solo lectura.
+- **Vista de detalle de usuario**: excluida explícitamente por el ticket.
+- **Nombre del revisor** (`reviewedBy`): el historial de análisis muestra `reviewedAt` (fecha) pero
+  no resuelve un nombre a partir de `reviewedByUserId` — Diagnósticos sí lo hace hoy
+  (`reviewerLabel`, vía un mapa de usuarios que ese componente arma aparte); replicar esa
+  machinery en una tabla compacta del detalle habría ido contra "no crear vista detalle grande".
+- **Distinción `waiting_verdict` vs. `pending_review` por corrida**: esa granularidad (PR3) exige
+  saber si CADA corrida individual del historial ya tiene su technicalVerdict resuelto — el
+  detalle solo resuelve el veredicto del análisis MÁS RECIENTE, no de cada análisis histórico, así
+  que `resolveRunMailStatus` colapsa ambos casos en un único estado "Pendiente".

@@ -36,6 +36,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/fields/fields.component').then((m) => m.FieldsComponent),
       },
+      // Admin PR 6: vista de detalle de campo — ruta hermana de 'fields' (no anidada como hijo:
+      // sigue el mismo patrón "leaf route" que el resto de este router, no hay <router-outlet>
+      // dentro de FieldsComponent). Debe ir DESPUÉS de 'fields' en la lista para que quede claro
+      // que es más específica, aunque Angular no lo requiera (segmentos distintos, sin ambigüedad).
+      {
+        path: 'fields/:fieldId',
+        loadComponent: () =>
+          import('./features/fields/field-detail/field-detail.component').then(
+            (m) => m.FieldDetailComponent,
+          ),
+      },
       {
         path: 'lots',
         loadComponent: () => import('./features/lots/lots.component').then((m) => m.LotsComponent),

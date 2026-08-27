@@ -1,0 +1,89 @@
+.fd-back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.fd-header__owner {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+}
+
+.fd-header__badges {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.fd-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.fd-section {
+  margin-bottom: 1.75rem;
+}
+
+.fd-section__title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+}
+
+.fd-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.fd-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fd-summary-card__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+.fd-summary-card__value {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.fd-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.fd-dl dt {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.fd-dl dd {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.fd-tech-details {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.fd-tech-details summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}

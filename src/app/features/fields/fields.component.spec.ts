@@ -109,13 +109,13 @@ describe('FieldsComponent (Admin PR 1 — deep link hasAnalysis)', () => {
   });
 
   describe('trazabilidad (Admin PR 2)', () => {
-    it('el nombre del campo es un link a /analysis con fieldId', () => {
+    it('el nombre del campo es un link al detalle del campo (Admin PR 6)', () => {
       setup([buildField()]);
       const el = fixture.nativeElement as HTMLElement;
 
       const link = el.querySelector('.entity-link') as HTMLAnchorElement;
       expect(link.textContent?.trim()).toBe('Campo Norte');
-      expect(link.getAttribute('href')).toBe('/analysis?fieldId=field-1');
+      expect(link.getAttribute('href')).toBe('/fields/field-1');
     });
 
     it('el dueño es un link a /users con userId', () => {

@@ -1,0 +1,347 @@
+@if (loading()) {
+  <div class="loading-state">Cargando campo...</div>
+} @else if (notFound()) {
+  <div class="page-header">
+    <h1>Campo no encontrado</h1>
+  </div>
+  <p class="empty-state">No encontramos un campo con ese ID — puede que haya sido eliminado.</p>
+  <a class="link-button" routerLink="/fields">← Volver a Campos</a>
+} @else if (errorMessage()) {
+  <div class="error-banner">{{ errorMessage() }}</div>
+  <a class="link-button" routerLink="/fields">← Volver a Campos</a>
+} @else {
+@if (detail(); as d) {
+  <a class="link-button fd-back" routerLink="/fields">← Volver a Campos</a>
+
+  <div class="page-header">
+    <div>
+      <h1>{{ d.field.name }}</h1>
+      <p class="fd-header__owner">
+        Dueño:
+        <a class="entity-link" routerLink="/users" [queryParams]="{ userId: d.field.ownerId }">
+          {{ d.field.ownerFullName }}
+        </a>
+        <span class="muted">({{ d.field.ownerEmail }})</span>
+      </p>
+      <app-copyable-id [value]="d.field.id" />
+    </div>
+    <div class="fd-header__badges">
+      <app-status-badge
+        [label]="fieldAnalysisStatusLabel(d.field.analysisStatus)"
+        [tone]="fieldAnalysisStatusTone(d.field.analysisStatus)"
+      />
+      <app-status-badge [label]="fieldAttentionLabel(d.field)" [tone]="fieldAttentionTone(d.field)" />
+    </div>
+  </div>
+
+  <div class="fd-header__actions">
+    <a class="link-button" routerLink="/analysis" [queryParams]="{ fieldId: d.field.id }">Ver diagnósticos</a>
+    <a class="link-button" routerLink="/lots" [queryParams]="{ fieldId: d.field.id }">Ver lotes</a>
+    <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: d.field.id }">Ver programados</a>
+  </div>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Resumen operativo</h2>
+    <div class="fd-summary-grid">
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Lotes</span>
+        <span class="fd-summary-card__value">{{ d.field.lotsCount }}</span>
+      </div>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Último análisis</span>
+        @if (d.latestAnalysis; as la) {
+          <span class="fd-summary-card__value">{{ la.createdAt | date: 'short' }}</span>
+        } @else {
+          <span class="fd-summary-card__value muted">Sin diagnóstico</span>
+        }
+      </div>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Score</span>
+        @if (d.latestAnalysis?.score != null) {
+          <span class="fd-summary-card__value">
+            {{ d.latestAnalysis!.score }} · {{ scoreBandLabel(d.latestAnalysis!.score!) }}
+          </span>
+        } @else {
+          <span class="fd-summary-card__value muted">No disponible</span>
+        }
+      </div>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Veredicto técnico</span>
+        @if (d.technicalVerdict?.status === 'generated') {
+          <app-status-badge
+            [label]="verdictLabel(d.technicalVerdict!.verdict)"
+            [tone]="verdictTone(d.technicalVerdict!.verdict)"
+          />
+        } @else {
+          <span class="fd-summary-card__value muted">No disponible</span>
+        }
+      </div>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Monitoreo semanal</span>
+        <app-status-badge
+          [label]="monitoringLabel(d.weeklyMonitoring)"
+          [tone]="monitoringTone(d.weeklyMonitoring)"
+        />
+      </div>
+      <div class="fd-summary-card">
+        <span class="fd-summary-card__label">Último mail</span>
+        @if (d.scheduledRuns[0]; as lastRun) {
+          <app-status-badge [label]="runMailStatusLabel(lastRun)" [tone]="runMailStatusTone(lastRun)" />
+        } @else {
+          <span class="fd-summary-card__value muted">Sin corridas</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Último análisis</h2>
+    @if (d.latestAnalysis; as la) {
+      <div class="card">
+        <p>
+          <app-status-badge [label]="la.status" [tone]="analysisStatusTone(la.status)" />
+        </p>
+        <dl class="fd-dl">
+          <dt>Fecha</dt>
+          <dd>{{ la.createdAt | date: 'short' }}</dd>
+          <dt>Duración</dt>
+          <dd>{{ la.durationMs | duration }}</dd>
+          @if (la.score != null) {
+            <dt>Score</dt>
+            <dd>{{ la.score }} · {{ scoreBandLabel(la.score) }}</dd>
+          }
+        </dl>
+        <a class="link-button" routerLink="/analysis" [queryParams]="{ analysisId: la.id }">
+          Ver en Diagnósticos →
+        </a>
+      </div>
+    } @else {
+      <p class="empty-state">Este campo todavía no tiene diagnósticos.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Veredicto técnico</h2>
+    @if (d.technicalVerdict; as verdict) {
+      @if (verdict.status === 'generated') {
+        <div class="verdict-panel">
+          <div class="verdict-panel__meta">
+            <app-status-badge
+              [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
+              [tone]="verdictTone(verdict.verdict)"
+            />
+            @if (verdict.confidence) {
+              <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+            }
+          </div>
+
+          @if (verdict.summary) {
+            <p class="verdict-panel__summary">{{ verdict.summary }}</p>
+          }
+
+          @if (verdict.keyFindings.length) {
+            <p class="verdict-panel__section-title">Hallazgos</p>
+            <ul>
+              @for (finding of verdict.keyFindings; track finding) {
+                <li>{{ finding }}</li>
+              }
+            </ul>
+          }
+
+          @if (verdict.recommendations.length) {
+            <p class="verdict-panel__section-title">Recomendaciones</p>
+            <ul>
+              @for (recommendation of verdict.recommendations; track recommendation) {
+                <li>{{ recommendation }}</li>
+              }
+            </ul>
+          }
+
+          @if (verdict.limitations.length) {
+            <p class="verdict-panel__section-title">Limitaciones</p>
+            <ul>
+              @for (limitation of verdict.limitations; track limitation) {
+                <li>{{ limitation }}</li>
+              }
+            </ul>
+          }
+
+          <details class="fd-tech-details">
+            <summary>Datos técnicos</summary>
+            <ul class="verdict-panel__tech-data">
+              <li>Generator: {{ verdict.generator ?? '—' }}</li>
+              <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+              <li>Generado: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+            </ul>
+          </details>
+        </div>
+      } @else {
+        <p class="empty-state">Veredicto técnico no disponible para este campo.</p>
+        @if (verdict.status === 'failed' && verdict.errorMessage) {
+          <p class="verdict-panel__error">{{ verdict.errorMessage }}</p>
+        }
+      }
+    } @else {
+      <p class="empty-state">Veredicto técnico no disponible para este campo.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Lotes ({{ d.field.lotsCount }})</h2>
+    @if (d.lots.length) {
+      <div class="table-scroll table-scroll--plain">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Creado</th>
+              <th>Actualizado</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lot of d.lots; track lot.id) {
+              <tr>
+                <td>{{ lot.name }}</td>
+                <td>{{ lot.createdAt | date: 'short' }}</td>
+                <td>{{ lot.updatedAt | date: 'short' }}</td>
+                <td><app-copyable-id [value]="lot.id" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">Este campo todavía no tiene lotes cargados.</p>
+    }
+    <a class="link-button" routerLink="/lots" [queryParams]="{ fieldId: d.field.id }">
+      Ver lotes en pantalla completa →
+    </a>
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Historial de análisis (últimos {{ d.analyses.length }})</h2>
+    @if (d.analyses.length) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Score</th>
+              <th>Duración</th>
+              <th>Revisado</th>
+              <th>Error</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of d.analyses; track row.id) {
+              <tr>
+                <td>{{ row.createdAt | date: 'short' }}</td>
+                <td><app-status-badge [label]="row.status" [tone]="analysisStatusTone(row.status)" /></td>
+                <td>
+                  @if (row.score != null) {
+                    {{ row.score }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>{{ row.durationMs | duration }}</td>
+                <td>
+                  @if (row.reviewedAt) {
+                    {{ row.reviewedAt | date: 'short' }}
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="muted">{{ row.errorMessage ?? '—' }}</td>
+                <td>
+                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: row.id }">
+                    Ver →
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">Este campo todavía no tiene diagnósticos.</p>
+    }
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Monitoreo semanal</h2>
+    @if (d.weeklyMonitoring.active) {
+      <div class="card">
+        <p><app-status-badge label="Activo" [tone]="'info'" /></p>
+        <dl class="fd-dl">
+          <dt>Frecuencia</dt>
+          <dd>{{ d.weeklyMonitoring.frequency === 'weekly' ? 'Semanal' : (d.weeklyMonitoring.frequency ?? '—') }}</dd>
+          <dt>Próxima corrida</dt>
+          <dd>{{ d.weeklyMonitoring.nextRunAt ? (d.weeklyMonitoring.nextRunAt | date: 'short') : '—' }}</dd>
+          <dt>Última corrida</dt>
+          <dd>{{ d.weeklyMonitoring.lastRunAt ? (d.weeklyMonitoring.lastRunAt | date: 'short') : '—' }}</dd>
+          <dt>Tiene corridas</dt>
+          <dd>{{ d.weeklyMonitoring.hasRuns ? 'Sí' : 'No' }}</dd>
+        </dl>
+      </div>
+    } @else {
+      <p class="empty-state">Este campo no tiene monitoreo semanal activo.</p>
+    }
+    <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: d.field.id }">
+      Ver en Programados →
+    </a>
+  </section>
+
+  <section class="fd-section">
+    <h2 class="fd-section__title">Corridas y mails (últimas {{ d.scheduledRuns.length }})</h2>
+    @if (d.scheduledRuns.length) {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Estado corrida</th>
+              <th>Diagnóstico</th>
+              <th>Diagnóstico semanal</th>
+              <th>Mail</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (run of d.scheduledRuns; track run.id) {
+              <tr>
+                <td>{{ run.scheduledFor | date: 'shortDate' }}</td>
+                <td><app-status-badge [label]="runStatusLabel(run.status)" [tone]="runStatusTone(run.status)" /></td>
+                <td>
+                  @if (run.analysisId) {
+                    <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: run.analysisId }">
+                      Ver →
+                    </a>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (run.weeklyTechnicalVerdict?.status === 'generated') {
+                    <app-status-badge
+                      [label]="trendLabel(run.weeklyTechnicalVerdict!.trend)"
+                      [tone]="trendTone(run.weeklyTechnicalVerdict!.trend)"
+                    />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td><app-status-badge [label]="runMailStatusLabel(run)" [tone]="runMailStatusTone(run)" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="empty-state">Este campo todavía no tiene corridas programadas.</p>
+    }
+  </section>
+}
+}
