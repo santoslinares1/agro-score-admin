@@ -1,9 +1,10 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminField } from '../../core/models/field.model';
 import { FieldsService } from '../../core/services/fields.service';
+import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 
 const PAGE_LIMIT = 20;
@@ -11,7 +12,7 @@ const PAGE_LIMIT = 20;
 @Component({
   selector: 'app-fields',
   standalone: true,
-  imports: [DatePipe, PaginationControlsComponent],
+  imports: [DatePipe, RouterLink, PaginationControlsComponent, CopyableIdComponent],
   templateUrl: './fields.component.html',
   styleUrl: '../shared-list.component.css',
 })
@@ -32,11 +33,22 @@ export class FieldsComponent implements OnInit {
   // vive en este signal (igual que search/page) hasta que el usuario lo quita a mano.
   protected readonly hasAnalysisFilter = signal<boolean | undefined>(undefined);
 
+  // Admin PR 2: trazabilidad — "ver campos de este usuario" (/fields?userId=<uuid>, desde
+  // Usuarios/Diagnósticos/Programados) y "saltar a este campo puntual" (/fields?fieldId=<uuid>,
+  // desde Diagnósticos/Programados, sin vista de detalle dedicada).
+  protected readonly userIdFilter = signal<string | undefined>(undefined);
+  protected readonly fieldIdFilter = signal<string | undefined>(undefined);
+
   ngOnInit(): void {
-    const param = this.route.snapshot.queryParamMap.get('hasAnalysis');
-    if (param === 'true' || param === 'false') {
-      this.hasAnalysisFilter.set(param === 'true');
+    const params = this.route.snapshot.queryParamMap;
+
+    const hasAnalysis = params.get('hasAnalysis');
+    if (hasAnalysis === 'true' || hasAnalysis === 'false') {
+      this.hasAnalysisFilter.set(hasAnalysis === 'true');
     }
+
+    this.userIdFilter.set(params.get('userId') ?? undefined);
+    this.fieldIdFilter.set(params.get('fieldId') ?? undefined);
 
     this.load();
   }
@@ -51,6 +63,8 @@ export class FieldsComponent implements OnInit {
         limit: this.limit,
         search: this.search() || undefined,
         hasAnalysis: this.hasAnalysisFilter(),
+        userId: this.userIdFilter(),
+        fieldId: this.fieldIdFilter(),
       })
       .subscribe({
         next: (result) => {
@@ -78,6 +92,18 @@ export class FieldsComponent implements OnInit {
 
   protected clearHasAnalysisFilter(): void {
     this.hasAnalysisFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearUserIdFilter(): void {
+    this.userIdFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearFieldIdFilter(): void {
+    this.fieldIdFilter.set(undefined);
     this.page.set(1);
     this.load();
   }

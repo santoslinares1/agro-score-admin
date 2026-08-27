@@ -1,11 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminAnalysis, AnalysisStatus } from '../../core/models/analysis.model';
 import { AnalysisService } from '../../core/services/analysis.service';
 import { UsersService } from '../../core/services/users.service';
+import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
@@ -33,7 +34,15 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 @Component({
   selector: 'app-analysis',
   standalone: true,
-  imports: [DatePipe, FormsModule, PaginationControlsComponent, StatusBadgeComponent, DurationPipe],
+  imports: [
+    DatePipe,
+    FormsModule,
+    RouterLink,
+    PaginationControlsComponent,
+    StatusBadgeComponent,
+    DurationPipe,
+    CopyableIdComponent,
+  ],
   templateUrl: './analysis.component.html',
   styleUrl: '../shared-list.component.css',
 })
@@ -68,6 +77,7 @@ export class AnalysisComponent implements OnInit {
   protected status: AnalysisStatus | '' = '';
   protected onlyFailed = false;
   protected onlyUnreviewed = false;
+  protected analysisId = '';
   protected fieldId = '';
   protected userId = '';
   protected from = '';
@@ -116,6 +126,7 @@ export class AnalysisComponent implements OnInit {
 
     this.onlyFailed = params.get('onlyFailed') === 'true';
     this.onlyUnreviewed = params.get('onlyUnreviewed') === 'true';
+    this.analysisId = params.get('analysisId') ?? '';
     this.fieldId = params.get('fieldId') ?? '';
     this.userId = params.get('userId') ?? '';
     this.from = params.get('from') ?? '';
@@ -133,6 +144,7 @@ export class AnalysisComponent implements OnInit {
         status: this.status || undefined,
         onlyFailed: this.onlyFailed || undefined,
         onlyUnreviewed: this.onlyUnreviewed || undefined,
+        analysisId: this.analysisId.trim() || undefined,
         fieldId: this.fieldId.trim() || undefined,
         userId: this.userId.trim() || undefined,
         from: this.from || undefined,
@@ -160,6 +172,7 @@ export class AnalysisComponent implements OnInit {
     this.status = '';
     this.onlyFailed = false;
     this.onlyUnreviewed = false;
+    this.analysisId = '';
     this.fieldId = '';
     this.userId = '';
     this.from = '';
@@ -178,10 +191,6 @@ export class AnalysisComponent implements OnInit {
     }
 
     return this.userLabels()[userId] ?? userId;
-  }
-
-  protected shortId(id: string): string {
-    return id.slice(0, 8);
   }
 
   protected isErrorExpanded(id: string): boolean {

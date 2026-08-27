@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AdminAnalysis, AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
@@ -67,6 +67,7 @@ describe('AnalysisComponent', () => {
     TestBed.configureTestingModule({
       imports: [AnalysisComponent],
       providers: [
+        provideRouter([]),
         { provide: AnalysisService, useValue: analysisServiceSpy },
         { provide: UsersService, useValue: usersServiceSpy },
         {
@@ -398,6 +399,62 @@ describe('AnalysisComponent', () => {
           onlyUnreviewed: undefined,
         }),
       );
+    });
+  });
+
+  describe('trazabilidad (Admin PR 2)', () => {
+    it('el nombre del campo es un link a /fields con fieldId', () => {
+      setup([buildAnalysis()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = el.querySelector('.entity-link') as HTMLAnchorElement;
+      expect(link.textContent?.trim()).toBe('Campo Norte');
+      expect(link.getAttribute('href')).toBe('/fields?fieldId=field-1');
+    });
+
+    it('el usuario es un link a /users con userId', () => {
+      setup([buildAnalysis()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const links = el.querySelectorAll('.entity-link');
+      const ownerLink = links[1] as HTMLAnchorElement;
+      expect(ownerLink.textContent?.trim()).toBe('Owner Test');
+      expect(ownerLink.getAttribute('href')).toBe('/users?userId=user-1');
+    });
+
+    it('muestra el analysisId truncado y copiable', () => {
+      setup([buildAnalysis({ id: 'abcd1234-5678-90ab-cdef-1234567890ab' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-copyable-id')?.textContent).toContain('#abcd1234…');
+    });
+
+    it('lee analysisId de la URL y lo pasa al primer pedido a AnalysisService.list', () => {
+      setup([], { analysisId: 'analysis-1' });
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ analysisId: 'analysis-1' }),
+      );
+    });
+
+    it('los filtros de Admin PR 1 (status/onlyUnreviewed) siguen funcionando junto con analysisId', () => {
+      setup([], { status: 'Error', onlyUnreviewed: 'true', analysisId: 'analysis-1' });
+
+      expect(analysisServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          status: 'Error',
+          onlyUnreviewed: true,
+          analysisId: 'analysis-1',
+        }),
+      );
+    });
+
+    it('no muestra undefined/null en la fila', () => {
+      setup([buildAnalysis()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).not.toContain('undefined');
+      expect(el.textContent).not.toContain('null');
     });
   });
 });

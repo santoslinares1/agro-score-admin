@@ -372,6 +372,37 @@ textarea:focus {
   text-decoration: underline;
 }
 
+/* Admin PR 2: trazabilidad — nombres/dueños que navegan a otra pantalla filtrada (campo, usuario,
+   análisis, etc.). Sin subrayado permanente para no saturar tablas ya densas; aparece en
+   hover/focus, igual que .link-button, para que quede claro que es interactivo sin que TODO el
+   texto de la tabla parezca un link. */
+.entity-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.entity-link:hover,
+.entity-link:focus-visible {
+  text-decoration: underline;
+}
+
+/* Admin PR 1/2: chip de filtro activo llegado por deep link (hasAnalysis en Campos, userId en
+   Usuarios/Campos, etc.) — movido acá desde shared-list.component.css porque Usuarios usa su
+   propio stylesheet y necesita el mismo patrón. */
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  width: fit-content;
+}
+
 .health-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

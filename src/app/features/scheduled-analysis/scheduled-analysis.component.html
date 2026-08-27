@@ -6,6 +6,25 @@
   Seguimiento de corridas automáticas, veredicto técnico y envío de reportes semanales.
 </p>
 
+@if (fieldIdFilter(); as filteredFieldId) {
+  <div class="filter-chip">
+    Filtro activo: programados del campo #{{ filteredFieldId.slice(0, 8) }}…
+    <button type="button" class="link-button" (click)="clearFieldIdFilter()">Quitar filtro</button>
+  </div>
+}
+@if (userIdFilter(); as filteredUserId) {
+  <div class="filter-chip">
+    Filtro activo: programados del usuario #{{ filteredUserId.slice(0, 8) }}…
+    <button type="button" class="link-button" (click)="clearUserIdFilter()">Quitar filtro</button>
+  </div>
+}
+@if (enabledFilter() !== undefined) {
+  <div class="filter-chip">
+    Filtro activo: solo {{ enabledFilter() ? 'activos' : 'inactivos' }}
+    <button type="button" class="link-button" (click)="clearEnabledFilter()">Quitar filtro</button>
+  </div>
+}
+
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
 }
@@ -34,12 +53,16 @@
       @for (item of items(); track item.id) {
         <tr>
           <td>
-            {{ item.fieldName ?? '—' }}
+            <a class="entity-link" routerLink="/fields" [queryParams]="{ fieldId: item.fieldId }">
+              {{ item.fieldName ?? '—' }}
+            </a>
             <br />
-            <span class="muted" style="font-family: ui-monospace, monospace">#{{ shortId(item.fieldId) }}</span>
+            <app-copyable-id [value]="item.fieldId" />
           </td>
           <td>
-            {{ item.userFullName ?? '—' }}
+            <a class="entity-link" routerLink="/users" [queryParams]="{ userId: item.userId }">
+              {{ item.userFullName ?? '—' }}
+            </a>
             @if (item.userEmail) {
               <br />
               <span class="muted">{{ item.userEmail }}</span>
@@ -67,6 +90,12 @@
             @if (item.latestRun; as run) {
               @if (run.analysisStatus) {
                 <app-status-badge [label]="run.analysisStatus" [tone]="analysisStatusTone(run.analysisStatus)" />
+                @if (run.analysisId) {
+                  <br />
+                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: run.analysisId }">
+                    Ver diagnóstico
+                  </a>
+                }
               } @else {
                 <span class="muted">Sin análisis</span>
               }
@@ -96,7 +125,7 @@
             }
           </td>
           <td>
-            <button type="button" class="link-button" (click)="toggleExpanded(item.id)">
+            <button type="button" class="link-button detail-toggle" (click)="toggleExpanded(item.id)">
               {{ isExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
             </button>
           </td>
@@ -108,7 +137,7 @@
                 <section>
                   <h3>Schedule</h3>
                   <ul class="verdict-panel__tech-data">
-                    <li>id: {{ item.id }}</li>
+                    <li>id: <app-copyable-id [value]="item.id" /></li>
                     <li>enabled: {{ item.enabled }}</li>
                     <li>frequency: {{ item.frequency }}</li>
                     <li>nextRunAt: {{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</li>
@@ -124,9 +153,16 @@
                   <h3>Última corrida</h3>
                   @if (item.latestRun; as run) {
                     <ul class="verdict-panel__tech-data">
-                      <li>run id: {{ run.id }}</li>
+                      <li>run id: <app-copyable-id [value]="run.id" /></li>
                       <li>status: {{ run.status }}</li>
-                      <li>analysisId: {{ run.analysisId ?? '—' }}</li>
+                      <li>
+                        analysisId:
+                        @if (run.analysisId; as analysisId) {
+                          <app-copyable-id [value]="analysisId" />
+                        } @else {
+                          —
+                        }
+                      </li>
                       <li>analysisStatus: {{ run.analysisStatus ?? '—' }}</li>
                       <li>startedAt: {{ run.startedAt ? (run.startedAt | date: 'short') : '—' }}</li>
                       <li>completedAt: {{ run.completedAt ? (run.completedAt | date: 'short') : '—' }}</li>

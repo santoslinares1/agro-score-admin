@@ -10,6 +10,19 @@
   </div>
 </div>
 
+@if (fieldIdFilter(); as filteredFieldId) {
+  <div class="filter-chip">
+    Filtro activo: lotes del campo #{{ filteredFieldId.slice(0, 8) }}…
+    <button type="button" class="link-button" (click)="clearFieldIdFilter()">Quitar filtro</button>
+  </div>
+}
+@if (userIdFilter(); as filteredUserId) {
+  <div class="filter-chip">
+    Filtro activo: lotes del usuario #{{ filteredUserId.slice(0, 8) }}…
+    <button type="button" class="link-button" (click)="clearUserIdFilter()">Quitar filtro</button>
+  </div>
+}
+
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
 }
@@ -34,8 +47,21 @@
       @for (lot of items(); track lot.id) {
         <tr>
           <td>{{ lot.name }}</td>
-          <td>{{ lot.fieldName }}</td>
-          <td>{{ lot.ownerFullName }} <span class="muted">({{ lot.ownerEmail }})</span></td>
+          <td>
+            <a class="entity-link" routerLink="/fields" [queryParams]="{ fieldId: lot.fieldId }">
+              {{ lot.fieldName }}
+            </a>
+          </td>
+          <td>
+            @if (lot.ownerId) {
+              <a class="entity-link" routerLink="/users" [queryParams]="{ userId: lot.ownerId }">
+                {{ lot.ownerFullName }}
+              </a>
+              <span class="muted">({{ lot.ownerEmail }})</span>
+            } @else {
+              <span class="muted">—</span>
+            }
+          </td>
           <td>{{ lot.createdAt | date: 'short' }}</td>
           <td>{{ lot.updatedAt | date: 'short' }}</td>
         </tr>

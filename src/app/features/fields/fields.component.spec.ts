@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AdminField } from '../../core/models/field.model';
@@ -35,6 +35,7 @@ describe('FieldsComponent (Admin PR 1 — deep link hasAnalysis)', () => {
     TestBed.configureTestingModule({
       imports: [FieldsComponent],
       providers: [
+        provideRouter([]),
         { provide: FieldsService, useValue: fieldsServiceSpy },
         {
           provide: ActivatedRoute,
@@ -105,5 +106,77 @@ describe('FieldsComponent (Admin PR 1 — deep link hasAnalysis)', () => {
 
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Campo Sin Diagnóstico');
+  });
+
+  describe('trazabilidad (Admin PR 2)', () => {
+    it('el nombre del campo es un link a /analysis con fieldId', () => {
+      setup([buildField()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = el.querySelector('.entity-link') as HTMLAnchorElement;
+      expect(link.textContent?.trim()).toBe('Campo Norte');
+      expect(link.getAttribute('href')).toBe('/analysis?fieldId=field-1');
+    });
+
+    it('el dueño es un link a /users con userId', () => {
+      setup([buildField()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const links = el.querySelectorAll('.entity-link');
+      const ownerLink = links[1] as HTMLAnchorElement;
+      expect(ownerLink.textContent?.trim()).toBe('Owner Test');
+      expect(ownerLink.getAttribute('href')).toBe('/users?userId=user-1');
+    });
+
+    it('tiene una acción "Ver programados" con fieldId', () => {
+      setup([buildField()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = Array.from(el.querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Ver programados',
+      ) as HTMLAnchorElement;
+
+      expect(link).toBeTruthy();
+      expect(link.getAttribute('href')).toBe('/scheduled-analysis?fieldId=field-1');
+    });
+
+    it('muestra el fieldId truncado y copiable bajo el nombre', () => {
+      setup([buildField({ id: 'abcd1234-5678-90ab-cdef-1234567890ab' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-copyable-id')?.textContent).toContain('#abcd1234…');
+    });
+
+    it('lee userId de la URL y lo reenvía a FieldsService.list', () => {
+      setup([], { userId: 'user-1' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ userId: 'user-1' }),
+      );
+    });
+
+    it('lee fieldId de la URL y lo reenvía a FieldsService.list', () => {
+      setup([], { fieldId: 'field-1' });
+
+      expect(fieldsServiceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ fieldId: 'field-1' }),
+      );
+    });
+
+    it('muestra un chip por cada filtro activo (userId y fieldId pueden convivir)', () => {
+      setup([], { userId: 'user-1', fieldId: 'field-1' });
+      const el = fixture.nativeElement as HTMLElement;
+
+      const chips = el.querySelectorAll('.filter-chip');
+      expect(chips.length).toBe(2);
+    });
+
+    it('no muestra undefined/null en la tabla', () => {
+      setup([buildField()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).not.toContain('undefined');
+      expect(el.textContent).not.toContain('null');
+    });
   });
 });

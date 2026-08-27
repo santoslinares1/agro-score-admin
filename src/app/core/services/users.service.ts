@@ -14,12 +14,18 @@ import {
 } from '../models/user.model';
 import { toHttpParams } from './query-params.util';
 
+// Admin PR 2: trazabilidad — "saltar al usuario" desde Campos/Diagnósticos/Programados
+// (/users?userId=<uuid>).
+export interface UsersQuery extends PaginationQuery {
+  userId?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  list(query: PaginationQuery): Observable<PaginatedResult<AdminUser>> {
+  list(query: UsersQuery): Observable<PaginatedResult<AdminUser>> {
     return this.http.get<PaginatedResult<AdminUser>>(`${this.apiUrl}/admin/users`, {
       params: toHttpParams(query),
     });

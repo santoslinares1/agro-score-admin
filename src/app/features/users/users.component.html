@@ -23,6 +23,13 @@
   </div>
 </div>
 
+@if (userIdFilter(); as filteredUserId) {
+  <div class="filter-chip">
+    Filtro activo: usuario #{{ filteredUserId.slice(0, 8) }}…
+    <button type="button" class="link-button" (click)="clearUserIdFilter()">Quitar filtro</button>
+  </div>
+}
+
 @if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
 }
@@ -55,13 +62,25 @@
     <tbody>
       @for (user of visibleUsers(); track user.id) {
         <tr [class.row--inactive]="!user.isActive">
-          <td>{{ user.email }}</td>
+          <td>
+            {{ user.email }}
+            <br />
+            <app-copyable-id [value]="user.id" />
+          </td>
           <td>{{ user.fullName }}</td>
           <td><span class="role-pill" [class]="'role-pill--' + user.role">{{ user.role }}</span></td>
           <td>{{ user.isActive ? 'Activo' : 'Inactivo' }}</td>
           <td>{{ user.createdAt | date: 'short' }}</td>
           <td>{{ user.updatedAt | date: 'short' }}</td>
           <td class="actions">
+            <div class="actions__traceability">
+              <a class="entity-link" routerLink="/fields" [queryParams]="{ userId: user.id }">
+                Ver campos
+              </a>
+              <a class="entity-link" routerLink="/analysis" [queryParams]="{ userId: user.id }">
+                Ver diagnósticos
+              </a>
+            </div>
             <button type="button" class="btn" (click)="openEditForm(user)">Editar</button>
             <button type="button" class="btn" (click)="openReset(user)">Generar reset</button>
             @if (user.isActive) {

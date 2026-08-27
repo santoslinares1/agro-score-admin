@@ -1,8 +1,10 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminScheduledAnalysisItem } from '../../core/models/scheduled-analysis.model';
 import { ScheduledAnalysisService } from '../../core/services/scheduled-analysis.service';
+import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
@@ -40,12 +42,19 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 @Component({
   selector: 'app-scheduled-analysis',
   standalone: true,
-  imports: [DatePipe, PaginationControlsComponent, StatusBadgeComponent],
+  imports: [
+    DatePipe,
+    RouterLink,
+    PaginationControlsComponent,
+    StatusBadgeComponent,
+    CopyableIdComponent,
+  ],
   templateUrl: './scheduled-analysis.component.html',
   styleUrl: '../shared-list.component.css',
 })
 export class ScheduledAnalysisComponent implements OnInit {
   private readonly scheduledAnalysisService = inject(ScheduledAnalysisService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly analysisStatusTone = analysisStatusTone;
   protected readonly scheduleTone = scheduleTone;
@@ -70,7 +79,22 @@ export class ScheduledAnalysisComponent implements OnInit {
 
   private readonly expandedIds = signal<ReadonlySet<string>>(new Set());
 
+  // Admin PR 2: trazabilidad — "ver programados de este campo/usuario" desde Campos/Usuarios
+  // (/scheduled-analysis?fieldId=<uuid>, ?userId=<uuid>, ?enabled=true).
+  protected readonly fieldIdFilter = signal<string | undefined>(undefined);
+  protected readonly userIdFilter = signal<string | undefined>(undefined);
+  protected readonly enabledFilter = signal<boolean | undefined>(undefined);
+
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.fieldIdFilter.set(params.get('fieldId') ?? undefined);
+    this.userIdFilter.set(params.get('userId') ?? undefined);
+
+    const enabled = params.get('enabled');
+    if (enabled === 'true' || enabled === 'false') {
+      this.enabledFilter.set(enabled === 'true');
+    }
+
     this.load();
   }
 
@@ -78,19 +102,27 @@ export class ScheduledAnalysisComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.scheduledAnalysisService.list({ page: this.page(), limit: this.limit }).subscribe({
-      next: (result) => {
-        this.items.set(result.items);
-        this.total.set(result.total);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(
-          apiErrorMessage(err, 'No se pudo cargar la lista de análisis programados.'),
-        );
-        this.loading.set(false);
-      },
-    });
+    this.scheduledAnalysisService
+      .list({
+        page: this.page(),
+        limit: this.limit,
+        fieldId: this.fieldIdFilter(),
+        userId: this.userIdFilter(),
+        enabled: this.enabledFilter(),
+      })
+      .subscribe({
+        next: (result) => {
+          this.items.set(result.items);
+          this.total.set(result.total);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(
+            apiErrorMessage(err, 'No se pudo cargar la lista de análisis programados.'),
+          );
+          this.loading.set(false);
+        },
+      });
   }
 
   protected onPageChange(page: number): void {
@@ -98,8 +130,22 @@ export class ScheduledAnalysisComponent implements OnInit {
     this.load();
   }
 
-  protected shortId(id: string): string {
-    return id.slice(0, 8);
+  protected clearFieldIdFilter(): void {
+    this.fieldIdFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearUserIdFilter(): void {
+    this.userIdFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearEnabledFilter(): void {
+    this.enabledFilter.set(undefined);
+    this.page.set(1);
+    this.load();
   }
 
   protected frequencyLabel(frequency: string): string {

@@ -1,0 +1,16 @@
+.copyable-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.copyable-id__value {
+  white-space: nowrap;
+}
+
+.copyable-id__copy {
+  font-size: 0.75rem;
+}

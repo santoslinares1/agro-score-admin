@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { AnalysisTechnicalVerdict } from '../../core/models/analysis.model';
@@ -100,19 +101,34 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
   let fixture: ComponentFixture<ScheduledAnalysisComponent>;
   let serviceSpy: jasmine.SpyObj<ScheduledAnalysisService>;
 
-  function setup(items: AdminScheduledAnalysisItem[]): void {
+  // Admin PR 2: queryParams simula la URL con la que llega un deep link desde Campos/Usuarios
+  // (p. ej. /scheduled-analysis?fieldId=<uuid>) — vacío por default.
+  function configureTestBed(queryParams: Record<string, string> = {}): void {
+    TestBed.configureTestingModule({
+      imports: [ScheduledAnalysisComponent],
+      providers: [
+        provideRouter([]),
+        { provide: ScheduledAnalysisService, useValue: serviceSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+      ],
+    });
+  }
+
+  function setup(
+    items: AdminScheduledAnalysisItem[],
+    queryParams: Record<string, string> = {},
+  ): void {
     serviceSpy.list.and.returnValue(of(buildResult(items)));
+    configureTestBed(queryParams);
     fixture = TestBed.createComponent(ScheduledAnalysisComponent);
     fixture.detectChanges();
   }
 
   beforeEach(() => {
     serviceSpy = jasmine.createSpyObj('ScheduledAnalysisService', ['list']);
-
-    TestBed.configureTestingModule({
-      imports: [ScheduledAnalysisComponent],
-      providers: [{ provide: ScheduledAnalysisService, useValue: serviceSpy }],
-    });
   });
 
   it('renderiza la tabla de análisis programados', () => {
@@ -172,7 +188,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     setup([buildItem({ technicalVerdict: buildTechnicalVerdict({ generator: 'claude', promptVersion: 'technical-verdict-v1' }) })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     const panelText = (el.querySelector('.verdict-panel') as HTMLElement).textContent ?? '';
@@ -242,6 +258,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
 
   it('maneja el estado de loading', () => {
     serviceSpy.list.and.returnValue(of(buildResult([])));
+    configureTestBed();
     fixture = TestBed.createComponent(ScheduledAnalysisComponent);
     const el = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
@@ -254,6 +271,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
 
   it('maneja el estado de error', () => {
     serviceSpy.list.and.returnValue(throwError(() => ({ error: { message: 'Fallo de red' } })));
+    configureTestBed();
     fixture = TestBed.createComponent(ScheduledAnalysisComponent);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
@@ -272,7 +290,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict() })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Diagnóstico semanal');
@@ -282,7 +300,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({ trend: 'stable' }) })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Tendencia: Estable');
@@ -292,7 +310,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     setup([buildItem({ weeklyTechnicalVerdict: buildWeeklyTechnicalVerdict({ trend: 'improving' }) })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Tendencia: En mejora');
@@ -308,7 +326,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('El campo retrocedió respecto de la semana anterior.');
@@ -324,7 +342,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Cambios relevantes');
@@ -341,7 +359,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Áreas a revisar');
@@ -358,7 +376,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Recomendaciones');
@@ -375,7 +393,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Limitaciones');
@@ -393,7 +411,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Generator: claude');
@@ -418,7 +436,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Error técnico');
@@ -429,7 +447,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     setup([buildItem({ weeklyTechnicalVerdict: null })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Diagnóstico semanal no disponible.');
@@ -444,7 +462,7 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     ]);
     const el = fixture.nativeElement as HTMLElement;
 
-    (el.querySelector('td button') as HTMLButtonElement).click();
+    (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(el.textContent).toContain('Crítico');
@@ -473,5 +491,103 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
 
     expect(el.textContent).not.toContain('undefined');
     expect(el.textContent).not.toContain('null');
+  });
+
+  describe('trazabilidad (Admin PR 2)', () => {
+    it('el campo es un link a /fields con fieldId', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = el.querySelector('.entity-link') as HTMLAnchorElement;
+      expect(link.textContent?.trim()).toBe('Campo Norte');
+      expect(link.getAttribute('href')).toBe('/fields?fieldId=field-1');
+    });
+
+    it('el usuario es un link a /users con userId', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const links = el.querySelectorAll('.entity-link');
+      const userLink = links[1] as HTMLAnchorElement;
+      expect(userLink.textContent?.trim()).toBe('Owner Test');
+      expect(userLink.getAttribute('href')).toBe('/users?userId=user-1');
+    });
+
+    it('muestra el fieldId truncado y copiable bajo el nombre del campo', () => {
+      setup([buildItem({ fieldId: 'abcd1234-5678-90ab-cdef-1234567890ab' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-copyable-id')?.textContent).toContain('#abcd1234…');
+    });
+
+    it('el analysisId de latestRun linkea a /analysis cuando existe', () => {
+      setup([buildItem({ latestRun: buildRun({ analysisId: 'analysis-1' }) })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = Array.from(el.querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Ver diagnóstico',
+      ) as HTMLAnchorElement;
+
+      expect(link).toBeTruthy();
+      expect(link.getAttribute('href')).toBe('/analysis?analysisId=analysis-1');
+    });
+
+    it('sin analysisId en latestRun, no muestra el link "Ver diagnóstico"', () => {
+      setup([buildItem({ latestRun: buildRun({ analysisId: null, analysisStatus: null }) })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      const link = Array.from(el.querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Ver diagnóstico',
+      );
+      expect(link).toBeUndefined();
+    });
+
+    it('lee fieldId de la URL y lo reenvía a ScheduledAnalysisService.list', () => {
+      setup([], { fieldId: 'field-1' });
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ fieldId: 'field-1' }),
+      );
+    });
+
+    it('lee userId de la URL y lo reenvía a ScheduledAnalysisService.list', () => {
+      setup([], { userId: 'user-1' });
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ userId: 'user-1' }),
+      );
+    });
+
+    it('lee enabled=true de la URL y lo reenvía a ScheduledAnalysisService.list', () => {
+      setup([], { enabled: 'true' });
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(jasmine.objectContaining({ enabled: true }));
+    });
+
+    it('sin query params, no aplica ningún filtro nuevo', () => {
+      setup([buildItem()]);
+
+      expect(serviceSpy.list).toHaveBeenCalledWith(
+        jasmine.objectContaining({ fieldId: undefined, userId: undefined, enabled: undefined }),
+      );
+    });
+
+    it('el scheduleId y el runId están disponibles como IDs copiables en el detalle expandido', () => {
+      setup([buildItem({ id: 'abcd1234-5678-90ab-cdef-1234567890ab' })]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      (el.querySelector('.detail-toggle') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      const copyableIds = el.querySelectorAll('.verdict-panel app-copyable-id');
+      expect(copyableIds.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('no rompe la paginación existente', () => {
+      setup([buildItem()]);
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('app-pagination-controls')).toBeTruthy();
+    });
   });
 });

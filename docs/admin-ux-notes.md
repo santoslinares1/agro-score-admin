@@ -61,12 +61,13 @@ Dashboard con esas mismas stats.
   fuera de alcance de este PR).
 - **`/fields?hasAnalysis=false`**: filtra de verdad (filtro nuevo, ver arriba). `FieldsComponent`
   muestra además un chip *"Filtro activo: campos sin diagnóstico"* con un botón para quitarlo.
-- **`/scheduled-analysis`**: **no filtra**. `GET /admin/scheduled-analysis` solo acepta paginación
-  hoy (`AdminService.listScheduledAnalysis`); agregar un filtro `enabled=true&hasRuns=false` real
+- **`/scheduled-analysis`**: **no filtra** *(actualizado en Admin PR 2 más abajo: ahora sí filtra
+  por `fieldId`/`userId`/`enabled`; `hasRuns=false` sigue sin filtro real)*. `GET
+  /admin/scheduled-analysis` solo aceptaba paginación al momento de este PR
+  (`AdminService.listScheduledAnalysis`); agregar un filtro `enabled=true&hasRuns=false` real
   implicaba tocar el join con `ScheduledAnalysisRun` (`getLatestRunsByScheduleId`, DISTINCT ON) y
-  quedaba fuera del alcance acotado de este PR. El link va a la pantalla completa — con 3
-  schedules totales hoy (según la auditoría), es navegable a mano. Queda como deuda explícita para
-  un PR de admin futuro si el volumen de schedules crece.
+  quedaba fuera del alcance acotado de este PR. El link iba a la pantalla completa — con 3
+  schedules totales en ese momento (según la auditoría), era navegable a mano.
 
 ### Qué quedó fuera de este PR
 
@@ -79,3 +80,113 @@ Dashboard con esas mismas stats.
   una plataforma de analítica — 4 alertas condicionales sobre stats ya calculadas (o triviales de
   calcular) resuelven la pregunta real ("¿qué miro primero?") sin agregar una capa nueva de
   agregación, gráficos ni dashboards configurables.
+
+---
+
+## Admin PR 2 — Trazabilidad usuario/campo/análisis
+
+Fecha: 2026-08-27.
+Alcance: `agro-score-admin` (links reales + query params + IDs copiables en las 6 pantallas de
+listado) + `agro-score-api` (filtros nuevos en `GET /admin/users`, `/admin/fields`, `/admin/lots`,
+`/admin/analysis`, `/admin/scheduled-analysis`). No se tocó `agro-score-web`,
+`agro-score-worker`, `.env` ni deploy. Sin migraciones — todos los filtros nuevos son WHERE sobre
+columnas que ya existían.
+
+### Objetivo
+
+La auditoría encontró que ninguna entidad del admin era navegable: Usuario, Campo, Lote,
+Diagnóstico y Programado vivían como tablas aisladas, sin links entre ellas, obligando a copiar
+UUIDs a mano entre pantallas para seguir una historia. Este PR convierte los nombres/dueños de
+cada tabla en links reales con filtro, y agrega un patrón de "ID truncado + copiar" reusable
+donde hacía falta. **No** agrega vistas de detalle consolidadas — eso queda para un PR futuro (ver
+"Deuda futura" más abajo), tal como pedía el ticket.
+
+### Links agregados por pantalla
+
+| Pantalla | Link / acción | Destino |
+|---|---|---|
+| Usuarios | "Ver campos" (por fila) | `/fields?userId=<id>` |
+| Usuarios | "Ver diagnósticos" (por fila) | `/analysis?userId=<id>` |
+| Campos | Nombre del campo | `/analysis?fieldId=<id>` |
+| Campos | Dueño | `/users?userId=<id>` |
+| Campos | "Ver programados" (por fila) | `/scheduled-analysis?fieldId=<id>` |
+| Lotes | Campo | `/fields?fieldId=<id>` |
+| Lotes | Dueño | `/users?userId=<id>` |
+| Diagnósticos | Campo | `/fields?fieldId=<id>` |
+| Diagnósticos | Usuario | `/users?userId=<id>` |
+| Programados | Campo | `/fields?fieldId=<id>` |
+| Programados | Usuario | `/users?userId=<id>` |
+| Programados | "Ver diagnóstico" (analysisId de latestRun, si existe) | `/analysis?analysisId=<id>` |
+
+Los links usan una clase global nueva (`.entity-link` en `src/styles.css`) — sin subrayado
+permanente para no saturar tablas ya densas, aparece en hover/focus (igual criterio que
+`.link-button`, ya existente). Ningún link reemplaza una acción mutante existente (Editar/
+Desactivar/Generar reset/Marcar revisado/Reintentar siguen intactas).
+
+### Query params soportados por pantalla
+
+| Pantalla | Query params | Filtra de verdad |
+|---|---|---|
+| Usuarios | `userId`, `email` | Sí — `userId` es un filtro nuevo (`ListUsersQueryDto`); `email` reusa el buscador de texto existente (`search` ya matchea email vía ILIKE) |
+| Campos | `userId`, `fieldId`, `hasAnalysis` (PR 1) | Sí — `userId`/`fieldId` nuevos en `ListFieldsQueryDto` |
+| Lotes | `fieldId`, `userId` | Sí — nuevos en `ListLotsQueryDto` (no existía antes) |
+| Diagnósticos | `status`, `onlyFailed`, `onlyUnreviewed`, `fieldId`, `userId`, `from`, `to` (PR 1), `analysisId` (nuevo) | Sí |
+| Programados | `fieldId`, `userId`, `enabled` | Sí — nuevos en `ListScheduledAnalysisQueryDto` (antes solo paginaba). `hasRuns=false` queda fuera (ver "Deuda futura") |
+
+Cada pantalla lee sus query params **una sola vez**, en `ngOnInit` vía
+`ActivatedRoute.snapshot.queryParamMap` — no hay re-sincronización con la URL mientras el usuario
+cambia filtros a mano (mismo alcance definido en Admin PR 1, evita convertir esto en un router de
+estado). Un filtro llegado por URL se muestra como chip *"Filtro activo: …"* con botón para
+quitarlo, reusando `.filter-chip` (movido a `src/styles.css` en este PR porque Usuarios tiene su
+propio stylesheet y necesitaba el mismo patrón que Campos).
+
+### IDs copiables
+
+Componente nuevo `CopyableIdComponent` (`shared/components/copyable-id/`) — muestra los primeros
+8 caracteres + "…" (con el UUID completo en el `title`, visible al hover) y un botón "Copiar" que
+usa `navigator.clipboard.writeText()`, con feedback "Copiado" por 1.5s. Falla en silencio si el
+Clipboard API no está disponible o rechaza (sin permisos/foco) — nunca rompe la fila.
+
+Aplicado a:
+
+- **Usuarios**: `userId` bajo el email.
+- **Campos**: `fieldId` bajo el nombre.
+- **Diagnósticos**: `analysisId` bajo el nombre del campo (reemplaza el `#{{ shortId }}` sin
+  copiar que ya existía).
+- **Programados**: `scheduleId` y `runId` (de latestRun) dentro del detalle expandido existente —
+  siguiendo la preferencia del ticket ("ID truncado + copiar en detalle expandido", no en la fila
+  densa).
+
+Lotes no tiene un ID propio en la lista mínima del ticket (`userId`, `fieldId`, `analysisId`,
+`scheduleId`, `runId`) — su trazabilidad se resuelve enteramente con los links a Campos/Usuarios.
+
+### Qué se tocó en `agro-score-api`
+
+- `UsersService.findAllPaginated()` + `ListUsersQueryDto` (nuevo): filtro `userId` (`user.id = :userId`).
+- `AdminService.listFields()` + `ListFieldsQueryDto` (extendido): filtros `userId`
+  (`field."userId"`) y `fieldId` (`field.id`).
+- `AdminService.listLots()` + `ListLotsQueryDto` (nuevo): filtros `fieldId` (`lot."fieldId"`) y
+  `userId` (vía el join existente a `field`).
+- `AdminService.listAnalysis()` + `ListAnalysisQueryDto` (extendido): filtro `analysisId`
+  (`analysis.id`).
+- `AdminService.listScheduledAnalysis()` + `ListScheduledAnalysisQueryDto` (nuevo): filtros
+  `fieldId`, `userId`, `enabled` — antes este endpoint solo paginaba, no filtraba nada.
+- Los guards existentes (`JwtAuthGuard` + `RolesGuard` a nivel de `AdminController`) no se
+  tocaron — se aplican automáticamente a los endpoints nuevos/modificados igual que a los demás.
+
+### Qué quedó fuera de este PR
+
+- **`hasRuns=false` en Programados**: la auditoría lo pedía como filtro de listado
+  (`?enabled=true&hasRuns=false`), pero el criterio "sin corridas" vive hoy como agregado
+  (`AdminService.countActiveSchedulesWithoutRuns`, Admin PR 1), no como condición de listado —
+  llevarlo a un filtro real implica tocar el join `DISTINCT ON` contra `ScheduledAnalysisRun`
+  (`getLatestRunsByScheduleId`). Documentado explícitamente como deuda para Admin PR 3, tal como
+  permitía el propio ticket.
+- **Link "Diagnóstico → Programados" cuando el análisis viene de una corrida semanal**: el shape
+  de `GET /admin/analysis` no incluye `scheduleId`/`scheduledRunId` — agregarlo implica un join
+  adicional en `AdminService.listAnalysis` que no estaba claramente acotado en este PR. No se
+  inventó el link.
+- **Vista de detalle consolidada** (Usuario/Campo con toda su historia en una sola pantalla): es
+  la preferencia explícita del ticket — "primero links + query params + IDs copiables, después,
+  en otro PR, vistas de detalle consolidadas". Con la trazabilidad de este PR, construir esa vista
+  después es mecánico (los filtros ya existen).

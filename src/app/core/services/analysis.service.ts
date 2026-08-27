@@ -9,6 +9,9 @@ import { toHttpParams } from './query-params.util';
 
 export interface AnalysisQuery extends PaginationQuery {
   status?: AnalysisStatus;
+  // Admin PR 2: trazabilidad — foco directo en un análisis puntual desde Programados
+  // (link al analysisId de latestRun).
+  analysisId?: string;
   fieldId?: string;
   userId?: string;
   from?: string;

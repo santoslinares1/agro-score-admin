@@ -21,6 +21,7 @@
       Solo no revisados
     </label>
 
+    <input type="text" placeholder="analysisId (UUID)" [(ngModel)]="analysisId" name="analysisId" />
     <input type="text" placeholder="fieldId (UUID)" [(ngModel)]="fieldId" name="fieldId" />
     <input type="text" placeholder="userId (UUID)" [(ngModel)]="userId" name="userId" />
 
@@ -69,12 +70,24 @@
       @for (item of items(); track item.id) {
         <tr>
           <td>
-            {{ item.fieldName ?? '—' }}
+            @if (item.fieldId) {
+              <a class="entity-link" routerLink="/fields" [queryParams]="{ fieldId: item.fieldId }">
+                {{ item.fieldName ?? '—' }}
+              </a>
+            } @else {
+              {{ item.fieldName ?? '—' }}
+            }
             <br />
-            <span class="muted" style="font-family: ui-monospace, monospace">#{{ shortId(item.id) }}</span>
+            <app-copyable-id [value]="item.id" />
           </td>
           <td>
-            {{ item.ownerFullName ?? '—' }}
+            @if (item.ownerId) {
+              <a class="entity-link" routerLink="/users" [queryParams]="{ userId: item.ownerId }">
+                {{ item.ownerFullName ?? '—' }}
+              </a>
+            } @else {
+              {{ item.ownerFullName ?? '—' }}
+            }
             @if (item.ownerEmail) {
               <span class="muted">({{ item.ownerEmail }})</span>
             }

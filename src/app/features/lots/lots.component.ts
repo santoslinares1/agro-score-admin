@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminLot } from '../../core/models/lot.model';
 import { LotsService } from '../../core/services/lots.service';
@@ -10,12 +11,13 @@ const PAGE_LIMIT = 20;
 @Component({
   selector: 'app-lots',
   standalone: true,
-  imports: [DatePipe, PaginationControlsComponent],
+  imports: [DatePipe, RouterLink, PaginationControlsComponent],
   templateUrl: './lots.component.html',
   styleUrl: '../shared-list.component.css',
 })
 export class LotsComponent implements OnInit {
   private readonly lotsService = inject(LotsService);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly items = signal<AdminLot[]>([]);
   protected readonly total = signal(0);
@@ -25,7 +27,16 @@ export class LotsComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
 
+  // Admin PR 2: trazabilidad — "ver lotes de este campo/usuario" (/lots?fieldId=<uuid>,
+  // /lots?userId=<uuid>) desde Campos/Usuarios.
+  protected readonly fieldIdFilter = signal<string | undefined>(undefined);
+  protected readonly userIdFilter = signal<string | undefined>(undefined);
+
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    this.fieldIdFilter.set(params.get('fieldId') ?? undefined);
+    this.userIdFilter.set(params.get('userId') ?? undefined);
+
     this.load();
   }
 
@@ -34,7 +45,13 @@ export class LotsComponent implements OnInit {
     this.errorMessage.set(null);
 
     this.lotsService
-      .list({ page: this.page(), limit: this.limit, search: this.search() || undefined })
+      .list({
+        page: this.page(),
+        limit: this.limit,
+        search: this.search() || undefined,
+        fieldId: this.fieldIdFilter(),
+        userId: this.userIdFilter(),
+      })
       .subscribe({
         next: (result) => {
           this.items.set(result.items);
@@ -56,6 +73,18 @@ export class LotsComponent implements OnInit {
 
   protected onPageChange(page: number): void {
     this.page.set(page);
+    this.load();
+  }
+
+  protected clearFieldIdFilter(): void {
+    this.fieldIdFilter.set(undefined);
+    this.page.set(1);
+    this.load();
+  }
+
+  protected clearUserIdFilter(): void {
+    this.userIdFilter.set(undefined);
+    this.page.set(1);
     this.load();
   }
 }

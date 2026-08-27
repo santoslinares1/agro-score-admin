@@ -20,3 +20,12 @@
 .row--inactive {
   opacity: 0.55;
 }
+
+/* Admin PR 2: links de trazabilidad compactos, separados de los botones de acción existentes
+   (Editar/Generar reset/Desactivar) para no confundirlos con mutaciones. */
+.actions__traceability {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}

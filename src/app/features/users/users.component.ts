@@ -1,10 +1,12 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { IssuedInvitationSummary } from '../../core/models/access-request.model';
 import { AdminUser, PasswordResetResult, UserRole } from '../../core/models/user.model';
 import { UsersService } from '../../core/services/users.service';
+import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 
 type FormMode = 'create' | 'edit';
@@ -26,13 +28,21 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [DatePipe, FormsModule, ReactiveFormsModule, PaginationControlsComponent],
+  imports: [
+    DatePipe,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    PaginationControlsComponent,
+    CopyableIdComponent,
+  ],
   templateUrl: './users.component.html',
   styleUrl: './users.component.css',
 })
 export class UsersComponent implements OnInit {
   private readonly usersService = inject(UsersService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly roles: UserRole[] = ['owner', 'admin', 'user'];
 
@@ -46,6 +56,11 @@ export class UsersComponent implements OnInit {
 
   protected readonly roleFilter = signal<UserRole | ''>('');
   protected readonly activeFilter = signal<ActiveFilter>('');
+
+  // Admin PR 2: trazabilidad — deep link real desde Campos/Diagnósticos/Programados
+  // (/users?userId=<uuid>). /users?email=<email> se resuelve reusando el buscador existente
+  // (search ya matchea por email vía ILIKE en el backend — ver UsersService.findAllPaginated).
+  protected readonly userIdFilter = signal<string | undefined>(undefined);
   protected readonly clientFilterMode = computed(
     () => this.roleFilter() !== '' || this.activeFilter() !== '',
   );
@@ -89,6 +104,17 @@ export class UsersComponent implements OnInit {
   protected readonly resetResult = signal<PasswordResetResult | null>(null);
 
   ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const userId = params.get('userId');
+    if (userId) {
+      this.userIdFilter.set(userId);
+    }
+
+    const email = params.get('email');
+    if (email) {
+      this.search.set(email);
+    }
+
     this.load();
   }
 
@@ -103,6 +129,7 @@ export class UsersComponent implements OnInit {
         page: usingClientFilters ? 1 : this.page(),
         limit: usingClientFilters ? CLIENT_FILTER_LIMIT : this.limit,
         search: this.search() || undefined,
+        userId: this.userIdFilter(),
       })
       .subscribe({
         next: (result) => {
@@ -135,6 +162,12 @@ export class UsersComponent implements OnInit {
 
   protected onPageChange(page: number): void {
     this.page.set(page);
+    this.load();
+  }
+
+  protected clearUserIdFilter(): void {
+    this.userIdFilter.set(undefined);
+    this.page.set(1);
     this.load();
   }
 
