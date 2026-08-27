@@ -1,0 +1,10 @@
+/* Fix loading global (auditoría final pre-demo) — ver comentario en app.component.ts. */
+.app-shell-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  background: var(--color-bg);
+}

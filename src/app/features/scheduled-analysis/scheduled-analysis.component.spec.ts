@@ -196,12 +196,14 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     expect(el.textContent).toContain('Finalizado');
   });
 
-  it('renderiza technicalVerdict generated', () => {
+  // Fix (auditoría final pre-demo): antes se mostraba el enum crudo "generated" en inglés.
+  it('renderiza technicalVerdict generated traducido, nunca el enum crudo', () => {
     setup([buildItem({ technicalVerdict: buildTechnicalVerdict({ status: 'generated', verdict: 'attention' }) })]);
     const el = fixture.nativeElement as HTMLElement;
 
-    expect(el.textContent).toContain('generated');
+    expect(el.textContent).toContain('Generado');
     expect(el.textContent).toContain('Requiere atención');
+    expect(el.textContent).not.toContain('generated');
   });
 
   it('muestra generator=claude y promptVersion en el detalle', () => {
@@ -236,12 +238,12 @@ describe('ScheduledAnalysisComponent (PR 13B)', () => {
     expect(el.textContent).toContain('Esperando veredicto técnico');
   });
 
-  it('renderiza "No disponible" cuando no hay latestRun/technicalVerdict', () => {
+  it('renderiza "Sin corridas"/"Sin veredicto" cuando no hay latestRun/technicalVerdict', () => {
     setup([buildItem({ latestRun: null, technicalVerdict: null })]);
     const el = fixture.nativeElement as HTMLElement;
 
     expect(el.textContent).toContain('Sin corridas');
-    expect(el.textContent).toContain('No disponible');
+    expect(el.textContent).toContain('Sin veredicto');
   });
 
   it('el toggle "Ver detalle" expande y colapsa de forma independiente por fila', () => {

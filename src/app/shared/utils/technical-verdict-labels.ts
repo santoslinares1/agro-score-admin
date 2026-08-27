@@ -22,10 +22,16 @@ const CONFIDENCE_LABELS: Record<AnalysisVerdictConfidence, string> = {
   high: 'Alta',
 };
 
+// Fix (auditoría final pre-demo): antes devolvía el enum crudo en inglés tal cual ("generated"),
+// documentado como "a propósito" en PR 13A — un badge en inglés sin traducir no es aceptable para
+// una demo a socios. `pending` se traduce igual que "sin veredicto todavía" (mismo texto que se
+// usa cuando `technicalVerdict` es null/undefined, ver analysis.component.html/
+// scheduled-analysis.component.html) — el tono del badge (`info`, más abajo) sigue distinguiendo
+// visualmente "en curso" de "nunca se intentó".
 const GENERATION_STATUS_LABELS: Record<AnalysisTechnicalVerdictStatus, string> = {
-  generated: 'generated',
-  failed: 'failed',
-  pending: 'pending',
+  generated: 'Generado',
+  failed: 'Falló',
+  pending: 'Sin veredicto',
 };
 
 const VERDICT_TONES: Record<AnalysisVerdictLabel, StatusTone> = {

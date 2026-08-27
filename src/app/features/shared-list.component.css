@@ -47,7 +47,9 @@
   word-break: break-word;
 }
 
-/* PR 13A: mismo patrón visual que .error-cell — celda compacta con toggle inline. */
+/* PR 13A: mismo patrón visual que .error-cell — celda compacta con toggle inline. max-width
+   agregado en el fix de auditoría final: sin tope, esta celda podía quedar visualmente pegada a
+   la de Error en pantallas angostas dentro de .table-scroll. */
 .verdict-cell {
   display: flex;
   flex-direction: column;
@@ -55,6 +57,26 @@
   gap: 0.3rem;
   font-size: 0.8rem;
   white-space: nowrap;
+  max-width: 220px;
+}
+
+/* Fix confirmación en Solicitudes de acceso (auditoría final pre-demo) — resumen legible antes de
+   una acción que crea un usuario/invitación real. Mismo patrón visual que .fd-dl
+   (field-detail.component.css), bajo un nombre compartido porque acá vive fuera de esa pantalla. */
+.confirm-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.85rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.confirm-summary dt {
+  color: var(--color-text-muted);
+}
+
+.confirm-summary dd {
+  margin: 0;
 }
 
 .verdict-detail-row td {

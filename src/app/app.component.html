@@ -1,1 +1,4 @@
-<router-outlet />
+@if (!hasActivatedOnce()) {
+  <div class="app-shell-loading">Cargando…</div>
+}
+<router-outlet (activate)="onOutletActivate()" />

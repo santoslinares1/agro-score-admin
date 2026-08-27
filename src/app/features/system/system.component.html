@@ -53,10 +53,14 @@
       <h2>Último diagnóstico exitoso</h2>
       @if (h.lastSuccessfulAnalysis; as a) {
         <p><strong>{{ a.lotName }}</strong></p>
-        <p class="muted">Completado {{ a.completedAt ? (a.completedAt | date: 'short') : '—' }}</p>
+        @if (a.completedAt) {
+          <p class="muted">Completado · {{ a.completedAt | date: 'short' }}</p>
+        } @else {
+          <p class="muted">Completado (fecha no registrada)</p>
+        }
         <p class="muted">Creado {{ a.createdAt | date: 'short' }}</p>
       } @else {
-        <p class="empty-state">Todavía no hay diagnósticos exitosos.</p>
+        <p class="empty-state">Sin diagnósticos exitosos registrados.</p>
       }
     </div>
 
@@ -64,10 +68,14 @@
       <h2>Último diagnóstico fallido</h2>
       @if (h.lastFailedAnalysis; as a) {
         <p><strong>{{ a.lotName }}</strong></p>
-        <p class="muted">Falló {{ a.failedAt ? (a.failedAt | date: 'short') : '—' }}</p>
+        @if (a.failedAt) {
+          <p class="muted">Falló · {{ a.failedAt | date: 'short' }}</p>
+        } @else {
+          <p class="muted">Falló (fecha no registrada)</p>
+        }
         @if (a.errorMessage) { <p class="error-cell" style="max-width: none; white-space: normal">{{ a.errorMessage }}</p> }
       } @else {
-        <p class="empty-state">Todavía no hay diagnósticos fallidos.</p>
+        <p class="empty-state">Sin diagnósticos fallidos registrados.</p>
       }
     </div>
   </div>

@@ -82,6 +82,12 @@ export class AccessRequestsComponent implements OnInit {
   protected readonly createUserSubmitting = signal(false);
   protected readonly createUserError = signal<string | null>(null);
   protected readonly createUserResult = signal<IssuedInvitationSummary | null>(null);
+  // Fix (auditoría final pre-demo): antes, "Confirmar creación" ejecutaba la acción de una y
+  // dependía de un `window.confirm()` nativo (sin estilo, inconsistente con el resto de la app)
+  // como única barrera. Ahora hay un paso explícito e in-app entre elegir el rol y ejecutar:
+  // `createUserConfirming` muestra el resumen ("¿Crear usuario para <email>?" + email/nombre/rol)
+  // y solo el botón "Crear usuario" de ESE paso llama al servicio.
+  protected readonly createUserConfirming = signal(false);
 
   ngOnInit(): void {
     this.load();
@@ -150,6 +156,7 @@ export class AccessRequestsComponent implements OnInit {
     this.editAssignedToUserId = item.assignedToUserId ?? '';
     this.detailError.set(null);
     this.createUserOpen.set(false);
+    this.createUserConfirming.set(false);
     this.createUserError.set(null);
     this.createUserResult.set(null);
     this.createUserRole = 'user';
@@ -196,25 +203,29 @@ export class AccessRequestsComponent implements OnInit {
 
   protected openCreateUser(): void {
     this.createUserOpen.set(true);
+    this.createUserConfirming.set(false);
     this.createUserError.set(null);
     this.createUserResult.set(null);
   }
 
   protected cancelCreateUser(): void {
     this.createUserOpen.set(false);
+    this.createUserConfirming.set(false);
+  }
+
+  // Avanza del selector de rol a la confirmación explícita — todavía no ejecuta nada.
+  protected reviewCreateUser(): void {
+    this.createUserConfirming.set(true);
+  }
+
+  // Desde la confirmación, vuelve al selector de rol sin ejecutar nada.
+  protected backToRoleSelect(): void {
+    this.createUserConfirming.set(false);
   }
 
   protected confirmCreateUser(): void {
     const current = this.selected();
     if (!current) {
-      return;
-    }
-
-    if (
-      !confirm(
-        `¿Crear una invitación de usuario para ${current.email} con rol "${this.createUserRole}"?`,
-      )
-    ) {
       return;
     }
 
@@ -225,6 +236,7 @@ export class AccessRequestsComponent implements OnInit {
       next: (result) => {
         this.createUserSubmitting.set(false);
         this.createUserOpen.set(false);
+        this.createUserConfirming.set(false);
         this.createUserResult.set(result.invitation);
         this.selected.set(result.accessRequest);
         this.editStatus = result.accessRequest.status;

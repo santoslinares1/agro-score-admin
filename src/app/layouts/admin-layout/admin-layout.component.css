@@ -90,10 +90,28 @@
   color: var(--color-text-muted);
 }
 
+/*
+ * Fix scroll (auditoría final pre-demo): `overflow-x: auto` acá SIN un `overflow-y` explícito
+ * hacía que el browser computara `overflow-y` como `auto` también — regla real del spec CSS
+ * (si un eje es `visible` y el otro no, el `visible` pasa a `auto`), no un bug de un browser en
+ * particular. Eso convertía a `.content` en su propio contenedor de scroll vertical, y como
+ * flex-item con overflow no-visible pierde su `min-height: auto` (otra regla real del spec de
+ * flexbox), dejaba de empujar a `.main`/`.shell` a crecer con contenido largo — en vez de eso
+ * recortaba/scrolleaba internamente mientras la página (html/body) podía scrollear POR SEPARADO
+ * al mismo tiempo. Resultado: dos contenedores de scroll compitiendo — exactamente el bug
+ * reportado en /fields/:fieldId (rueda del mouse revela una zona en blanco gigante, sidebar/header
+ * quedan atrás, el contenido "flota" desconectado). Se ve peor en pantallas largas (Field/User
+ * Detail, Auditoría) pero el origen es este archivo compartido por toda la app, no esas pantallas.
+ *
+ * Fix: la página entera vuelve a ser la única fuente de scroll (html/body, `overflow` visible en
+ * los dos ejes acá). El scroll horizontal para contenido ancho en mobile ya lo resuelve
+ * `.table-scroll` (styles.css) por tabla — TODAS las tablas de la app ya están envueltas en esa
+ * clase (verificado), así que no hace falta que `.content` intente cubrir ese caso de nuevo.
+ */
 .content {
   flex: 1;
   padding: 1.75rem;
-  overflow-x: auto;
+  min-width: 0;
 }
 
 .sidebar-toggle {

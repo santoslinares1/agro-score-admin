@@ -288,7 +288,7 @@ describe('AnalysisComponent', () => {
       expect(text).toContain('Claude rechazó la API key configurada (401).');
     });
 
-    it('technicalVerdict null/undefined muestra "No disponible" y no rompe la fila', () => {
+    it('technicalVerdict null/undefined muestra "Sin veredicto" y no rompe la fila', () => {
       setup([
         buildAnalysis({ id: 'a1', technicalVerdict: null }),
         buildAnalysis({ id: 'a2', technicalVerdict: undefined }),
@@ -296,10 +296,30 @@ describe('AnalysisComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
       const cells = el.querySelectorAll('.verdict-cell');
 
-      expect(cells[0].textContent).toContain('No disponible');
+      expect(cells[0].textContent).toContain('Sin veredicto');
       expect(cells[0].querySelector('button')).toBeNull();
-      expect(cells[1].textContent).toContain('No disponible');
+      expect(cells[1].textContent).toContain('Sin veredicto');
       expect(cells[1].querySelector('button')).toBeNull();
+    });
+
+    // Fix (auditoría final pre-demo): antes se mostraba el enum crudo "generated" en inglés.
+    it('technicalVerdict generated muestra el estado traducido en la columna Veredicto técnico, no en Error', () => {
+      setup([
+        buildAnalysis({
+          errorMessage: null,
+          technicalVerdict: buildTechnicalVerdict({ status: 'generated', verdict: 'attention' }),
+        }),
+      ]);
+      const el = fixture.nativeElement as HTMLElement;
+      const errorCell = el.querySelector('.error-cell') as HTMLElement;
+      const verdictCell = el.querySelector('.verdict-cell') as HTMLElement;
+
+      expect(verdictCell.textContent).toContain('Generado');
+      expect(verdictCell.textContent).toContain('Requiere atención');
+      expect(verdictCell.textContent).not.toContain('generated');
+      expect(errorCell.textContent).not.toContain('Generado');
+      expect(errorCell.textContent).not.toContain('Requiere atención');
+      expect(errorCell.textContent).toContain('Sin error registrado');
     });
 
     it('no rompe si los arrays vienen vacíos, y no muestra subtítulos de listas vacías', () => {

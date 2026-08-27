@@ -156,7 +156,7 @@
           <button type="button" class="btn btn-primary" (click)="openCreateUser()">
             Crear usuario desde esta solicitud
           </button>
-        } @else {
+        } @else if (!createUserConfirming()) {
           @if (createUserError()) {
             <div class="error-banner">{{ createUserError() }}</div>
           }
@@ -172,13 +172,40 @@
 
           <div class="modal-actions">
             <button type="button" class="btn" (click)="cancelCreateUser()">Cancelar</button>
+            <button type="button" class="btn btn-primary" (click)="reviewCreateUser()">Continuar</button>
+          </div>
+        } @else {
+          @if (createUserError()) {
+            <div class="error-banner">{{ createUserError() }}</div>
+          }
+
+          <div class="warning-banner">¿Crear usuario para <strong>{{ item.email }}</strong>?</div>
+
+          <dl class="confirm-summary">
+            <dt>Email</dt>
+            <dd>{{ item.email }}</dd>
+            <dt>Nombre</dt>
+            <dd>{{ item.name }}</dd>
+            <dt>Rol</dt>
+            <dd>{{ createUserRole }}</dd>
+          </dl>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="btn"
+              [disabled]="createUserSubmitting()"
+              (click)="backToRoleSelect()"
+            >
+              Cancelar
+            </button>
             <button
               type="button"
               class="btn btn-primary"
               [disabled]="createUserSubmitting()"
               (click)="confirmCreateUser()"
             >
-              {{ createUserSubmitting() ? 'Creando...' : 'Confirmar creación' }}
+              {{ createUserSubmitting() ? 'Creando...' : 'Crear usuario' }}
             </button>
           </div>
         }
