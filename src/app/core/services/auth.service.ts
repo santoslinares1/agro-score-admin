@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, Observable, of, shareReplay, tap } from 'rxjs';
+import { BehaviorSubject, catchError, finalize, Observable, of, shareReplay, tap } from 'rxjs';
 
 import { environment } from '../../../environment/environment';
 import { AuthResponse, LoginPayload } from '../models/auth.model';
@@ -30,6 +30,9 @@ export class AuthService {
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
   private restoreSession$: Observable<AdminUser | null> | null = null;
+  // SEC-003: evita que un doble click (u otra llamada concurrente) a logout() dispare una
+  // segunda request mientras la primera sigue en vuelo — ver logout() más abajo.
+  private loggingOut = false;
 
   get currentUser(): AdminUser | null {
     return this.currentUserSubject.value;
@@ -78,10 +81,28 @@ export class AuthService {
       .pipe(tap((user) => this.currentUserSubject.next(user)));
   }
 
+  // SEC-003: el backend ahora revoca de verdad — POST /auth/logout requiere el Bearer todavía
+  // vigente e incrementa User.tokenVersion (invalida TODOS los JWT emitidos antes para ese
+  // usuario, no solo el de esta pestaña/dispositivo — ver docs/admin-backend.md en
+  // agro-score-api). `loggingOut` (arriba) se resetea en `finalize` sin importar éxito/error.
+  // `clearSession()` corre SIEMPRE, de forma síncrona e inmediata (no espera la respuesta): si la
+  // red falla o el backend está caído, la sesión local igual queda limpia — el borrado de
+  // localStorage nunca es prueba de que el token quedó revocado server-side, solo la respuesta
+  // exitosa del backend lo es.
   logout(): void {
-    this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
-      error: () => undefined,
-    });
+    if (!this.loggingOut) {
+      this.loggingOut = true;
+
+      this.http
+        .post(`${this.apiUrl}/auth/logout`, {})
+        .pipe(
+          catchError(() => of(null)),
+          finalize(() => {
+            this.loggingOut = false;
+          }),
+        )
+        .subscribe();
+    }
 
     this.clearSession();
   }
