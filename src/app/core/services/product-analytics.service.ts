@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -10,7 +10,13 @@ export class ProductAnalyticsService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
 
-  getProductAnalytics(): Observable<AdminProductAnalytics> {
-    return this.http.get<AdminProductAnalytics>(`${this.apiUrl}/admin/product-analytics`);
+  /**
+   * `week`: cualquier fecha (YYYY-MM-DD) dentro de la semana calendario a reportar — la API la
+   * resuelve al lunes-domingo que la contiene. Sin `week`, la API devuelve la última semana
+   * calendario ya completa (nunca la semana en curso, todavía parcial).
+   */
+  getProductAnalytics(week?: string): Observable<AdminProductAnalytics> {
+    const params = week ? new HttpParams().set('week', week) : undefined;
+    return this.http.get<AdminProductAnalytics>(`${this.apiUrl}/admin/product-analytics`, { params });
   }
 }

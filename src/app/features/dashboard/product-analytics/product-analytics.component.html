@@ -1,132 +1,185 @@
 <section class="pa-section">
-  <h2 class="pa-section__title">Embudo de uso</h2>
+  <h2 class="pa-section__title">Entrega técnica</h2>
   <p class="pa-section__subcopy">
-    Estado actual del uso: cuántos usuarios y campos llegan a generar valor real. Se calcula sobre
-    entidades actuales, no sobre cohortes por fecha de alta — no es una tasa de conversión real.
+    Cuántos campos y usuarios recibieron un resultado técnicamente utilizable (calidad
+    "sufficient"), cuánto tardaron y qué proporción se repite semana a semana. No mide si alguien
+    abrió o leyó ese resultado — eso no está instrumentado.
   </p>
 
   @if (loading()) {
-    <p class="loading-state">Cargando embudo de uso...</p>
+    <p class="loading-state">Cargando entrega técnica...</p>
   } @else if (errorMessage()) {
     <p class="error-banner">{{ errorMessage() }}</p>
   } @else {
-  @if (analytics(); as a) {
-    @if (a.funnel.length) {
-      <ol class="pa-funnel">
-        @for (stage of a.funnel; track stage.id) {
-          <li class="pa-funnel__stage">
-            <div class="pa-funnel__row">
-              <span class="pa-funnel__label">{{ stage.label }}</span>
-              <span class="pa-funnel__count">{{ stage.count }}</span>
-            </div>
-            <div class="pa-funnel__bar-track">
-              <div class="pa-funnel__bar" [style.width.%]="barWidthPercent(stage, a.funnel)"></div>
-            </div>
-            <div class="pa-funnel__meta">
-              @if (stage.conversionFromPrevious != null) {
-                <span>{{ stage.conversionFromPrevious * 100 | number: '1.0-1' }}% de la etapa anterior</span>
-              }
-              @if (stage.dropoffFromPrevious != null && stage.dropoffFromPrevious !== 0) {
-                @if (stage.dropoffFromPrevious > 0) {
-                  <span class="pa-funnel__delta pa-funnel__delta--down">Caída: -{{ stage.dropoffFromPrevious }}</span>
-                } @else {
-                  <span class="pa-funnel__delta pa-funnel__delta--up">+{{ -stage.dropoffFromPrevious }} vs. etapa anterior</span>
-                }
-              }
-              @if (stage.route) {
-                <a class="pa-funnel__link" [routerLink]="stage.route" [queryParams]="stage.queryParams">Ver →</a>
-              }
-            </div>
-            @if (stage.description) {
-              <p class="pa-funnel__description">{{ stage.description }}</p>
-            }
-          </li>
+    @if (analytics(); as a) {
+      <div class="pa-week-nav">
+        <button type="button" class="link-button" (click)="previousWeek()">← Semana anterior</button>
+        <span class="pa-week-nav__label">
+          Semana {{ a.period.week.weekStart }} – {{ a.period.week.weekEnd }} ({{ a.period.timezone }})
+        </span>
+        @if (!isCurrentWeekView()) {
+          <button type="button" class="link-button" (click)="nextWeek()">Semana siguiente →</button>
+          <button type="button" class="link-button" (click)="backToLatestWeek()">Volver a la última completa</button>
         }
-      </ol>
-    } @else {
-      <p class="empty-state">Todavía no hay datos suficientes para armar el embudo.</p>
-    }
+      </div>
 
-    <h3 class="pa-subsection__title">Qué mirar</h3>
-    @if (a.insights.length) {
-      <ul class="pa-insights">
-        @for (insight of a.insights; track insight.id) {
-          <li class="insight-card" [class]="'insight-card--' + insight.severity">
-            <div class="insight-card__header">
-              <app-status-badge [label]="severityLabel(insight.severity)" [tone]="severityTone(insight.severity)" />
-              <span class="insight-card__title">{{ insight.title }}</span>
-            </div>
-            <p class="insight-card__description">{{ insight.description }}</p>
-            @if (insight.route) {
-              <a class="insight-card__action" [routerLink]="insight.route" [queryParams]="insight.queryParams">
-                Ver detalle →
-              </a>
+      @if (!a.coverage.scheduleHistory.complete) {
+        <p class="pa-coverage-note">
+          Denominador histórico de campos esperados incompleto para esta semana: el historial de
+          habilitación de monitoreo semanal
+          @if (a.coverage.scheduleHistory.availableFrom) {
+            recién es confiable desde {{ a.coverage.scheduleHistory.availableFrom | date: 'short' }}.
+          } @else {
+            todavía no tiene ningún registro.
+          }
+          El denominador de North Star puede estar subestimado.
+        </p>
+      }
+      @if (a.coverage.analysisClassificationScan.truncated) {
+        <p class="pa-coverage-note">
+          Activation/time-to-value se calcularon sobre {{ a.coverage.analysisClassificationScan.scanned }}
+          análisis (tope operativo de {{ a.coverage.analysisClassificationScan.limit }}) — pueden quedar
+          usuarios sin evaluar en esta corrida.
+        </p>
+      }
+      @if (a.coverage.nonCanonicalSchedules.count > 0) {
+        <p class="pa-coverage-note">
+          {{ a.coverage.nonCanonicalSchedules.count }}
+          {{ a.coverage.nonCanonicalSchedules.count === 1 ? 'monitoreo semanal tiene' : 'monitoreos semanales tienen' }}
+          un horario distinto del cutoff canónico (lunes 09:00 America/Argentina/Cordoba) y quedan
+          fuera de North Star por completo — no es un error de procesamiento, es una configuración
+          no contemplada todavía por esta métrica.
+        </p>
+      }
+
+      <div class="pa-kpi-grid">
+        <div class="card pa-kpi-card">
+          <h3 class="pa-kpi-card__title">North Star — campos con monitoreo utilizable</h3>
+          <p class="pa-kpi-card__value">
+            {{ a.northStar.usableFieldsCount }} / {{ a.northStar.eligibleFieldsCount }}
+            @if (formatPercent(a.northStar.rate); as pct) {
+              <span class="pa-kpi-card__rate">({{ pct }})</span>
+            } @else {
+              <span class="pa-kpi-card__rate muted">(sin denominador)</span>
             }
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="empty-state">No hay lecturas rápidas para mostrar en este momento.</p>
-    }
+          </p>
+          <p class="pa-kpi-card__caption">
+            Campos con snapshot sufficient / campos con monitoreo semanal (horario canónico) habilitado
+            al cutoff de la semana (lunes 09:00 America/Argentina/Cordoba).
+          </p>
+        </div>
 
-    <h3 class="pa-subsection__title">Monitoreo semanal</h3>
-    <div class="pa-monitoring card">
-      <div class="pa-monitoring__stats">
-        <div class="pa-monitoring__stat">
-          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.totalFields }}</span>
-          <span class="pa-monitoring__label">Campos totales</span>
+        <div class="card pa-kpi-card">
+          <h3 class="pa-kpi-card__title">Activation técnica</h3>
+          <p class="pa-kpi-card__value">
+            {{ a.activation.activatedUsersCount }} / {{ a.activation.eligibleUsersCount }}
+            @if (formatPercent(a.activation.rate); as pct) {
+              <span class="pa-kpi-card__rate">({{ pct }})</span>
+            } @else {
+              <span class="pa-kpi-card__rate muted">(sin denominador)</span>
+            }
+          </p>
+          <p class="pa-kpi-card__caption">
+            Usuarios con al menos un resultado sufficient / usuarios elegibles (no administrativos).
+          </p>
         </div>
-        <div class="pa-monitoring__stat">
-          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.activeSchedules }}</span>
-          <span class="pa-monitoring__label">Con schedule activo</span>
-        </div>
-        <div class="pa-monitoring__stat">
-          <span class="pa-monitoring__value pa-monitoring__value--warning">{{ a.weeklyMonitoring.activeSchedulesWithoutRuns }}</span>
-          <span class="pa-monitoring__label">Activos sin corridas</span>
-        </div>
-        <div class="pa-monitoring__stat">
-          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.schedulesWithRuns }}</span>
-          <span class="pa-monitoring__label">Con corridas</span>
-        </div>
-        <div class="pa-monitoring__stat">
-          <span class="pa-monitoring__value">{{ a.weeklyMonitoring.sentEmails }}</span>
-          <span class="pa-monitoring__label">Mails enviados</span>
+
+        <div class="card pa-kpi-card">
+          <h3 class="pa-kpi-card__title">Retención semanal técnica de campos</h3>
+          @if (a.retention.periodComplete) {
+            <p class="pa-kpi-card__value">
+              {{ a.retention.retainedInNextWeekCount }} / {{ a.retention.sufficientInWeekCount }}
+              @if (formatPercent(a.retention.rate); as pct) {
+                <span class="pa-kpi-card__rate">({{ pct }})</span>
+              } @else {
+                <span class="pa-kpi-card__rate muted">(sin denominador)</span>
+              }
+            </p>
+            <p class="pa-kpi-card__caption">
+              Campos sufficient en {{ a.retention.week.weekStart }}–{{ a.retention.week.weekEnd }} que
+              repitieron sufficient en {{ a.retention.nextWeek.weekStart }}–{{ a.retention.nextWeek.weekEnd }}.
+            </p>
+          } @else {
+            <p class="pa-kpi-card__value pa-kpi-card__value--unavailable">Todavía no disponible</p>
+            <p class="pa-kpi-card__caption">
+              La semana {{ a.retention.nextWeek.weekStart }}–{{ a.retention.nextWeek.weekEnd }} todavía
+              no terminó — la retención se puede afirmar recién cuando esa semana y la anterior
+              ({{ a.retention.week.weekStart }}–{{ a.retention.week.weekEnd }}) estén completas.
+              @if (a.retention.sufficientInWeekCount > 0 || a.retention.retainedInNextWeekCount > 0) {
+                Datos parciales hasta ahora: {{ a.retention.retainedInNextWeekCount }} /
+                {{ a.retention.sufficientInWeekCount }} — todavía puede cambiar.
+              }
+            </p>
+          }
         </div>
       </div>
-      <div class="pa-monitoring__actions">
-        <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ enabled: true }">
-          Ver programados activos →
-        </a>
-        <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ enabled: true, hasRuns: false }">
-          Ver activos sin corridas →
-        </a>
-      </div>
-    </div>
 
-    <h3 class="pa-subsection__title">Errores frecuentes (30 días)</h3>
-    @if (a.topAnalysisErrorsLast30Days.length) {
-      <div class="table-scroll table-scroll--plain">
-        <table>
-          <thead>
-            <tr>
-              <th>Mensaje</th>
-              <th>Cantidad</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (bucket of a.topAnalysisErrorsLast30Days; track bucket.message) {
+      <h3 class="pa-subsection__title">Time to First Technical Value</h3>
+      <div class="card pa-ttv-card">
+        <div class="pa-ttv-card__stats">
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.cohortUsersCount }}</span>
+            <span class="pa-ttv-card__label">Usuarios en la cohorte</span>
+          </div>
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.activatedUsersCount }}</span>
+            <span class="pa-ttv-card__label">Activados</span>
+          </div>
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.notActivatedUsersCount }}</span>
+            <span class="pa-ttv-card__label">Todavía no activados</span>
+          </div>
+        </div>
+        <div class="pa-ttv-card__percentiles">
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p50Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label">p50</span>
+          </div>
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p75Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label">p75</span>
+          </div>
+          <div class="pa-ttv-card__stat">
+            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p95Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label">p95</span>
+            @if (a.timeToFirstTechnicalValue.p95Hours === null && a.timeToFirstTechnicalValue.activatedUsersCount > 0) {
+              <span class="pa-ttv-card__note">Volumen insuficiente todavía</span>
+            }
+          </div>
+        </div>
+        <p class="pa-kpi-card__caption">
+          Tiempo entre el alta del usuario y su primer resultado sufficient — mediana y percentiles,
+          nunca promedio.
+        </p>
+      </div>
+
+      <h3 class="pa-subsection__title">Calidad de los resultados de la semana</h3>
+      @if (a.qualityBreakdown.totalSnapshots > 0) {
+        <div class="table-scroll table-scroll--plain">
+          <table>
+            <thead>
               <tr>
-                <td>{{ bucket.message }}</td>
-                <td>{{ bucket.count }}</td>
+                <th>Calidad</th>
+                <th>Cantidad</th>
+                <th>Proporción</th>
               </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      <a class="link-button" routerLink="/analysis" [queryParams]="{ status: 'Error' }">Ver diagnósticos fallidos →</a>
-    } @else {
-      <p class="empty-state">No hubo diagnósticos fallidos con mensaje de error en los últimos 30 días.</p>
+            </thead>
+            <tbody>
+              @for (entry of a.qualityBreakdown.breakdown; track entry.status) {
+                <tr>
+                  <td>
+                    <app-status-badge [label]="qualityLabels[entry.status]" [tone]="qualityTones[entry.status]" />
+                  </td>
+                  <td>{{ entry.count }}</td>
+                  <td>{{ formatPercent(entry.proportion) ?? '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-state">Todavía no hay snapshots semanales para esta semana.</p>
+      }
     }
-  }
   }
 </section>

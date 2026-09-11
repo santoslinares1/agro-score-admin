@@ -1,38 +1,50 @@
-import { DecimalPipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 
 import {
   AdminProductAnalytics,
-  ProductAnalyticsFunnelStage,
-  ProductAnalyticsInsightSeverity,
+  WeeklySnapshotDataQuality,
 } from '../../../core/models/product-analytics.model';
 import { ProductAnalyticsService } from '../../../core/services/product-analytics.service';
 import { StatusBadgeComponent, StatusTone } from '../../../shared/components/status-badge/status-badge.component';
 
-const SEVERITY_LABELS: Record<ProductAnalyticsInsightSeverity, string> = {
-  critical: 'Crítico',
-  warning: 'Atención',
-  opportunity: 'Oportunidad',
-  info: 'Info',
+const QUALITY_LABELS: Record<WeeklySnapshotDataQuality, string> = {
+  sufficient: 'Sufficient',
+  partial: 'Partial',
+  insufficient: 'Insufficient',
 };
 
-const SEVERITY_TONES: Record<ProductAnalyticsInsightSeverity, StatusTone> = {
-  critical: 'error',
-  warning: 'warning',
-  opportunity: 'info',
-  info: 'info',
+// 'partial'/'insufficient' NUNCA se pintan como "error" (ver el ticket) — 'warning'/'neutral' son
+// los tonos más cercanos a "calidad reducida", no "algo salió mal".
+const QUALITY_TONES: Record<WeeklySnapshotDataQuality, StatusTone> = {
+  sufficient: 'success',
+  partial: 'warning',
+  insufficient: 'neutral',
 };
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function shiftDateOnly(dateOnly: string, days: number): string {
+  const [year, month, day] = dateOnly.split('-').map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day) + days * MS_PER_DAY);
+  return shifted.toISOString().slice(0, 10);
+}
 
 /**
- * Admin PR 4: sección "Embudo de uso" del Dashboard — carga /admin/product-analytics por su
- * cuenta (no recibe datos por @Input de DashboardComponent) para que un error acá nunca tumbe el
- * resto del Dashboard, que ya terminó de cargar /admin/metrics de forma independiente.
+ * KPIs P0 (auditoría de KPIs + Decision 1/2) — sección "Entrega técnica" del Dashboard. Reemplaza
+ * el "Embudo de uso" (Admin PR 4), que mezclaba users/fields/schedules/runs/emails en una sola
+ * secuencia de "conversión" que nunca fue un funnel de cohorte real. Carga /admin/product-analytics
+ * por su cuenta (no recibe datos por @Input de DashboardComponent) — mismo criterio que antes: un
+ * error acá nunca tumba el resto del Dashboard.
+ *
+ * Todo el copy usa deliberadamente "entrega técnica" / "resultado técnicamente utilizable", nunca
+ * "valor real" — estas métricas miden si el pipeline entregó un resultado sufficient, no si un
+ * humano lo abrió, lo leyó o lo encontró útil (eso no se mide en este ticket).
  */
 @Component({
   selector: 'app-product-analytics',
   standalone: true,
-  imports: [DecimalPipe, RouterLink, StatusBadgeComponent],
+  imports: [DatePipe, StatusBadgeComponent],
   templateUrl: './product-analytics.component.html',
   styleUrl: './product-analytics.component.css',
 })
@@ -42,35 +54,62 @@ export class ProductAnalyticsComponent implements OnInit {
   protected readonly analytics = signal<AdminProductAnalytics | null>(null);
   protected readonly loading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
+  // Fecha (YYYY-MM-DD) dentro de la semana pedida — undefined = "última semana completa" (default
+  // del backend). Nunca se calcula la semana en el frontend: siempre se refleja period.week que
+  // devuelve la respuesta.
+  private readonly requestedWeek = signal<string | undefined>(undefined);
+
+  protected readonly qualityLabels = QUALITY_LABELS;
+  protected readonly qualityTones = QUALITY_TONES;
+
+  protected readonly isCurrentWeekView = computed(() => this.requestedWeek() === undefined);
 
   ngOnInit(): void {
     this.load();
   }
 
-  protected severityLabel(severity: ProductAnalyticsInsightSeverity): string {
-    return SEVERITY_LABELS[severity];
-  }
-
-  protected severityTone(severity: ProductAnalyticsInsightSeverity): StatusTone {
-    return SEVERITY_TONES[severity];
-  }
-
-  // Ancho de la barra de cada etapa relativo a la PRIMERA etapa del funnel (no a la etapa
-  // anterior, que es lo que ya muestra conversionFromPrevious) — así la barra se lee de un
-  // vistazo como "qué fracción del punto de partida llegó hasta acá".
-  protected barWidthPercent(stage: ProductAnalyticsFunnelStage, funnel: ProductAnalyticsFunnelStage[]): number {
-    const first = funnel[0]?.count ?? 0;
-    if (first <= 0) {
-      return 0;
+  protected previousWeek(): void {
+    const week = this.analytics()?.period.week;
+    if (!week) {
+      return;
     }
-    return Math.min(100, Math.round((stage.count / first) * 100));
+    this.requestedWeek.set(shiftDateOnly(week.weekStart, -7));
+    this.load();
+  }
+
+  protected nextWeek(): void {
+    const week = this.analytics()?.period.week;
+    if (!week) {
+      return;
+    }
+    this.requestedWeek.set(shiftDateOnly(week.weekStart, 7));
+    this.load();
+  }
+
+  protected backToLatestWeek(): void {
+    this.requestedWeek.set(undefined);
+    this.load();
+  }
+
+  protected formatPercent(rate: number | null): string | null {
+    return rate === null ? null : `${(rate * 100).toFixed(1)}%`;
+  }
+
+  protected formatHours(hours: number | null): string | null {
+    if (hours === null) {
+      return null;
+    }
+    if (hours < 48) {
+      return `${hours.toFixed(1)} h`;
+    }
+    return `${(hours / 24).toFixed(1)} días`;
   }
 
   private load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.productAnalyticsService.getProductAnalytics().subscribe({
+    this.productAnalyticsService.getProductAnalytics(this.requestedWeek()).subscribe({
       next: (analytics) => {
         this.analytics.set(analytics);
         this.loading.set(false);

@@ -24,23 +24,47 @@ function buildMetrics(overrides: Partial<AdminMetrics> = {}): AdminMetrics {
   };
 }
 
-// Admin PR 4: app-product-analytics (dentro del Dashboard) inyecta su propio
+// KPIs P0: app-product-analytics (dentro del Dashboard) inyecta su propio
 // ProductAnalyticsService — sin este mock, TestBed intenta resolver HttpClient real. Todos los
 // tests de este describe usan el mismo fixture "vacío": lo que le pasa a product-analytics no es
 // lo que están cubriendo, eso vive en product-analytics.component.spec.ts.
 function buildEmptyProductAnalytics(): AdminProductAnalytics {
+  const week = { weekStart: '2026-08-31', weekEnd: '2026-09-06' };
   return {
     generatedAt: new Date().toISOString(),
-    funnel: [],
-    insights: [],
-    weeklyMonitoring: {
-      totalFields: 0,
-      activeSchedules: 0,
-      activeSchedulesWithoutRuns: 0,
-      schedulesWithRuns: 0,
-      sentEmails: 0,
+    period: { week, timezone: 'America/Argentina/Cordoba' },
+    coverage: {
+      scheduleHistory: { availableFrom: null, complete: false },
+      analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
+      nonCanonicalSchedules: { count: 0 },
     },
-    topAnalysisErrorsLast30Days: [],
+    northStar: { week, usableFieldsCount: 0, eligibleFieldsCount: 0, rate: null },
+    activation: { eligibleUsersCount: 0, activatedUsersCount: 0, rate: null },
+    timeToFirstTechnicalValue: {
+      cohortUsersCount: 0,
+      activatedUsersCount: 0,
+      notActivatedUsersCount: 0,
+      p50Hours: null,
+      p75Hours: null,
+      p95Hours: null,
+    },
+    retention: {
+      week,
+      nextWeek: { weekStart: '2026-09-07', weekEnd: '2026-09-13' },
+      periodComplete: false,
+      sufficientInWeekCount: 0,
+      retainedInNextWeekCount: 0,
+      rate: null,
+    },
+    qualityBreakdown: {
+      week,
+      totalSnapshots: 0,
+      breakdown: [
+        { status: 'sufficient', count: 0, proportion: null },
+        { status: 'partial', count: 0, proportion: null },
+        { status: 'insufficient', count: 0, proportion: null },
+      ],
+    },
   };
 }
 
