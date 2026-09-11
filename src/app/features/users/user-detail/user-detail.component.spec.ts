@@ -3,8 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 
+import { AdminUser } from '../../../core/models/user.model';
 import { AdminUserDetail } from '../../../core/models/user-detail.model';
 import { UserDetailService } from '../../../core/services/user-detail.service';
+import { UsersService } from '../../../core/services/users.service';
 import { UserDetailComponent } from './user-detail.component';
 
 function buildDetail(overrides: Partial<AdminUserDetail> = {}): AdminUserDetail {
@@ -41,6 +43,11 @@ function buildDetail(overrides: Partial<AdminUserDetail> = {}): AdminUserDetail 
 describe('UserDetailComponent (Admin PR 7)', () => {
   let fixture: ComponentFixture<UserDetailComponent>;
   let serviceSpy: jasmine.SpyObj<UserDetailService>;
+  // MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): lista completa de métodos, no solo
+  // 'markActivationAssistanceStarted' — un spy incompleto puede enmascarar un TypeError real
+  // lanzado dentro de un callback `next`/`error` de RxJS (hallazgo ya documentado en
+  // users.component.spec.ts / weekly-analysis-history.component.spec.ts de agro-score-web).
+  let usersServiceSpy: jasmine.SpyObj<UsersService>;
 
   function setup(
     config: {
@@ -51,6 +58,15 @@ describe('UserDetailComponent (Admin PR 7)', () => {
     } = {},
   ): void {
     serviceSpy = jasmine.createSpyObj('UserDetailService', ['get']);
+    usersServiceSpy = jasmine.createSpyObj('UsersService', [
+      'list',
+      'create',
+      'update',
+      'deactivate',
+      'createInvitation',
+      'requestPasswordReset',
+      'markActivationAssistanceStarted',
+    ]);
 
     if (config.pending) {
       serviceSpy.get.and.returnValue(config.pending.asObservable());
@@ -65,6 +81,7 @@ describe('UserDetailComponent (Admin PR 7)', () => {
       providers: [
         provideRouter([]),
         { provide: UserDetailService, useValue: serviceSpy },
+        { provide: UsersService, useValue: usersServiceSpy },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -499,5 +516,133 @@ describe('UserDetailComponent (Admin PR 7)', () => {
     expect(el.textContent).not.toContain('undefined');
     expect(el.textContent).not.toContain('null');
     expect(el.textContent).not.toContain('NaN');
+  });
+
+  // MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): única acción mutante permitida en
+  // esta pantalla, de otro modo solo-lectura (ver "no muestra botones mutantes" arriba).
+  describe('Asistencia de activación (MEASUREMENT GAP P1-06)', () => {
+    function findAssistanceButton(el: HTMLElement): HTMLButtonElement | undefined {
+      return Array.from(el.querySelectorAll<HTMLButtonElement>('button')).find((b) =>
+        b.textContent?.includes('Marcar inicio de asistencia'),
+      );
+    }
+
+    function buildUser(overrides: Partial<AdminUser> = {}): AdminUser {
+      return {
+        id: 'user-1',
+        email: 'ana@example.com',
+        fullName: 'Ana Test',
+        role: 'user',
+        isActive: true,
+        createdAt: '2026-08-01T10:00:00.000Z',
+        updatedAt: '2026-08-01T10:00:00.000Z',
+        activationAssistanceStartedAt: null,
+        ...overrides,
+      };
+    }
+
+    it('estado sin marcar: muestra el texto "no registrada" y el botón de acción', () => {
+      setup({ detail: buildDetail({ user: buildUser() }) });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Asistencia de activación no registrada.');
+      expect(findAssistanceButton(el)).toBeTruthy();
+    });
+
+    it('estado marcado: muestra la fecha, nunca el botón, ni ningún input de fecha editable', () => {
+      setup({
+        detail: buildDetail({
+          user: buildUser({ activationAssistanceStartedAt: '2026-09-01T12:00:00.000Z' }),
+        }),
+      });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Asistencia iniciada el');
+      expect(el.textContent).not.toContain('no registrada');
+      expect(findAssistanceButton(el)).toBeFalsy();
+      // Nunca un input de fecha editable en ningún estado de esta sección — la fecha es de
+      // solo-lectura, fijada exclusivamente por el backend (ver el ticket: "nunca permitir editar
+      // manualmente la fecha").
+      expect(el.querySelector('input[type="date"], input[type="datetime-local"]')).toBeFalsy();
+    });
+
+    it('confirmación cancelada: no llama al backend ni cambia el estado', () => {
+      setup({ detail: buildDetail({ user: buildUser() }) });
+      spyOn(window, 'confirm').and.returnValue(false);
+      const el = fixture.nativeElement as HTMLElement;
+
+      findAssistanceButton(el)?.click();
+
+      expect(window.confirm).toHaveBeenCalled();
+      expect(usersServiceSpy.markActivationAssistanceStarted).not.toHaveBeenCalled();
+      expect(el.textContent).toContain('Asistencia de activación no registrada.');
+    });
+
+    it('confirmación aceptada: llama a UsersService.markActivationAssistanceStarted con el id del usuario', () => {
+      setup({ detail: buildDetail({ user: buildUser() }) });
+      spyOn(window, 'confirm').and.returnValue(true);
+      usersServiceSpy.markActivationAssistanceStarted.and.returnValue(
+        of(buildUser({ activationAssistanceStartedAt: '2026-09-01T12:00:00.000Z' })),
+      );
+      const el = fixture.nativeElement as HTMLElement;
+
+      findAssistanceButton(el)?.click();
+
+      expect(usersServiceSpy.markActivationAssistanceStarted).toHaveBeenCalledWith('user-1');
+    });
+
+    it('éxito: actualiza la UI a "iniciada el …", oculta el botón, y no vuelve a pedir el detalle completo', () => {
+      setup({ detail: buildDetail({ user: buildUser() }) });
+      spyOn(window, 'confirm').and.returnValue(true);
+      usersServiceSpy.markActivationAssistanceStarted.and.returnValue(
+        of(buildUser({ activationAssistanceStartedAt: '2026-09-01T12:00:00.000Z' })),
+      );
+      let el = fixture.nativeElement as HTMLElement;
+
+      findAssistanceButton(el)?.click();
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Asistencia iniciada el');
+      expect(findAssistanceButton(el)).toBeFalsy();
+      // La única llamada de red de todo este flujo es la de marcar — nunca se vuelve a llamar
+      // UserDetailService.get para refrescar fields/analyses/scheduledAnalysis/auditLogs, que no
+      // cambiaron como efecto de esta acción.
+      expect(serviceSpy.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('error: conserva el estado previo (sigue "no registrada" y el botón sigue disponible) y muestra un error acotado', () => {
+      setup({ detail: buildDetail({ user: buildUser() }) });
+      spyOn(window, 'confirm').and.returnValue(true);
+      usersServiceSpy.markActivationAssistanceStarted.and.returnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
+      let el = fixture.nativeElement as HTMLElement;
+
+      findAssistanceButton(el)?.click();
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('Asistencia de activación no registrada.');
+      expect(findAssistanceButton(el)).toBeTruthy();
+      expect(el.querySelector('.error-banner')?.textContent).toContain(
+        'No se pudo marcar el inicio de asistencia.',
+      );
+    });
+
+    it('no se puede re-ejecutar desde la UI una vez marcado: sin botón, un click en el contenedor no dispara nada nuevo', () => {
+      setup({
+        detail: buildDetail({
+          user: buildUser({ activationAssistanceStartedAt: '2026-09-01T12:00:00.000Z' }),
+        }),
+      });
+
+      // markAssistanceStarted() está protegido incluso si algo externo lo invocara directamente
+      // (defensa en profundidad, no solo ausencia del botón en el DOM).
+      (fixture.componentInstance as unknown as { markAssistanceStarted(): void })
+        .markAssistanceStarted();
+
+      expect(usersServiceSpy.markActivationAssistanceStarted).not.toHaveBeenCalled();
+    });
   });
 });

@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AdminUserDetail } from '../../../core/models/user-detail.model';
 import { UserDetailService } from '../../../core/services/user-detail.service';
+import { UsersService } from '../../../core/services/users.service';
 import { CopyableIdComponent } from '../../../shared/components/copyable-id/copyable-id.component';
 import { StatusBadgeComponent, StatusTone } from '../../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
@@ -37,6 +38,13 @@ const ROLE_LABELS: Record<string, string> = {
   user: 'Usuario',
 };
 
+// Mismo criterio que users.component.ts — cada componente que llama a UsersService define su
+// propia copia local en vez de un util compartido (no hay uno hoy en este repo).
+function apiErrorMessage(err: unknown, fallback: string): string {
+  const message = (err as { error?: { message?: string | string[] } })?.error?.message;
+  return Array.isArray(message) ? message.join(', ') : (message ?? fallback);
+}
+
 /**
  * Admin PR 7: vista de detalle de UN usuario, solo lectura — consolida en una pantalla lo que hoy
  * exige saltar entre Usuarios/Campos/Lotes/Diagnósticos/Programados/Auditoría. Reusa (nunca
@@ -62,6 +70,7 @@ const ROLE_LABELS: Record<string, string> = {
 })
 export class UserDetailComponent implements OnInit {
   private readonly userDetailService = inject(UserDetailService);
+  private readonly usersService = inject(UsersService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly userId = signal('');
@@ -69,6 +78,12 @@ export class UserDetailComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  // MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): único estado mutante de esta
+  // pantalla (ver el test "no muestra botones mutantes" — Editar/Generar reset/Desactivar siguen
+  // ausentes acá a propósito; esta es la única excepción, explícitamente pedida por el ticket).
+  protected readonly assistanceSubmitting = signal(false);
+  protected readonly assistanceError = signal<string | null>(null);
 
   protected readonly analysisStatusTone = analysisStatusTone;
   protected readonly fieldAnalysisStatusLabel = fieldAnalysisStatusLabel;
@@ -103,6 +118,53 @@ export class UserDetailComponent implements OnInit {
 
   protected activeTone(isActive: boolean): StatusTone {
     return isActive ? 'success' : 'neutral';
+  }
+
+  /**
+   * MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): un owner/admin confirma
+   * explícitamente que el equipo empezó a asistir MATERIALMENTE a este usuario — nunca se dispara
+   * solo, nunca desde crear la cuenta/invitación, nunca desde ningún otro flujo de esta pantalla.
+   *
+   * Set-once real en el backend (ver UsersService.markActivationAssistanceStarted en la API): acá
+   * solo se pide confirmación explícita y se refleja el resultado — nunca se permite reintentar
+   * desde la UI una vez que `detail().user.activationAssistanceStartedAt` quedó poblado (el botón
+   * deja de renderizarse, ver template), y nunca se acepta editar/backdatear la fecha (no hay
+   * ningún input de fecha en este flujo).
+   */
+  protected markAssistanceStarted(): void {
+    const current = this.detail();
+    if (!current || current.user.activationAssistanceStartedAt) {
+      return;
+    }
+
+    if (
+      !confirm(
+        `¿Marcar el inicio de asistencia de activación para ${current.user.fullName} (${current.user.email})?\n\n` +
+          'Esta acción es permanente: no se puede editar ni deshacer, y afecta la interpretación de KPIs de ' +
+          'self-service vs. asistido para este usuario a partir de este momento.',
+      )
+    ) {
+      return;
+    }
+
+    this.assistanceSubmitting.set(true);
+    this.assistanceError.set(null);
+
+    this.usersService.markActivationAssistanceStarted(current.user.id).subscribe({
+      next: (updatedUser) => {
+        this.assistanceSubmitting.set(false);
+        // Solo actualiza el usuario dentro del detalle ya cargado — nunca vuelve a pedir/recalcular
+        // fields/analyses/scheduledAnalysis/auditLogs, que no cambiaron como efecto de esta acción.
+        this.detail.update((d) => (d ? { ...d, user: updatedUser } : d));
+      },
+      error: (error: unknown) => {
+        this.assistanceSubmitting.set(false);
+        // Nunca toca `detail()` ante un error — el usuario sigue viendo el estado previo intacto.
+        this.assistanceError.set(
+          apiErrorMessage(error, 'No se pudo marcar el inicio de asistencia.'),
+        );
+      },
+    });
   }
 
   private load(): void {

@@ -9,6 +9,17 @@ export interface AdminUser {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /**
+   * MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): cuándo un owner/admin marcó
+   * explícitamente, desde esta pantalla, que el equipo empezó a asistir MATERIALMENTE a este
+   * usuario — nunca inferido de quién creó la cuenta/invitación, ni de ningún otro dato ya
+   * existente (ver UserDetailComponent.markAssistanceStarted). `null`/ausente significa "sin
+   * marcar" — que puede ser self-service real O simplemente que el equipo todavía no lo marcó;
+   * ambos casos son indistinguibles a propósito (ver el ticket de origen), nunca se interpreta acá
+   * como self-service. Optional en vez de requerido para no romper los fixtures existentes de
+   * AdminUser en el resto del repo (mismo criterio que companyName arriba).
+   */
+  activationAssistanceStartedAt?: string | null;
 }
 
 export interface CreateAdminUserPayload {

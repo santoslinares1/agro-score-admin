@@ -36,6 +36,34 @@
     </a>
   </div>
 
+  <!-- MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): única mutación permitida en esta
+       pantalla, de otro modo solo-lectura (ver user-detail.component.spec.ts). -->
+  <section class="fd-section">
+    <h2 class="fd-section__title">Asistencia de activación</h2>
+    @if (d.user.activationAssistanceStartedAt) {
+      <p>Asistencia iniciada el {{ d.user.activationAssistanceStartedAt | date: 'medium' }}.</p>
+    } @else {
+      <p>Asistencia de activación no registrada.</p>
+      <p class="muted ud-summary-note">
+        Marcar esta acción es permanente: no se puede editar ni deshacer, y afecta cómo se
+        interpretan los KPIs de self-service vs. asistido para este usuario a partir de este
+        momento. No la marques por crear la cuenta o la invitación — solo cuando el equipo empiece
+        a asistir materialmente al usuario con el flujo del producto.
+      </p>
+      <button
+        type="button"
+        class="link-button"
+        [disabled]="assistanceSubmitting()"
+        (click)="markAssistanceStarted()"
+      >
+        {{ assistanceSubmitting() ? 'Marcando…' : 'Marcar inicio de asistencia' }}
+      </button>
+      @if (assistanceError()) {
+        <p class="error-banner">{{ assistanceError() }}</p>
+      }
+    }
+  </section>
+
   <section class="fd-section">
     <h2 class="fd-section__title">Resumen de cuenta</h2>
     <div class="fd-summary-grid">

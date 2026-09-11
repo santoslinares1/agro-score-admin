@@ -56,4 +56,13 @@ export class UsersService {
       {},
     );
   }
+
+  // MEASUREMENT GAP P1-06 ("Self-service frente a asistencia"): nunca manda body — el backend
+  // genera el timestamp en Postgres y rechaza estructuralmente cualquier fecha/actor/modo enviado
+  // por el cliente (ver AdminService.markActivationAssistanceStarted). Set-once en el backend: si
+  // el usuario ya estaba marcado, esta llamada responde éxito con el mismo timestamp, sin fabricar
+  // una segunda transición.
+  markActivationAssistanceStarted(userId: string): Observable<AdminUser> {
+    return this.http.post<AdminUser>(`${this.apiUrl}/admin/users/${userId}/activation-assistance`, {});
+  }
 }
