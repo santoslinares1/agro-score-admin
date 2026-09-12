@@ -37,6 +37,14 @@ export type ProductAnalyticsCoverage = {
   nonCanonicalSchedules: {
     count: number;
   };
+  /** Cobertura histórica de `Analysis.completedAt` — insumo directo de `activation` y
+   * `timeToFirstTechnicalValue` (ambas ignoran cualquier Analysis sin `completedAt`). `false`
+   * (incluyendo `availableFrom: null`) significa que esas dos métricas pueden estar subestimando
+   * usuarios cuyo primer resultado sufficient es anterior al rollout de esa columna. */
+  analysisTimingAvailability: {
+    availableFrom: string | null;
+    complete: boolean;
+  };
 };
 
 export type NorthStarMetric = {

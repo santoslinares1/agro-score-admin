@@ -6,6 +6,18 @@
     abrió o leyó ese resultado — eso no está instrumentado.
   </p>
 
+  <!-- UX-002 (agroscore-product-ux-review): fuera del @if de loading/error/success — visible
+       siempre, incluso ante un error de la primera carga, para poder reintentar sin recargar la
+       página. generatedAt solo se muestra cuando ya hay una respuesta cargada. -->
+  <div class="pa-toolbar">
+    @if (analytics(); as a) {
+      <span class="pa-toolbar__generated-at">Actualizado {{ a.generatedAt | date: 'short' }}</span>
+    }
+    <button type="button" class="link-button" [disabled]="loading()" (click)="load()">
+      {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
+    </button>
+  </div>
+
   @if (loading()) {
     <p class="loading-state">Cargando entrega técnica...</p>
   } @else if (errorMessage()) {
@@ -33,6 +45,17 @@
             todavía no tiene ningún registro.
           }
           El denominador de North Star puede estar subestimado.
+        </p>
+      }
+      @if (!a.coverage.analysisTimingAvailability.complete) {
+        <p class="pa-coverage-note">
+          Cobertura de duración de análisis incompleta: la marca de finalización (`completedAt`)
+          @if (a.coverage.analysisTimingAvailability.availableFrom) {
+            recién es confiable desde {{ a.coverage.analysisTimingAvailability.availableFrom | date: 'short' }}.
+          } @else {
+            todavía no tiene ningún registro.
+          }
+          Activation y Time to First Technical Value pueden estar subestimados para análisis anteriores a esa fecha.
         </p>
       }
       @if (a.coverage.analysisClassificationScan.truncated) {

@@ -1,15 +1,40 @@
 <div class="page-header">
   <h1>Dashboard</h1>
+  <div class="page-header__actions">
+    <!-- UX-002 (agroscore-product-ux-review): visible en cualquier estado (loading/error/success)
+         para poder reintentar sin recargar la página completa, no solo "refrescar" con éxito. -->
+    <button type="button" class="btn" [disabled]="loading()" (click)="load()">
+      {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
+    </button>
+  </div>
 </div>
 
 @if (loading()) {
   <div class="loading-state">Cargando métricas...</div>
 } @else if (errorMessage()) {
   <div class="error-banner">{{ errorMessage() }}</div>
-} @else {
-  @if (metrics(); as m) {
-  <app-operational-alerts [alerts]="operationalAlerts(m)" />
+}
 
+<!-- UX-003 (agroscore-product-ux-review): alertas antes que el inventario. Misma condición de
+     éxito que el chequeo original (nunca junto a loading()/errorMessage(), incluso si metrics()
+     todavía guarda un valor de una carga anterior) — separada del banner de arriba solo para
+     poder intercalar app-product-analytics entre alertas e inventario sin duplicar ese banner. -->
+@if (!loading() && !errorMessage()) {
+  @if (metrics(); as m) {
+    <app-operational-alerts [alerts]="operationalAlerts(m)" />
+  }
+}
+
+<!-- UX-001 (agroscore-product-ux-review): app-product-analytics hace su propio fetch de
+     /admin/product-analytics, independiente de /admin/metrics — no debe depender del loading/
+     error/success de este componente. Ver product-analytics.component.ts para el fetch/estado
+     propios. UX-003: posicionado deliberadamente acá, inmediatamente después de las alertas y
+     antes del inventario (Usuarios/Campos/...). -->
+<app-product-analytics />
+
+<!-- UX-003: resto del inventario — mismo criterio de éxito que el bloque de alertas de arriba. -->
+@if (!loading() && !errorMessage()) {
+  @if (metrics(); as m) {
   <section class="metrics-section">
     <h2 class="metrics-section__title">Usuarios</h2>
     <div class="metrics-grid">
@@ -17,8 +42,11 @@
         <span class="metric-card__label">Totales</span>
         <span class="metric-card__value">{{ m.totalUsers }}</span>
       </div>
+      <!-- UX-005 (agroscore-product-ux-review): "Activos" prometía uso/engagement; el dato real
+           es isActive=true (cuenta no desactivada, ver UsersService.countActive) — no tiene
+           relación con actividad reciente. Solo cambia el label, m.activeUsers no se toca. -->
       <div class="metric-card card">
-        <span class="metric-card__label">Activos</span>
+        <span class="metric-card__label">Cuentas habilitadas</span>
         <span class="metric-card__value">{{ m.activeUsers }}</span>
       </div>
       <div class="metric-card card">
@@ -87,14 +115,19 @@
   <section class="metrics-section">
     <h2 class="metrics-section__title">Salud operativa</h2>
     <div class="metrics-grid">
-      <div class="metric-card card">
+      <!-- UX-004 (agroscore-product-ux-review): mismo filtro (?status=Error) que ya usa la alerta
+           "diagnósticos fallidos en los últimos 30 días" — hereda la misma imprecisión que esa
+           alerta a propósito: el backend no soporta un filtro por fecha, así que el link muestra
+           TODOS los errores, no solo los de la ventana de 7/30 días. No se inventa un filtro
+           nuevo acá. -->
+      <a class="metric-card card metric-card--link" routerLink="/analysis" [queryParams]="{ status: 'Error' }">
         <span class="metric-card__label">Fallidos (7 días)</span>
         <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast7Days ?? 0 }}</span>
-      </div>
-      <div class="metric-card card">
+      </a>
+      <a class="metric-card card metric-card--link" routerLink="/analysis" [queryParams]="{ status: 'Error' }">
         <span class="metric-card__label">Fallidos (30 días)</span>
         <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast30Days ?? 0 }}</span>
-      </div>
+      </a>
       <div class="metric-card card">
         <span class="metric-card__label">Tasa de fallo (7 días)</span>
         <span class="metric-card__value">
@@ -113,30 +146,33 @@
         <span class="metric-card__label">Duración promedio (7 días)</span>
         <span class="metric-card__value">{{ m.averageAnalysisDurationMsLast7Days | duration }}</span>
       </div>
+      <!-- UX-004: sin cambios — /admin/users no tiene hoy un filtro equivalente a hasAnalysis
+           (verificado en ListUsersQueryDto: solo userId/paginación). No se inventa un query
+           param inexistente en el backend; queda como texto plano a propósito. -->
       <div class="metric-card card">
         <span class="metric-card__label">Usuarios sin diagnóstico</span>
         <span class="metric-card__value">{{ m.usersWithNoAnalysis ?? 0 }}</span>
       </div>
-      <div class="metric-card card">
+      <!-- UX-004: mismo filtro (?hasAnalysis=false) que ya usa la alerta "campos sin diagnóstico". -->
+      <a class="metric-card card metric-card--link" routerLink="/fields" [queryParams]="{ hasAnalysis: false }">
         <span class="metric-card__label">Campos sin diagnóstico</span>
         <span class="metric-card__value">{{ m.fieldsWithNoAnalysis ?? 0 }}</span>
-      </div>
+      </a>
     </div>
   </section>
 
   <section class="metrics-section">
     <h2 class="metrics-section__title">Solicitudes de acceso</h2>
     <div class="status-summary">
+      <!-- UX-004: ListAccessRequestsQueryDto ya acepta `status` — mismo filtro, nunca inventado. -->
       @for (s of accessRequestStatusOrder; track s) {
-        <div class="status-summary__item">
+        <a class="status-summary__item status-summary__item--link" routerLink="/access-requests" [queryParams]="{ status: s }">
           <app-status-badge [label]="accessRequestStatusLabels[s]" [tone]="accessRequestStatusTone(s)" />
           <span class="status-summary__count">{{ m.accessRequestsByStatus?.[s] ?? 0 }}</span>
-        </div>
+        </a>
       }
     </div>
   </section>
-
-  <app-product-analytics />
 
   <div class="lists-grid">
     <div class="card">

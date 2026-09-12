@@ -72,7 +72,11 @@ export class DashboardComponent implements OnInit {
     return buildOperationalAlerts(m);
   }
 
-  private load(): void {
+  // UX-002 (agroscore-product-ux-review): protected (no private) para que el botón "Actualizar"
+  // del template pueda invocarlo directamente — mismo método que ngOnInit, sin duplicar la
+  // lógica de fetch. El botón se deshabilita mientras loading() es true (ver template) para que
+  // un doble click no encole una segunda request.
+  protected load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 

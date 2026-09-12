@@ -105,7 +105,11 @@ export class ProductAnalyticsComponent implements OnInit {
     return `${(hours / 24).toFixed(1)} días`;
   }
 
-  private load(): void {
+  // UX-002 (agroscore-product-ux-review): protected (no private) para que el botón "Actualizar"
+  // del template pueda invocarlo directamente — mismo método que ngOnInit/previousWeek/nextWeek,
+  // sin duplicar la lógica de fetch. Siempre respeta requestedWeek() tal cual está: refrescar
+  // nunca vuelve silenciosamente a la última semana completa.
+  protected load(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 

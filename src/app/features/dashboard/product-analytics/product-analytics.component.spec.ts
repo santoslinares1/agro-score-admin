@@ -16,6 +16,7 @@ function buildAnalytics(overrides: Partial<AdminProductAnalytics> = {}): AdminPr
       scheduleHistory: { availableFrom: '2026-08-01T00:00:00.000Z', complete: true },
       analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
       nonCanonicalSchedules: { count: 0 },
+      analysisTimingAvailability: { availableFrom: '2026-08-01T00:00:00.000Z', complete: true },
     },
     northStar: { week: WEEK, usableFieldsCount: 0, eligibleFieldsCount: 0, rate: null },
     activation: { eligibleUsersCount: 0, activatedUsersCount: 0, rate: null },
@@ -213,6 +214,7 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
             scheduleHistory: { availableFrom: null, complete: false },
             analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
             nonCanonicalSchedules: { count: 0 },
+            analysisTimingAvailability: { availableFrom: null, complete: false },
           },
         }),
       });
@@ -223,6 +225,48 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
       expect(Array.from(notes).some((n) => n.textContent?.includes('histórico'))).toBe(true);
     });
 
+    it('cobertura de completedAt incompleta: muestra la nota, nunca la oculta', () => {
+      const { fixture } = createComponent({
+        analytics: buildAnalytics({
+          coverage: {
+            scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
+            analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
+            nonCanonicalSchedules: { count: 0 },
+            analysisTimingAvailability: { availableFrom: '2026-08-18T00:00:00.000Z', complete: false },
+          },
+        }),
+      });
+      const el = fixture.nativeElement as HTMLElement;
+      const notes = Array.from(el.querySelectorAll('.pa-coverage-note'));
+
+      expect(notes.some((n) => n.textContent?.includes('duración de análisis'))).toBe(true);
+      expect(el.textContent).toContain('Time to First Technical Value');
+    });
+
+    it('cobertura de completedAt sin ningún registro: muestra la nota sin fecha', () => {
+      const { fixture } = createComponent({
+        analytics: buildAnalytics({
+          coverage: {
+            scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
+            analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
+            nonCanonicalSchedules: { count: 0 },
+            analysisTimingAvailability: { availableFrom: null, complete: false },
+          },
+        }),
+      });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.textContent).toContain('todavía no tiene ningún registro');
+    });
+
+    it('cobertura de completedAt completa: no muestra la nota', () => {
+      const { fixture } = createComponent({ analytics: buildAnalytics() });
+      const el = fixture.nativeElement as HTMLElement;
+      const notes = Array.from(el.querySelectorAll('.pa-coverage-note'));
+
+      expect(notes.some((n) => n.textContent?.includes('duración de análisis'))).toBe(false);
+    });
+
     it('scan de activation truncado: muestra la nota con scanned/limit', () => {
       const { fixture } = createComponent({
         analytics: buildAnalytics({
@@ -230,6 +274,7 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
             scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
             analysisClassificationScan: { scanned: 5000, limit: 5000, truncated: true },
             nonCanonicalSchedules: { count: 0 },
+            analysisTimingAvailability: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
           },
         }),
       });
@@ -253,6 +298,7 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
             scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
             analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
             nonCanonicalSchedules: { count: 3 },
+            analysisTimingAvailability: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
           },
         }),
       });
@@ -272,6 +318,7 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
             scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
             analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
             nonCanonicalSchedules: { count: 0 },
+            analysisTimingAvailability: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
           },
         }),
       });
@@ -287,6 +334,7 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
             scheduleHistory: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
             analysisClassificationScan: { scanned: 0, limit: 5000, truncated: false },
             nonCanonicalSchedules: { count: 1 },
+            analysisTimingAvailability: { availableFrom: '2026-01-01T00:00:00.000Z', complete: true },
           },
         }),
       });
@@ -431,6 +479,90 @@ describe('ProductAnalyticsComponent (KPIs P0)', () => {
 
       expect(el.textContent).toContain('2026-01-05');
       expect(el.textContent).toContain('2026-01-11');
+    });
+  });
+
+  describe('UX-002 (agroscore-product-ux-review): refresco manual y generatedAt', () => {
+    // Selector estructural, no texto: "Actualizando…" NO contiene "Actualizar" como substring
+    // (difieren justo en el 10mo carácter — 'r' vs 'n'), así que buscar por texto era frágil
+    // exactamente en el estado que estos tests necesitan (loading=true). `.pa-toolbar` es único
+    // en este componente.
+    function findRefreshButton(fixture: ComponentFixture<ProductAnalyticsComponent>): HTMLButtonElement {
+      const button = fixture.nativeElement.querySelector('.pa-toolbar button') as HTMLButtonElement | null;
+      if (!button) {
+        throw new Error('No se encontró el botón de refresco (.pa-toolbar button) en el template.');
+      }
+      return button;
+    }
+
+    it('muestra generatedAt formateado una vez que hay datos cargados', () => {
+      const generatedAt = '2026-09-10T15:30:00.000Z';
+      const { fixture } = createComponent({ analytics: buildAnalytics({ generatedAt }) });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('.pa-toolbar__generated-at')?.textContent).toContain('Actualizado');
+    });
+
+    it('NEGATIVO: durante la carga inicial (sin datos previos), no muestra generatedAt', () => {
+      const pending = new Subject<AdminProductAnalytics>();
+      const { fixture } = createComponent({ pending });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('.pa-toolbar__generated-at')).toBeFalsy();
+    });
+
+    it('NEGATIVO: el botón "Actualizar" está deshabilitado mientras loading() es true', () => {
+      const pending = new Subject<AdminProductAnalytics>();
+      const { fixture } = createComponent({ pending });
+
+      expect(findRefreshButton(fixture).disabled).toBe(true);
+    });
+
+    it('POSITIVO: con la semana por defecto, "Actualizar" vuelve a pedir la misma semana (undefined, no una nueva)', () => {
+      const { fixture, spy } = createComponent({ analytics: buildAnalytics() });
+      spy.getProductAnalytics.calls.reset();
+      spy.getProductAnalytics.and.returnValue(of(buildAnalytics()));
+
+      findRefreshButton(fixture).click();
+
+      expect(spy.getProductAnalytics).toHaveBeenCalledWith(undefined);
+    });
+
+    it('POSITIVO (invariante del ticket): tras navegar a "Semana anterior", "Actualizar" pide ESA semana, nunca vuelve a la última completa', () => {
+      const { fixture, spy } = createComponent({ analytics: buildAnalytics() });
+
+      const previousWeekButton = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b) =>
+        (b as HTMLButtonElement).textContent?.includes('Semana anterior'),
+      ) as HTMLButtonElement;
+      previousWeekButton.click(); // pide '2026-08-24', requestedWeek() queda en ese valor
+
+      spy.getProductAnalytics.calls.reset();
+      spy.getProductAnalytics.and.returnValue(of(buildAnalytics()));
+
+      findRefreshButton(fixture).click();
+
+      expect(spy.getProductAnalytics).toHaveBeenCalledWith('2026-08-24');
+    });
+
+    it('NEGATIVO / recovery: si la carga inicial falla, "Actualizar" sigue presente y habilitado para reintentar', () => {
+      const { fixture } = createComponent({ error: true });
+      const el = fixture.nativeElement as HTMLElement;
+
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+      const button = findRefreshButton(fixture);
+      expect(button.disabled).toBe(false);
+    });
+
+    it('POSITIVO: clickear "Actualizar" en estado de error dispara un nuevo intento', () => {
+      const { fixture, spy } = createComponent({ error: true });
+      spy.getProductAnalytics.calls.reset();
+      spy.getProductAnalytics.and.returnValue(of(buildAnalytics()));
+
+      findRefreshButton(fixture).click();
+      fixture.detectChanges();
+
+      expect(spy.getProductAnalytics).toHaveBeenCalledTimes(1);
+      expect(fixture.nativeElement.querySelector('.error-banner')).toBeFalsy();
     });
   });
 

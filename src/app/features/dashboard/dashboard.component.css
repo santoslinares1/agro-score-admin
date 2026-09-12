@@ -62,6 +62,25 @@
   color: var(--color-info);
 }
 
+/* UX-004 (agroscore-product-ux-review): las cards/badges que sí tienen un filtro real ya
+   construido son <a> en vez de <div> — mismo aspecto visual que las cards existentes, sin el
+   subrayado/color de link por defecto del navegador. Mismo patrón que .ud-summary-card--link
+   (user-detail.component.css). */
+.metric-card--link,
+.status-summary__item--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.metric-card--link:hover {
+  border-color: var(--color-text-muted);
+}
+
+.status-summary__item--link:hover .status-summary__count {
+  text-decoration: underline;
+}
+
 .lists-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
