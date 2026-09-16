@@ -1,407 +1,491 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Análisis programados</h1>
 </div>
 
-<p class="muted" style="margin-bottom: 1rem">
+<p class="muted mb-4 text-[0.8rem] text-muted">
   Seguimiento de corridas automáticas, veredicto técnico y envío de reportes semanales.
 </p>
 
 @if (fieldIdFilter(); as filteredFieldId) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: programados del campo #{{ filteredFieldId.slice(0, 8) }}…
-    <button type="button" class="link-button" (click)="clearFieldIdFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearFieldIdFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (userIdFilter(); as filteredUserId) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: programados del usuario #{{ filteredUserId.slice(0, 8) }}…
-    <button type="button" class="link-button" (click)="clearUserIdFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearUserIdFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (enabledFilter() !== undefined) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: solo {{ enabledFilter() ? 'activos' : 'inactivos' }}
-    <button type="button" class="link-button" (click)="clearEnabledFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearEnabledFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (hasRunsFilter() !== undefined) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: {{ hasRunsFilter() ? 'con corridas registradas' : 'sin ninguna corrida registrada' }}
-    <button type="button" class="link-button" (click)="clearHasRunsFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearHasRunsFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 
 @if (summary(); as s) {
-  <div class="scheduled-summary">
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.total }}</span>
-      <span class="scheduled-summary__label">Programaciones</span>
+  <div class="scheduled-summary mb-5 flex flex-wrap gap-6 rounded-card border border-border bg-surface px-5 py-[0.9rem]">
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.total }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Programaciones</span>
     </div>
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.active }}</span>
-      <span class="scheduled-summary__label">Activas</span>
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.active }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Activas</span>
     </div>
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.inactive }}</span>
-      <span class="scheduled-summary__label">Inactivas</span>
-    </div>
-    <div class="scheduled-summary__item" [class.scheduled-summary__item--warning]="s.withoutRuns > 0">
-      <span class="scheduled-summary__value">{{ s.withoutRuns }}</span>
-      <span class="scheduled-summary__label">Sin corridas</span>
-    </div>
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.lastRunOk }}</span>
-      <span class="scheduled-summary__label">Última corrida OK</span>
-    </div>
-    <div class="scheduled-summary__item" [class.scheduled-summary__item--error]="s.lastRunFailed > 0">
-      <span class="scheduled-summary__value">{{ s.lastRunFailed }}</span>
-      <span class="scheduled-summary__label">Última corrida fallida</span>
-    </div>
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.mailSentLast7Days }}</span>
-      <span class="scheduled-summary__label">Mails enviados (7 días)</span>
-    </div>
-    <div class="scheduled-summary__item">
-      <span class="scheduled-summary__value">{{ s.mailSentLast30Days }}</span>
-      <span class="scheduled-summary__label">Mails enviados (30 días)</span>
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.inactive }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Inactivas</span>
     </div>
     <div
-      class="scheduled-summary__item"
+      class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]"
+      [class.scheduled-summary__item--warning]="s.withoutRuns > 0"
+    >
+      <span
+        class="scheduled-summary__value text-[1.3rem] font-bold"
+        [class]="s.withoutRuns > 0 ? 'text-warning' : ''"
+        >{{ s.withoutRuns }}</span
+      >
+      <span class="scheduled-summary__label text-xs text-muted">Sin corridas</span>
+    </div>
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.lastRunOk }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Última corrida OK</span>
+    </div>
+    <div
+      class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]"
+      [class.scheduled-summary__item--error]="s.lastRunFailed > 0"
+    >
+      <span
+        class="scheduled-summary__value text-[1.3rem] font-bold"
+        [class]="s.lastRunFailed > 0 ? 'text-error' : ''"
+        >{{ s.lastRunFailed }}</span
+      >
+      <span class="scheduled-summary__label text-xs text-muted">Última corrida fallida</span>
+    </div>
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.mailSentLast7Days }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Mails enviados (7 días)</span>
+    </div>
+    <div class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]">
+      <span class="scheduled-summary__value text-[1.3rem] font-bold">{{ s.mailSentLast30Days }}</span>
+      <span class="scheduled-summary__label text-xs text-muted">Mails enviados (30 días)</span>
+    </div>
+    <div
+      class="scheduled-summary__item flex min-w-[100px] flex-col gap-[0.15rem]"
       [class.scheduled-summary__item--warning]="s.mailPendingOrFailed > 0"
     >
-      <span class="scheduled-summary__value">{{ s.mailPendingOrFailed }}</span>
-      <span class="scheduled-summary__label">Mails pendientes / fallidos</span>
+      <span
+        class="scheduled-summary__value text-[1.3rem] font-bold"
+        [class]="s.mailPendingOrFailed > 0 ? 'text-warning' : ''"
+        >{{ s.mailPendingOrFailed }}</span
+      >
+      <span class="scheduled-summary__label text-xs text-muted">Mails pendientes / fallidos</span>
     </div>
   </div>
 }
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading()) {
-  <div class="loading-state">Cargando análisis programados...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando análisis programados...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay campos con seguimiento semanal configurado.</p>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No hay campos con seguimiento semanal configurado.
+  </p>
 } @else {
-  <div class="table-scroll">
-  <table>
-    <thead>
-      <tr>
-        <th>Campo</th>
-        <th>Usuario</th>
-        <th>Schedule</th>
-        <th>Próxima ejecución</th>
-        <th>Última corrida</th>
-        <th>Análisis</th>
-        <th>Veredicto técnico</th>
-        <th>Mail</th>
-        <th>Estado del flujo</th>
-        <th>Detalle</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items(); track item.id) {
+  <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+    <table>
+      <thead>
         <tr>
-          <td>
-            <a class="entity-link" routerLink="/fields" [queryParams]="{ fieldId: item.fieldId }">
-              {{ item.fieldName ?? '—' }}
-            </a>
-            <br />
-            <app-copyable-id [value]="item.fieldId" />
-          </td>
-          <td>
-            <a class="entity-link" routerLink="/users" [queryParams]="{ userId: item.userId }">
-              {{ item.userFullName ?? '—' }}
-            </a>
-            @if (item.userEmail) {
+          <th>Campo</th>
+          <th>Usuario</th>
+          <th>Schedule</th>
+          <th>Próxima ejecución</th>
+          <th>Última corrida</th>
+          <th>Análisis</th>
+          <th>Veredicto técnico</th>
+          <th>Mail</th>
+          <th>Estado del flujo</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td>
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                routerLink="/fields"
+                [queryParams]="{ fieldId: item.fieldId }"
+              >
+                {{ item.fieldName ?? '—' }}
+              </a>
               <br />
-              <span class="muted">{{ item.userEmail }}</span>
-            }
-          </td>
-          <td>
-            <app-status-badge
-              [label]="item.enabled ? 'Activo' : 'Inactivo'"
-              [tone]="scheduleTone(item.enabled)"
-            />
-            <br />
-            <span class="muted">{{ frequencyLabel(item.frequency) }}</span>
-          </td>
-          <td>{{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</td>
-          <td>
-            @if (item.latestRun; as run) {
-              <app-status-badge [label]="runStatusLabel(run.status)" [tone]="runStatusTone(run.status)" />
+              <app-copyable-id [value]="item.fieldId" />
+            </td>
+            <td>
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                routerLink="/users"
+                [queryParams]="{ userId: item.userId }"
+              >
+                {{ item.userFullName ?? '—' }}
+              </a>
+              @if (item.userEmail) {
+                <br />
+                <span class="muted text-[0.8rem] text-muted">{{ item.userEmail }}</span>
+              }
+            </td>
+            <td>
+              <app-status-badge
+                [label]="item.enabled ? 'Activo' : 'Inactivo'"
+                [tone]="scheduleTone(item.enabled)"
+              />
               <br />
-              <span class="muted">{{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</span>
-            } @else {
-              <span class="muted">Sin corridas</span>
-            }
-          </td>
-          <td>
-            @if (item.latestRun; as run) {
-              @if (run.analysisStatus) {
-                <app-status-badge [label]="run.analysisStatus" [tone]="analysisStatusTone(run.analysisStatus)" />
-                @if (run.analysisId) {
-                  <br />
-                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: run.analysisId }">
-                    Ver diagnóstico
-                  </a>
+              <span class="muted text-[0.8rem] text-muted">{{ frequencyLabel(item.frequency) }}</span>
+            </td>
+            <td>{{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</td>
+            <td>
+              @if (item.latestRun; as run) {
+                <app-status-badge [label]="runStatusLabel(run.status)" [tone]="runStatusTone(run.status)" />
+                <br />
+                <span class="muted text-[0.8rem] text-muted">{{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</span>
+              } @else {
+                <span class="muted text-[0.8rem] text-muted">Sin corridas</span>
+              }
+            </td>
+            <td>
+              @if (item.latestRun; as run) {
+                @if (run.analysisStatus) {
+                  <app-status-badge [label]="run.analysisStatus" [tone]="analysisStatusTone(run.analysisStatus)" />
+                  @if (run.analysisId) {
+                    <br />
+                    <a
+                      class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                      routerLink="/analysis"
+                      [queryParams]="{ analysisId: run.analysisId }"
+                    >
+                      Ver diagnóstico
+                    </a>
+                  }
+                } @else {
+                  <span class="muted text-[0.8rem] text-muted">Sin análisis</span>
                 }
               } @else {
-                <span class="muted">Sin análisis</span>
+                <span class="muted text-[0.8rem] text-muted">Sin corridas</span>
               }
-            } @else {
-              <span class="muted">Sin corridas</span>
-            }
-          </td>
-          <td class="verdict-cell">
-            @if (item.technicalVerdict; as verdict) {
-              <app-status-badge
-                [label]="generationStatusLabel(verdict.status)"
-                [tone]="generationStatusTone(verdict.status)"
-              />
-              @if (verdict.verdict) {
-                <br />
-                <span class="muted">{{ verdictLabel(verdict.verdict) }}</span>
-              }
-            } @else {
-              <span class="muted">Sin veredicto</span>
-            }
-          </td>
-          <td>
-            <app-status-badge [label]="mailStatusLabel(item)" [tone]="mailStatusTone(item)" />
-            @if (item.latestRun?.emailSentAt; as emailSentAt) {
-              <br />
-              <span class="muted">{{ emailSentAt | date: 'short' }}</span>
-            }
-          </td>
-          <td class="flow-state-cell">
-            @if (resolveFlowState(item); as flow) {
-              <app-status-badge
-                [label]="flowStateBadgeLabel(flow.blockingState)"
-                [tone]="flowStageTone(flow.blockingState)"
-              />
-              <p class="flow-state-cell__reason">{{ flow.blockingReason }}</p>
-            }
-          </td>
-          <td>
-            <button type="button" class="link-button detail-toggle" (click)="toggleExpanded(item.id)">
-              {{ isExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
-            </button>
-          </td>
-        </tr>
-        @if (isExpanded(item.id)) {
-          <tr class="verdict-detail-row">
-            <td colspan="10">
-              <div class="verdict-panel scheduled-detail">
-                @if (resolveFlowState(item); as flow) {
-                  <section class="flow-summary">
-                    <h3>Estado del flujo</h3>
-                    <p class="flow-summary__reason">{{ flow.blockingReason }}</p>
-                    <ul class="flow-summary__stages">
-                      <li>
-                        <app-status-badge [label]="flow.run.text" [tone]="flowStageTone(flow.run.state)" />
-                        <span class="flow-summary__stage-label">Corrida</span>
-                      </li>
-                      <li>
-                        <app-status-badge
-                          [label]="flow.analysis.text"
-                          [tone]="flowStageTone(flow.analysis.state)"
-                        />
-                        <span class="flow-summary__stage-label">Análisis</span>
-                      </li>
-                      <li>
-                        <app-status-badge
-                          [label]="flow.technicalVerdict.text"
-                          [tone]="flowStageTone(flow.technicalVerdict.state)"
-                        />
-                        <span class="flow-summary__stage-label">Veredicto técnico</span>
-                      </li>
-                      <li>
-                        <app-status-badge
-                          [label]="flow.weeklyVerdict.text"
-                          [tone]="flowStageTone(flow.weeklyVerdict.state)"
-                        />
-                        <span class="flow-summary__stage-label">Diagnóstico semanal</span>
-                      </li>
-                      <li>
-                        <app-status-badge [label]="flow.mail.text" [tone]="flowStageTone(flow.mail.state)" />
-                        <span class="flow-summary__stage-label">Mail</span>
-                      </li>
-                    </ul>
-                  </section>
+            </td>
+            <td class="verdict-cell flex max-w-[220px] flex-col items-start gap-[0.3rem] whitespace-nowrap text-[0.8rem]">
+              @if (item.technicalVerdict; as verdict) {
+                <app-status-badge
+                  [label]="generationStatusLabel(verdict.status)"
+                  [tone]="generationStatusTone(verdict.status)"
+                />
+                @if (verdict.verdict) {
+                  <br />
+                  <span class="muted text-[0.8rem] text-muted">{{ verdictLabel(verdict.verdict) }}</span>
                 }
-
-                <section>
-                  <h3>Schedule</h3>
-                  <ul class="verdict-panel__tech-data">
-                    <li>id: <app-copyable-id [value]="item.id" /></li>
-                    <li>enabled: {{ item.enabled }}</li>
-                    <li>frequency: {{ item.frequency }}</li>
-                    <li>nextRunAt: {{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</li>
-                    <li>lastRunAt: {{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</li>
-                    <li>lastStatus: {{ item.lastStatus ?? '—' }}</li>
-                    @if (item.lastErrorMessage) {
-                      <li>lastErrorMessage: {{ item.lastErrorMessage }}</li>
-                    }
-                  </ul>
-                </section>
-
-                <section>
-                  <h3>Última corrida</h3>
-                  @if (item.latestRun; as run) {
-                    <ul class="verdict-panel__tech-data">
-                      <li>run id: <app-copyable-id [value]="run.id" /></li>
-                      <li>status: {{ run.status }}</li>
-                      <li>
-                        analysisId:
-                        @if (run.analysisId; as analysisId) {
-                          <app-copyable-id [value]="analysisId" />
-                        } @else {
-                          —
-                        }
-                      </li>
-                      <li>analysisStatus: {{ run.analysisStatus ?? '—' }}</li>
-                      <li>startedAt: {{ run.startedAt ? (run.startedAt | date: 'short') : '—' }}</li>
-                      <li>completedAt: {{ run.completedAt ? (run.completedAt | date: 'short') : '—' }}</li>
-                      <li>failedAt: {{ run.failedAt ? (run.failedAt | date: 'short') : '—' }}</li>
-                      @if (run.errorMessage) {
-                        <li class="verdict-panel__error">errorMessage: {{ run.errorMessage }}</li>
-                      }
-                    </ul>
-                  } @else {
-                    <p class="muted">Este campo todavía no disparó ninguna corrida.</p>
-                  }
-                </section>
-
-                <section>
-                  <h3>Veredicto técnico</h3>
-                  @if (item.technicalVerdict; as verdict) {
-                    <div class="verdict-panel__meta">
-                      <app-status-badge
-                        [label]="'Estado: ' + generationStatusLabel(verdict.status)"
-                        [tone]="generationStatusTone(verdict.status)"
-                      />
-                      @if (verdict.verdict) {
-                        <app-status-badge
-                          [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
-                          [tone]="verdictTone(verdict.verdict)"
-                        />
-                      }
-                      @if (verdict.confidence) {
-                        <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
-                      }
-                    </div>
-                    <ul class="verdict-panel__tech-data">
-                      <li>Generator: {{ verdict.generator ?? '—' }}</li>
-                      <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
-                      <li>Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
-                      @if (verdict.errorMessage) {
-                        <li class="verdict-panel__error">errorMessage: {{ verdict.errorMessage }}</li>
-                      }
-                    </ul>
-                  } @else {
-                    <p class="muted">Este análisis no tiene veredicto técnico disponible.</p>
-                  }
-                </section>
-
-                <section>
-                  <h3>Diagnóstico semanal</h3>
-                  @if (item.weeklyTechnicalVerdict; as weekly) {
-                    <div class="verdict-panel__meta">
-                      <app-status-badge
-                        [label]="'Estado: ' + generationStatusLabel(weekly.status)"
-                        [tone]="generationStatusTone(weekly.status)"
-                      />
-                      @if (weekly.trend) {
-                        <app-status-badge
-                          [label]="'Tendencia: ' + trendLabel(weekly.trend)"
-                          [tone]="trendTone(weekly.trend)"
-                        />
-                      }
-                      @if (weekly.verdict) {
-                        <app-status-badge
-                          [label]="'Estado del campo: ' + verdictLabel(weekly.verdict)"
-                          [tone]="verdictTone(weekly.verdict)"
-                        />
-                      }
-                      @if (weekly.confidence) {
-                        <span class="muted">Confianza: {{ confidenceLabel(weekly.confidence) }}</span>
-                      }
-                    </div>
-
-                    @if (weekly.summary) {
-                      <p class="verdict-panel__summary">{{ weekly.summary }}</p>
-                    }
-
-                    @if (weekly.keyChanges.length) {
-                      <p class="verdict-panel__section-title">Cambios relevantes</p>
-                      <ul>
-                        @for (change of weekly.keyChanges; track change) {
-                          <li>{{ change }}</li>
-                        }
-                      </ul>
-                    }
-
-                    @if (weekly.areasToReview.length) {
-                      <p class="verdict-panel__section-title">Áreas a revisar</p>
-                      <ul>
-                        @for (area of weekly.areasToReview; track area) {
-                          <li>{{ area }}</li>
-                        }
-                      </ul>
-                    }
-
-                    @if (weekly.recommendations.length) {
-                      <p class="verdict-panel__section-title">Recomendaciones</p>
-                      <ul>
-                        @for (recommendation of weekly.recommendations; track recommendation) {
-                          <li>{{ recommendation }}</li>
-                        }
-                      </ul>
-                    }
-
-                    @if (weekly.limitations.length) {
-                      <p class="verdict-panel__section-title">Limitaciones</p>
-                      <ul>
-                        @for (limitation of weekly.limitations; track limitation) {
-                          <li>{{ limitation }}</li>
-                        }
-                      </ul>
-                    }
-
-                    @if (weekly.errorMessage) {
-                      <p class="verdict-panel__section-title verdict-panel__section-title--error">Error técnico</p>
-                      <p class="verdict-panel__error">{{ weekly.errorMessage }}</p>
-                    }
-
-                    <p class="verdict-panel__section-title">Datos técnicos</p>
-                    <ul class="verdict-panel__tech-data">
-                      <li>Generator: {{ weekly.generator ?? '—' }}</li>
-                      <li>Prompt version: {{ weekly.promptVersion ?? '—' }}</li>
-                      <li>Generated at: {{ weekly.generatedAt ? (weekly.generatedAt | date: 'short') : '—' }}</li>
-                      <li>Previous snapshot: {{ weekly.previousSnapshotId ?? '—' }}</li>
-                    </ul>
-                  } @else {
-                    <p class="muted">Diagnóstico semanal no disponible.</p>
-                  }
-                </section>
-
-                <section>
-                  <h3>Mail</h3>
-                  <ul class="verdict-panel__tech-data">
-                    <li>Estado: {{ mailStatusLabel(item) }}</li>
-                    <li>emailSentAt: {{ item.latestRun?.emailSentAt ? (item.latestRun?.emailSentAt | date: 'short') : '—' }}</li>
-                    <li>Destinatario: {{ item.userEmail ?? '—' }}</li>
-                  </ul>
-                </section>
-              </div>
+              } @else {
+                <span class="muted text-[0.8rem] text-muted">Sin veredicto</span>
+              }
+            </td>
+            <td>
+              <app-status-badge [label]="mailStatusLabel(item)" [tone]="mailStatusTone(item)" />
+              @if (item.latestRun?.emailSentAt; as emailSentAt) {
+                <br />
+                <span class="muted text-[0.8rem] text-muted">{{ emailSentAt | date: 'short' }}</span>
+              }
+            </td>
+            <td class="flow-state-cell max-w-[220px]">
+              @if (resolveFlowState(item); as flow) {
+                <app-status-badge
+                  [label]="flowStateBadgeLabel(flow.blockingState)"
+                  [tone]="flowStageTone(flow.blockingState)"
+                />
+                <p class="flow-state-cell__reason mt-[0.35rem] text-[0.78rem] text-muted">{{ flow.blockingReason }}</p>
+              }
+            </td>
+            <td>
+              <button
+                type="button"
+                class="link-button detail-toggle cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+                (click)="toggleExpanded(item.id)"
+              >
+                {{ isExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
+              </button>
             </td>
           </tr>
+          @if (isExpanded(item.id)) {
+            <tr class="verdict-detail-row">
+              <td colspan="10" class="bg-[#f8f9fb] px-5 py-4">
+                <div class="verdict-panel scheduled-detail grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-5">
+                  @if (resolveFlowState(item); as flow) {
+                    <section class="flow-summary col-span-full border-b border-border pb-3">
+                      <h3 class="mb-[0.4rem] text-[0.85rem]">Estado del flujo</h3>
+                      <p class="flow-summary__reason mb-3 text-[0.95rem] font-semibold">{{ flow.blockingReason }}</p>
+                      <ul class="flow-summary__stages m-0 flex flex-wrap list-none gap-5 p-0">
+                        <li class="flex flex-col items-start gap-[0.3rem]">
+                          <app-status-badge [label]="flow.run.text" [tone]="flowStageTone(flow.run.state)" />
+                          <span class="flow-summary__stage-label text-xs text-muted">Corrida</span>
+                        </li>
+                        <li class="flex flex-col items-start gap-[0.3rem]">
+                          <app-status-badge
+                            [label]="flow.analysis.text"
+                            [tone]="flowStageTone(flow.analysis.state)"
+                          />
+                          <span class="flow-summary__stage-label text-xs text-muted">Análisis</span>
+                        </li>
+                        <li class="flex flex-col items-start gap-[0.3rem]">
+                          <app-status-badge
+                            [label]="flow.technicalVerdict.text"
+                            [tone]="flowStageTone(flow.technicalVerdict.state)"
+                          />
+                          <span class="flow-summary__stage-label text-xs text-muted">Veredicto técnico</span>
+                        </li>
+                        <li class="flex flex-col items-start gap-[0.3rem]">
+                          <app-status-badge
+                            [label]="flow.weeklyVerdict.text"
+                            [tone]="flowStageTone(flow.weeklyVerdict.state)"
+                          />
+                          <span class="flow-summary__stage-label text-xs text-muted">Diagnóstico semanal</span>
+                        </li>
+                        <li class="flex flex-col items-start gap-[0.3rem]">
+                          <app-status-badge [label]="flow.mail.text" [tone]="flowStageTone(flow.mail.state)" />
+                          <span class="flow-summary__stage-label text-xs text-muted">Mail</span>
+                        </li>
+                      </ul>
+                    </section>
+                  }
+
+                  <section>
+                    <h3 class="mb-[0.4rem] text-[0.85rem]">Schedule</h3>
+                    <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                      <li class="break-words">id: <app-copyable-id [value]="item.id" /></li>
+                      <li class="break-words">enabled: {{ item.enabled }}</li>
+                      <li class="break-words">frequency: {{ item.frequency }}</li>
+                      <li class="break-words">nextRunAt: {{ item.nextRunAt ? (item.nextRunAt | date: 'short') : '—' }}</li>
+                      <li class="break-words">lastRunAt: {{ item.lastRunAt ? (item.lastRunAt | date: 'short') : '—' }}</li>
+                      <li class="break-words">lastStatus: {{ item.lastStatus ?? '—' }}</li>
+                      @if (item.lastErrorMessage) {
+                        <li class="break-words">lastErrorMessage: {{ item.lastErrorMessage }}</li>
+                      }
+                    </ul>
+                  </section>
+
+                  <section>
+                    <h3 class="mb-[0.4rem] text-[0.85rem]">Última corrida</h3>
+                    @if (item.latestRun; as run) {
+                      <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                        <li class="break-words">run id: <app-copyable-id [value]="run.id" /></li>
+                        <li class="break-words">status: {{ run.status }}</li>
+                        <li class="break-words">
+                          analysisId:
+                          @if (run.analysisId; as analysisId) {
+                            <app-copyable-id [value]="analysisId" />
+                          } @else {
+                            —
+                          }
+                        </li>
+                        <li class="break-words">analysisStatus: {{ run.analysisStatus ?? '—' }}</li>
+                        <li class="break-words">startedAt: {{ run.startedAt ? (run.startedAt | date: 'short') : '—' }}</li>
+                        <li class="break-words">completedAt: {{ run.completedAt ? (run.completedAt | date: 'short') : '—' }}</li>
+                        <li class="break-words">failedAt: {{ run.failedAt ? (run.failedAt | date: 'short') : '—' }}</li>
+                        @if (run.errorMessage) {
+                          <li class="verdict-panel__error m-0 max-w-[60ch] break-words text-error">errorMessage: {{ run.errorMessage }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="muted text-[0.8rem] text-muted">Este campo todavía no disparó ninguna corrida.</p>
+                    }
+                  </section>
+
+                  <section>
+                    <h3 class="mb-[0.4rem] text-[0.85rem]">Veredicto técnico</h3>
+                    @if (item.technicalVerdict; as verdict) {
+                      <div class="verdict-panel__meta mb-[0.6rem] flex flex-wrap items-center gap-2">
+                        <app-status-badge
+                          [label]="'Estado: ' + generationStatusLabel(verdict.status)"
+                          [tone]="generationStatusTone(verdict.status)"
+                        />
+                        @if (verdict.verdict) {
+                          <app-status-badge
+                            [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
+                            [tone]="verdictTone(verdict.verdict)"
+                          />
+                        }
+                        @if (verdict.confidence) {
+                          <span class="muted text-[0.8rem] text-muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+                        }
+                      </div>
+                      <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                        <li class="break-words">Generator: {{ verdict.generator ?? '—' }}</li>
+                        <li class="break-words">Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+                        <li class="break-words">Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+                        @if (verdict.errorMessage) {
+                          <li class="verdict-panel__error m-0 max-w-[60ch] break-words text-error">errorMessage: {{ verdict.errorMessage }}</li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="muted text-[0.8rem] text-muted">Este análisis no tiene veredicto técnico disponible.</p>
+                    }
+                  </section>
+
+                  <section>
+                    <h3 class="mb-[0.4rem] text-[0.85rem]">Diagnóstico semanal</h3>
+                    @if (item.weeklyTechnicalVerdict; as weekly) {
+                      <div class="verdict-panel__meta mb-[0.6rem] flex flex-wrap items-center gap-2">
+                        <app-status-badge
+                          [label]="'Estado: ' + generationStatusLabel(weekly.status)"
+                          [tone]="generationStatusTone(weekly.status)"
+                        />
+                        @if (weekly.trend) {
+                          <app-status-badge
+                            [label]="'Tendencia: ' + trendLabel(weekly.trend)"
+                            [tone]="trendTone(weekly.trend)"
+                          />
+                        }
+                        @if (weekly.verdict) {
+                          <app-status-badge
+                            [label]="'Estado del campo: ' + verdictLabel(weekly.verdict)"
+                            [tone]="verdictTone(weekly.verdict)"
+                          />
+                        }
+                        @if (weekly.confidence) {
+                          <span class="muted text-[0.8rem] text-muted">Confianza: {{ confidenceLabel(weekly.confidence) }}</span>
+                        }
+                      </div>
+
+                      @if (weekly.summary) {
+                        <p class="verdict-panel__summary mb-[0.6rem] max-w-[60ch]">{{ weekly.summary }}</p>
+                      }
+
+                      @if (weekly.keyChanges.length) {
+                        <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                          Cambios relevantes
+                        </p>
+                        <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                          @for (change of weekly.keyChanges; track change) {
+                            <li>{{ change }}</li>
+                          }
+                        </ul>
+                      }
+
+                      @if (weekly.areasToReview.length) {
+                        <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                          Áreas a revisar
+                        </p>
+                        <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                          @for (area of weekly.areasToReview; track area) {
+                            <li>{{ area }}</li>
+                          }
+                        </ul>
+                      }
+
+                      @if (weekly.recommendations.length) {
+                        <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                          Recomendaciones
+                        </p>
+                        <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                          @for (recommendation of weekly.recommendations; track recommendation) {
+                            <li>{{ recommendation }}</li>
+                          }
+                        </ul>
+                      }
+
+                      @if (weekly.limitations.length) {
+                        <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                          Limitaciones
+                        </p>
+                        <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                          @for (limitation of weekly.limitations; track limitation) {
+                            <li>{{ limitation }}</li>
+                          }
+                        </ul>
+                      }
+
+                      @if (weekly.errorMessage) {
+                        <p class="verdict-panel__section-title verdict-panel__section-title--error mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-error">
+                          Error técnico
+                        </p>
+                        <p class="verdict-panel__error m-0 max-w-[60ch] text-error">{{ weekly.errorMessage }}</p>
+                      }
+
+                      <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                        Datos técnicos
+                      </p>
+                      <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                        <li class="break-words">Generator: {{ weekly.generator ?? '—' }}</li>
+                        <li class="break-words">Prompt version: {{ weekly.promptVersion ?? '—' }}</li>
+                        <li class="break-words">Generated at: {{ weekly.generatedAt ? (weekly.generatedAt | date: 'short') : '—' }}</li>
+                        <li class="break-words">Previous snapshot: {{ weekly.previousSnapshotId ?? '—' }}</li>
+                      </ul>
+                    } @else {
+                      <p class="muted text-[0.8rem] text-muted">Diagnóstico semanal no disponible.</p>
+                    }
+                  </section>
+
+                  <section>
+                    <h3 class="mb-[0.4rem] text-[0.85rem]">Mail</h3>
+                    <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                      <li class="break-words">Estado: {{ mailStatusLabel(item) }}</li>
+                      <li class="break-words">emailSentAt: {{ item.latestRun?.emailSentAt ? (item.latestRun?.emailSentAt | date: 'short') : '—' }}</li>
+                      <li class="break-words">Destinatario: {{ item.userEmail ?? '—' }}</li>
+                    </ul>
+                  </section>
+                </div>
+              </td>
+            </tr>
+          }
         }
-      }
-    </tbody>
-  </table>
+      </tbody>
+    </table>
   </div>
 
   <app-pagination-controls

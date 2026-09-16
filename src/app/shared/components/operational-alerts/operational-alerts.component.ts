@@ -18,6 +18,16 @@ const SEVERITY_TONES: Record<OperationalAlertSeverity, StatusTone> = {
   info: 'info',
 };
 
+// Mismo criterio que TONE_CLASSES en status-badge.component.ts: `alert.severity` es
+// dinámico, así que las clases de Tailwind se resuelven acá (el único lugar que las usa)
+// en vez de repetir un lookup por severidad en cada consumidor.
+const SEVERITY_BORDER_CLASSES: Record<OperationalAlertSeverity, string> = {
+  critical: 'border-l-error',
+  warning: 'border-l-warning',
+  opportunity: 'border-l-info',
+  info: 'border-l-info',
+};
+
 /**
  * Admin PR 1: franja "Alertas operativas" arriba del Dashboard — recibe la lista ya armada por
  * buildOperationalAlerts() (shared/utils/operational-alerts.util.ts) y solo se ocupa de pintarla.
@@ -28,9 +38,10 @@ const SEVERITY_TONES: Record<OperationalAlertSeverity, StatusTone> = {
   standalone: true,
   imports: [RouterLink, StatusBadgeComponent],
   templateUrl: './operational-alerts.component.html',
-  styleUrl: './operational-alerts.component.css',
 })
 export class OperationalAlertsComponent {
+  protected readonly SEVERITY_BORDER_CLASSES = SEVERITY_BORDER_CLASSES;
+
   readonly alerts = input.required<OperationalAlert[]>();
 
   protected severityLabel(severity: OperationalAlertSeverity): string {

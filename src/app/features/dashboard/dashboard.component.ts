@@ -38,7 +38,6 @@ const ACCESS_REQUEST_STATUS_ORDER: AccessRequestStatus[] = [
     ProductAnalyticsComponent,
   ],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
   private readonly metricsService = inject(MetricsService);

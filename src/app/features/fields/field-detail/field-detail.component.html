@@ -1,31 +1,53 @@
 @if (loading()) {
-  <div class="loading-state">Cargando campo...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando campo...</div>
 } @else if (notFound()) {
-  <div class="page-header">
+  <div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
     <h1>Campo no encontrado</h1>
   </div>
-  <p class="empty-state">No encontramos un campo con ese ID — puede que haya sido eliminado.</p>
-  <a class="link-button" routerLink="/fields">← Volver a Campos</a>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No encontramos un campo con ese ID — puede que haya sido eliminado.
+  </p>
+  <a
+    class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+    routerLink="/fields"
+    >← Volver a Campos</a
+  >
 } @else if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
-  <a class="link-button" routerLink="/fields">← Volver a Campos</a>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
+  <a
+    class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+    routerLink="/fields"
+    >← Volver a Campos</a
+  >
 } @else {
 @if (detail(); as d) {
-  <a class="link-button fd-back" routerLink="/fields">← Volver a Campos</a>
+  <a
+    class="link-button fd-back mb-3 inline-block cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+    routerLink="/fields"
+    >← Volver a Campos</a
+  >
 
-  <div class="page-header">
+  <div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
     <div>
       <h1>{{ d.field.name }}</h1>
-      <p class="fd-header__owner">
+      <p class="fd-header__owner my-[0.35rem] text-[0.9rem]">
         Dueño:
-        <a class="entity-link" routerLink="/users" [queryParams]="{ userId: d.field.ownerId }">
+        <a
+          class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+          routerLink="/users"
+          [queryParams]="{ userId: d.field.ownerId }"
+        >
           {{ d.field.ownerFullName }}
         </a>
-        <span class="muted">({{ d.field.ownerEmail }})</span>
+        <span class="muted text-[0.8rem] text-muted">({{ d.field.ownerEmail }})</span>
       </p>
       <app-copyable-id [value]="d.field.id" />
     </div>
-    <div class="fd-header__badges">
+    <div class="fd-header__badges flex items-start gap-2">
       <app-status-badge
         [label]="fieldAnalysisStatusLabel(d.field.analysisStatus)"
         [tone]="fieldAnalysisStatusTone(d.field.analysisStatus)"
@@ -34,114 +56,137 @@
     </div>
   </div>
 
-  <div class="fd-header__actions">
-    <a class="link-button" routerLink="/analysis" [queryParams]="{ fieldId: d.field.id }">Ver diagnósticos</a>
-    <a class="link-button" routerLink="/lots" [queryParams]="{ fieldId: d.field.id }">Ver lotes</a>
-    <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: d.field.id }">Ver programados</a>
+  <div class="fd-header__actions mb-6 flex flex-wrap gap-5">
+    <a
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      routerLink="/analysis"
+      [queryParams]="{ fieldId: d.field.id }"
+      >Ver diagnósticos</a
+    >
+    <a
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      routerLink="/lots"
+      [queryParams]="{ fieldId: d.field.id }"
+      >Ver lotes</a
+    >
+    <a
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      routerLink="/scheduled-analysis"
+      [queryParams]="{ fieldId: d.field.id }"
+      >Ver programados</a
+    >
   </div>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Resumen operativo</h2>
-    <div class="fd-summary-grid">
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Lotes</span>
-        <span class="fd-summary-card__value">{{ d.field.lotsCount }}</span>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Resumen operativo</h2>
+    <div class="fd-summary-grid grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Lotes</span>
+        <span class="fd-summary-card__value text-[0.95rem] font-semibold">{{ d.field.lotsCount }}</span>
       </div>
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Último análisis</span>
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Último análisis</span>
         @if (d.latestAnalysis; as la) {
-          <span class="fd-summary-card__value">{{ la.createdAt | date: 'short' }}</span>
+          <span class="fd-summary-card__value text-[0.95rem] font-semibold">{{ la.createdAt | date: 'short' }}</span>
         } @else {
-          <span class="fd-summary-card__value muted">Sin diagnóstico</span>
+          <span class="fd-summary-card__value muted text-[0.95rem] font-semibold text-muted">Sin diagnóstico</span>
         }
       </div>
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Score</span>
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Score</span>
         @if (d.latestAnalysis?.score != null) {
-          <span class="fd-summary-card__value">
+          <span class="fd-summary-card__value text-[0.95rem] font-semibold">
             {{ d.latestAnalysis!.score }} · {{ scoreBandLabel(d.latestAnalysis!.score!) }}
           </span>
         } @else {
-          <span class="fd-summary-card__value muted">No disponible</span>
+          <span class="fd-summary-card__value muted text-[0.95rem] font-semibold text-muted">No disponible</span>
         }
       </div>
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Veredicto técnico</span>
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Veredicto técnico</span>
         @if (d.technicalVerdict?.status === 'generated') {
           <app-status-badge
             [label]="verdictLabel(d.technicalVerdict!.verdict)"
             [tone]="verdictTone(d.technicalVerdict!.verdict)"
           />
         } @else {
-          <span class="fd-summary-card__value muted">No disponible</span>
+          <span class="fd-summary-card__value muted text-[0.95rem] font-semibold text-muted">No disponible</span>
         }
       </div>
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Monitoreo semanal</span>
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Monitoreo semanal</span>
         <app-status-badge
           [label]="monitoringLabel(d.weeklyMonitoring)"
           [tone]="monitoringTone(d.weeklyMonitoring)"
         />
       </div>
-      <div class="fd-summary-card">
-        <span class="fd-summary-card__label">Último mail</span>
+      <div class="fd-summary-card flex flex-col gap-[0.4rem] rounded-card border border-border bg-surface px-4 py-[0.85rem]">
+        <span class="fd-summary-card__label text-[0.7rem] uppercase tracking-[0.03em] text-muted">Último mail</span>
         @if (d.scheduledRuns[0]; as lastRun) {
           <app-status-badge [label]="runMailStatusLabel(lastRun)" [tone]="runMailStatusTone(lastRun)" />
         } @else {
-          <span class="fd-summary-card__value muted">Sin corridas</span>
+          <span class="fd-summary-card__value muted text-[0.95rem] font-semibold text-muted">Sin corridas</span>
         }
       </div>
     </div>
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Último análisis</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Último análisis</h2>
     @if (d.latestAnalysis; as la) {
-      <div class="card">
+      <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
         <p>
           <app-status-badge [label]="la.status" [tone]="analysisStatusTone(la.status)" />
         </p>
-        <dl class="fd-dl">
-          <dt>Fecha</dt>
-          <dd>{{ la.createdAt | date: 'short' }}</dd>
-          <dt>Duración</dt>
-          <dd>{{ la.durationMs | duration }}</dd>
+        <dl class="fd-dl my-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-[0.4rem]">
+          <dt class="text-[0.85rem] text-muted">Fecha</dt>
+          <dd class="m-0 text-[0.85rem]">{{ la.createdAt | date: 'short' }}</dd>
+          <dt class="text-[0.85rem] text-muted">Duración</dt>
+          <dd class="m-0 text-[0.85rem]">{{ la.durationMs | duration }}</dd>
           @if (la.score != null) {
-            <dt>Score</dt>
-            <dd>{{ la.score }} · {{ scoreBandLabel(la.score) }}</dd>
+            <dt class="text-[0.85rem] text-muted">Score</dt>
+            <dd class="m-0 text-[0.85rem]">{{ la.score }} · {{ scoreBandLabel(la.score) }}</dd>
           }
         </dl>
-        <a class="link-button" routerLink="/analysis" [queryParams]="{ analysisId: la.id }">
+        <a
+          class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+          routerLink="/analysis"
+          [queryParams]="{ analysisId: la.id }"
+        >
           Ver en Diagnósticos →
         </a>
       </div>
     } @else {
-      <p class="empty-state">Este campo todavía no tiene diagnósticos.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Este campo todavía no tiene diagnósticos.
+      </p>
     }
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Veredicto técnico</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Veredicto técnico</h2>
     @if (d.technicalVerdict; as verdict) {
       @if (verdict.status === 'generated') {
         <div class="verdict-panel">
-          <div class="verdict-panel__meta">
+          <div class="verdict-panel__meta mb-[0.6rem] flex flex-wrap items-center gap-2">
             <app-status-badge
               [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
               [tone]="verdictTone(verdict.verdict)"
             />
             @if (verdict.confidence) {
-              <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+              <span class="muted text-[0.8rem] text-muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
             }
           </div>
 
           @if (verdict.summary) {
-            <p class="verdict-panel__summary">{{ verdict.summary }}</p>
+            <p class="verdict-panel__summary mb-[0.6rem] max-w-[60ch]">{{ verdict.summary }}</p>
           }
 
           @if (verdict.keyFindings.length) {
-            <p class="verdict-panel__section-title">Hallazgos</p>
-            <ul>
+            <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+              Hallazgos
+            </p>
+            <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
               @for (finding of verdict.keyFindings; track finding) {
                 <li>{{ finding }}</li>
               }
@@ -149,8 +194,10 @@
           }
 
           @if (verdict.recommendations.length) {
-            <p class="verdict-panel__section-title">Recomendaciones</p>
-            <ul>
+            <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+              Recomendaciones
+            </p>
+            <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
               @for (recommendation of verdict.recommendations; track recommendation) {
                 <li>{{ recommendation }}</li>
               }
@@ -158,38 +205,44 @@
           }
 
           @if (verdict.limitations.length) {
-            <p class="verdict-panel__section-title">Limitaciones</p>
-            <ul>
+            <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+              Limitaciones
+            </p>
+            <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
               @for (limitation of verdict.limitations; track limitation) {
                 <li>{{ limitation }}</li>
               }
             </ul>
           }
 
-          <details class="fd-tech-details">
-            <summary>Datos técnicos</summary>
-            <ul class="verdict-panel__tech-data">
-              <li>Generator: {{ verdict.generator ?? '—' }}</li>
-              <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
-              <li>Generado: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+          <details class="fd-tech-details mt-3 text-[0.85rem]">
+            <summary class="cursor-pointer text-muted">Datos técnicos</summary>
+            <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+              <li class="break-words">Generator: {{ verdict.generator ?? '—' }}</li>
+              <li class="break-words">Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+              <li class="break-words">Generado: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
             </ul>
           </details>
         </div>
       } @else {
-        <p class="empty-state">Veredicto técnico no disponible para este campo.</p>
+        <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+          Veredicto técnico no disponible para este campo.
+        </p>
         @if (verdict.status === 'failed' && verdict.errorMessage) {
-          <p class="verdict-panel__error">{{ verdict.errorMessage }}</p>
+          <p class="verdict-panel__error m-0 max-w-[60ch] text-error">{{ verdict.errorMessage }}</p>
         }
       }
     } @else {
-      <p class="empty-state">Veredicto técnico no disponible para este campo.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Veredicto técnico no disponible para este campo.
+      </p>
     }
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Lotes ({{ d.field.lotsCount }})</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Lotes ({{ d.field.lotsCount }})</h2>
     @if (d.lots.length) {
-      <div class="table-scroll table-scroll--plain">
+      <div class="table-scroll table-scroll--plain overflow-x-auto">
         <table>
           <thead>
             <tr>
@@ -212,17 +265,23 @@
         </table>
       </div>
     } @else {
-      <p class="empty-state">Este campo todavía no tiene lotes cargados.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Este campo todavía no tiene lotes cargados.
+      </p>
     }
-    <a class="link-button" routerLink="/lots" [queryParams]="{ fieldId: d.field.id }">
+    <a
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      routerLink="/lots"
+      [queryParams]="{ fieldId: d.field.id }"
+    >
       Ver lotes en pantalla completa →
     </a>
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Historial de análisis (últimos {{ d.analyses.length }})</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Historial de análisis (últimos {{ d.analyses.length }})</h2>
     @if (d.analyses.length) {
-      <div class="table-scroll">
+      <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
         <table>
           <thead>
             <tr>
@@ -244,7 +303,7 @@
                   @if (row.score != null) {
                     {{ row.score }}
                   } @else {
-                    <span class="muted">—</span>
+                    <span class="muted text-[0.8rem] text-muted">—</span>
                   }
                 </td>
                 <td>{{ row.durationMs | duration }}</td>
@@ -252,12 +311,16 @@
                   @if (row.reviewedAt) {
                     {{ row.reviewedAt | date: 'short' }}
                   } @else {
-                    <span class="muted">—</span>
+                    <span class="muted text-[0.8rem] text-muted">—</span>
                   }
                 </td>
-                <td class="muted">{{ row.errorMessage ?? '—' }}</td>
+                <td class="muted text-[0.8rem] text-muted">{{ row.errorMessage ?? '—' }}</td>
                 <td>
-                  <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: row.id }">
+                  <a
+                    class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                    routerLink="/analysis"
+                    [queryParams]="{ analysisId: row.id }"
+                  >
                     Ver →
                   </a>
                 </td>
@@ -267,38 +330,46 @@
         </table>
       </div>
     } @else {
-      <p class="empty-state">Este campo todavía no tiene diagnósticos.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Este campo todavía no tiene diagnósticos.
+      </p>
     }
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Monitoreo semanal</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Monitoreo semanal</h2>
     @if (d.weeklyMonitoring.active) {
-      <div class="card">
+      <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
         <p><app-status-badge label="Activo" [tone]="'info'" /></p>
-        <dl class="fd-dl">
-          <dt>Frecuencia</dt>
-          <dd>{{ d.weeklyMonitoring.frequency === 'weekly' ? 'Semanal' : (d.weeklyMonitoring.frequency ?? '—') }}</dd>
-          <dt>Próxima corrida</dt>
-          <dd>{{ d.weeklyMonitoring.nextRunAt ? (d.weeklyMonitoring.nextRunAt | date: 'short') : '—' }}</dd>
-          <dt>Última corrida</dt>
-          <dd>{{ d.weeklyMonitoring.lastRunAt ? (d.weeklyMonitoring.lastRunAt | date: 'short') : '—' }}</dd>
-          <dt>Tiene corridas</dt>
-          <dd>{{ d.weeklyMonitoring.hasRuns ? 'Sí' : 'No' }}</dd>
+        <dl class="fd-dl my-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-[0.4rem]">
+          <dt class="text-[0.85rem] text-muted">Frecuencia</dt>
+          <dd class="m-0 text-[0.85rem]">{{ d.weeklyMonitoring.frequency === 'weekly' ? 'Semanal' : (d.weeklyMonitoring.frequency ?? '—') }}</dd>
+          <dt class="text-[0.85rem] text-muted">Próxima corrida</dt>
+          <dd class="m-0 text-[0.85rem]">{{ d.weeklyMonitoring.nextRunAt ? (d.weeklyMonitoring.nextRunAt | date: 'short') : '—' }}</dd>
+          <dt class="text-[0.85rem] text-muted">Última corrida</dt>
+          <dd class="m-0 text-[0.85rem]">{{ d.weeklyMonitoring.lastRunAt ? (d.weeklyMonitoring.lastRunAt | date: 'short') : '—' }}</dd>
+          <dt class="text-[0.85rem] text-muted">Tiene corridas</dt>
+          <dd class="m-0 text-[0.85rem]">{{ d.weeklyMonitoring.hasRuns ? 'Sí' : 'No' }}</dd>
         </dl>
       </div>
     } @else {
-      <p class="empty-state">Este campo no tiene monitoreo semanal activo.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Este campo no tiene monitoreo semanal activo.
+      </p>
     }
-    <a class="link-button" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: d.field.id }">
+    <a
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      routerLink="/scheduled-analysis"
+      [queryParams]="{ fieldId: d.field.id }"
+    >
       Ver en Programados →
     </a>
   </section>
 
-  <section class="fd-section">
-    <h2 class="fd-section__title">Corridas y mails (últimas {{ d.scheduledRuns.length }})</h2>
+  <section class="fd-section mb-7">
+    <h2 class="fd-section__title mb-3 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Corridas y mails (últimas {{ d.scheduledRuns.length }})</h2>
     @if (d.scheduledRuns.length) {
-      <div class="table-scroll">
+      <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
         <table>
           <thead>
             <tr>
@@ -316,11 +387,15 @@
                 <td><app-status-badge [label]="runStatusLabel(run.status)" [tone]="runStatusTone(run.status)" /></td>
                 <td>
                   @if (run.analysisId) {
-                    <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: run.analysisId }">
+                    <a
+                      class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                      routerLink="/analysis"
+                      [queryParams]="{ analysisId: run.analysisId }"
+                    >
                       Ver →
                     </a>
                   } @else {
-                    <span class="muted">—</span>
+                    <span class="muted text-[0.8rem] text-muted">—</span>
                   }
                 </td>
                 <td>
@@ -330,7 +405,7 @@
                       [tone]="trendTone(run.weeklyTechnicalVerdict!.trend)"
                     />
                   } @else {
-                    <span class="muted">—</span>
+                    <span class="muted text-[0.8rem] text-muted">—</span>
                   }
                 </td>
                 <td><app-status-badge [label]="runMailStatusLabel(run)" [tone]="runMailStatusTone(run)" /></td>
@@ -340,7 +415,9 @@
         </table>
       </div>
     } @else {
-      <p class="empty-state">Este campo todavía no tiene corridas programadas.</p>
+      <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+        Este campo todavía no tiene corridas programadas.
+      </p>
     }
   </section>
 }

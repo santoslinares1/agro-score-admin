@@ -12,7 +12,6 @@ const COPIED_FEEDBACK_MS = 1500;
   selector: 'app-copyable-id',
   standalone: true,
   templateUrl: './copyable-id.component.html',
-  styleUrl: './copyable-id.component.css',
 })
 export class CopyableIdComponent {
   readonly value = input.required<string>();

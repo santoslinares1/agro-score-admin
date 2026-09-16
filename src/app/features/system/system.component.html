@@ -1,85 +1,102 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Sistema</h1>
-  <div class="page-header__actions">
-    <button type="button" class="btn" [disabled]="loading()" (click)="refresh()">
+  <div class="page-header__actions flex flex-wrap items-center gap-[0.6rem]">
+    <button
+      type="button"
+      class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="loading()"
+      (click)="refresh()"
+    >
       {{ loading() ? 'Actualizando...' : '↻ Refrescar' }}
     </button>
   </div>
 </div>
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading() && !health()) {
-  <div class="loading-state">Consultando estado del sistema...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Consultando estado del sistema...</div>
 } @else {
   @if (health(); as h) {
-  <div class="health-grid">
-    <div class="health-card card">
-      <span class="health-card__label">API</span>
-      <app-status-badge [label]="healthStatusLabel(h.api.status)" [tone]="healthStatusTone(h.api.status)" />
+    <div class="health-grid mb-7 grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">API</span>
+        <app-status-badge [label]="healthStatusLabel(h.api.status)" [tone]="healthStatusTone(h.api.status)" />
+      </div>
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">Base de datos</span>
+        <app-status-badge [label]="healthStatusLabel(h.db.status)" [tone]="healthStatusTone(h.db.status)" />
+        @if (h.db.error) { <span class="muted text-[0.8rem] text-muted">{{ h.db.error }}</span> }
+      </div>
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">Worker</span>
+        <app-status-badge [label]="healthStatusLabel(h.worker.status)" [tone]="healthStatusTone(h.worker.status)" />
+        @if (h.worker.error) { <span class="muted text-[0.8rem] text-muted">{{ h.worker.error }}</span> }
+      </div>
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">Earth Engine</span>
+        <app-status-badge
+          [label]="healthStatusLabel(h.earthEngine.status)"
+          [tone]="healthStatusTone(h.earthEngine.status)"
+        />
+        @if (h.earthEngine.note) { <span class="muted text-[0.8rem] text-muted">{{ h.earthEngine.note }}</span> }
+      </div>
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">Uptime</span>
+        <span class="health-card__value text-[1.1rem] font-bold">{{ formatUptime(h.uptimeSeconds) }}</span>
+      </div>
+      <div class="health-card card flex flex-col gap-2 rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="health-card__label text-xs uppercase tracking-[0.03em] text-muted">Commit</span>
+        <span class="health-card__value health-card__value--mono font-mono text-[0.95rem]"
+          >{{ h.currentBackendCommit ?? 'No disponible' }}</span
+        >
+      </div>
     </div>
-    <div class="health-card card">
-      <span class="health-card__label">Base de datos</span>
-      <app-status-badge [label]="healthStatusLabel(h.db.status)" [tone]="healthStatusTone(h.db.status)" />
-      @if (h.db.error) { <span class="muted">{{ h.db.error }}</span> }
-    </div>
-    <div class="health-card card">
-      <span class="health-card__label">Worker</span>
-      <app-status-badge [label]="healthStatusLabel(h.worker.status)" [tone]="healthStatusTone(h.worker.status)" />
-      @if (h.worker.error) { <span class="muted">{{ h.worker.error }}</span> }
-    </div>
-    <div class="health-card card">
-      <span class="health-card__label">Earth Engine</span>
-      <app-status-badge
-        [label]="healthStatusLabel(h.earthEngine.status)"
-        [tone]="healthStatusTone(h.earthEngine.status)"
-      />
-      @if (h.earthEngine.note) { <span class="muted">{{ h.earthEngine.note }}</span> }
-    </div>
-    <div class="health-card card">
-      <span class="health-card__label">Uptime</span>
-      <span class="health-card__value">{{ formatUptime(h.uptimeSeconds) }}</span>
-    </div>
-    <div class="health-card card">
-      <span class="health-card__label">Commit</span>
-      <span class="health-card__value health-card__value--mono">{{ h.currentBackendCommit ?? 'No disponible' }}</span>
-    </div>
-  </div>
 
-  <div class="lists-grid">
-    <div class="card">
-      <h2>Último diagnóstico exitoso</h2>
-      @if (h.lastSuccessfulAnalysis; as a) {
-        <p><strong>{{ a.lotName }}</strong></p>
-        @if (a.completedAt) {
-          <p class="muted">Completado · {{ a.completedAt | date: 'short' }}</p>
+    <div class="lists-grid grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-5">
+      <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
+        <h2 class="mb-2 text-base">Último diagnóstico exitoso</h2>
+        @if (h.lastSuccessfulAnalysis; as a) {
+          <p><strong>{{ a.lotName }}</strong></p>
+          @if (a.completedAt) {
+            <p class="muted text-[0.8rem] text-muted">Completado · {{ a.completedAt | date: 'short' }}</p>
+          } @else {
+            <p class="muted text-[0.8rem] text-muted">Completado (fecha no registrada)</p>
+          }
+          <p class="muted text-[0.8rem] text-muted">Creado {{ a.createdAt | date: 'short' }}</p>
         } @else {
-          <p class="muted">Completado (fecha no registrada)</p>
+          <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+            Sin diagnósticos exitosos registrados.
+          </p>
         }
-        <p class="muted">Creado {{ a.createdAt | date: 'short' }}</p>
-      } @else {
-        <p class="empty-state">Sin diagnósticos exitosos registrados.</p>
-      }
-    </div>
+      </div>
 
-    <div class="card">
-      <h2>Último diagnóstico fallido</h2>
-      @if (h.lastFailedAnalysis; as a) {
-        <p><strong>{{ a.lotName }}</strong></p>
-        @if (a.failedAt) {
-          <p class="muted">Falló · {{ a.failedAt | date: 'short' }}</p>
+      <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
+        <h2 class="mb-2 text-base">Último diagnóstico fallido</h2>
+        @if (h.lastFailedAnalysis; as a) {
+          <p><strong>{{ a.lotName }}</strong></p>
+          @if (a.failedAt) {
+            <p class="muted text-[0.8rem] text-muted">Falló · {{ a.failedAt | date: 'short' }}</p>
+          } @else {
+            <p class="muted text-[0.8rem] text-muted">Falló (fecha no registrada)</p>
+          }
+          @if (a.errorMessage) {
+            <p>{{ a.errorMessage }}</p>
+          }
         } @else {
-          <p class="muted">Falló (fecha no registrada)</p>
+          <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+            Sin diagnósticos fallidos registrados.
+          </p>
         }
-        @if (a.errorMessage) { <p class="error-cell" style="max-width: none; white-space: normal">{{ a.errorMessage }}</p> }
-      } @else {
-        <p class="empty-state">Sin diagnósticos fallidos registrados.</p>
-      }
+      </div>
     </div>
-  </div>
 
-  <p class="muted" style="margin-top: 1.25rem">Consultado {{ h.timestamp | date: 'medium' }}</p>
+    <p class="muted mt-5 text-[0.8rem] text-muted">Consultado {{ h.timestamp | date: 'medium' }}</p>
   }
 }

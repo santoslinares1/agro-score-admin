@@ -1,13 +1,23 @@
-<div class="denied-page">
-  <div class="denied-card card">
-    <h1>Acceso denegado</h1>
+<div class="denied-page flex min-h-screen items-center justify-center bg-background p-4">
+  <div
+    class="denied-card card max-w-[420px] rounded-card border border-border bg-surface p-5 text-center shadow-card"
+  >
+    <h1 class="text-error">Acceso denegado</h1>
     <p>
       Tu cuenta @if (currentUser) {
         ({{ currentUser.email }})
       } no tiene rol <strong>owner</strong> ni <strong>admin</strong>, así que no
       puede entrar al panel administrativo de AgroScore.
     </p>
-    <p class="hint">Si creés que esto es un error, pedile a un owner que te promueva desde el backend.</p>
-    <button type="button" class="btn" (click)="logout()">Cerrar sesión</button>
+    <p class="hint mb-5 text-[0.85rem] text-muted">
+      Si creés que esto es un error, pedile a un owner que te promueva desde el backend.
+    </p>
+    <button
+      type="button"
+      class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+      (click)="logout()"
+    >
+      Cerrar sesión
+    </button>
   </div>
 </div>

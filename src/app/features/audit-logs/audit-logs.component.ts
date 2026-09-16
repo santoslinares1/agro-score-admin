@@ -27,7 +27,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   standalone: true,
   imports: [DatePipe, FormsModule, PaginationControlsComponent],
   templateUrl: './audit-logs.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class AuditLogsComponent implements OnInit {
   private readonly auditLogsService = inject(AuditLogsService);

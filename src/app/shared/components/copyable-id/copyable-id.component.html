@@ -1,6 +1,10 @@
-<span class="copyable-id">
-  <span class="copyable-id__value" [title]="value()">#{{ shortValue }}…</span>
-  <button type="button" class="link-button copyable-id__copy" (click)="copy()">
+<span class="copyable-id inline-flex items-center gap-[0.35rem] font-mono text-[0.78rem] text-muted">
+  <span class="copyable-id__value whitespace-nowrap" [title]="value()">#{{ shortValue }}…</span>
+  <button
+    type="button"
+    class="copyable-id__copy cursor-pointer border-0 bg-transparent p-0 text-xs text-primary underline"
+    (click)="copy()"
+  >
     {{ copied() ? 'Copiado' : 'Copiar' }}
   </button>
 </span>

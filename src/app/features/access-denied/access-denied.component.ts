@@ -7,7 +7,6 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-access-denied',
   standalone: true,
   templateUrl: './access-denied.component.html',
-  styleUrl: './access-denied.component.css',
 })
 export class AccessDeniedComponent {
   private readonly authService = inject(AuthService);

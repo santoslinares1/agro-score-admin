@@ -46,7 +46,6 @@ function shiftDateOnly(dateOnly: string, days: number): string {
   standalone: true,
   imports: [DatePipe, StatusBadgeComponent],
   templateUrl: './product-analytics.component.html',
-  styleUrl: './product-analytics.component.css',
 })
 export class ProductAnalyticsComponent implements OnInit {
   private readonly productAnalyticsService = inject(ProductAnalyticsService);

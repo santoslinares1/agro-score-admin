@@ -56,7 +56,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
     CopyableIdComponent,
   ],
   templateUrl: './scheduled-analysis.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class ScheduledAnalysisComponent implements OnInit {
   private readonly scheduledAnalysisService = inject(ScheduledAnalysisService);

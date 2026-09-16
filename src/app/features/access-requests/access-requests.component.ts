@@ -43,7 +43,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   standalone: true,
   imports: [DatePipe, FormsModule, PaginationControlsComponent, StatusBadgeComponent],
   templateUrl: './access-requests.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class AccessRequestsComponent implements OnInit {
   private readonly accessRequestsService = inject(AccessRequestsService);

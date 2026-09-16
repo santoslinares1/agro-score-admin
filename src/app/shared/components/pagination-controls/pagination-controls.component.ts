@@ -4,15 +4,19 @@ import { Component, computed, input, output } from '@angular/core';
   selector: 'app-pagination-controls',
   standalone: true,
   template: `
-    <div class="pagination">
-      <button type="button" [disabled]="page() <= 1" (click)="pageChange.emit(page() - 1)">
-        ← Anterior
-      </button>
-      <span class="pagination__info">
-        Página {{ page() }} de {{ totalPages() }} · {{ total() }} resultados
-      </span>
+    <div class="flex items-center justify-center gap-4 py-4 text-sm text-muted">
       <button
         type="button"
+        class="cursor-pointer rounded-md border border-border bg-surface px-[0.8rem] py-[0.4rem] text-foreground enabled:hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
+        [disabled]="page() <= 1"
+        (click)="pageChange.emit(page() - 1)"
+      >
+        ← Anterior
+      </button>
+      <span> Página {{ page() }} de {{ totalPages() }} · {{ total() }} resultados </span>
+      <button
+        type="button"
+        class="cursor-pointer rounded-md border border-border bg-surface px-[0.8rem] py-[0.4rem] text-foreground enabled:hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
         [disabled]="page() >= totalPages()"
         (click)="pageChange.emit(page() + 1)"
       >
@@ -20,7 +24,6 @@ import { Component, computed, input, output } from '@angular/core';
       </button>
     </div>
   `,
-  styleUrl: './pagination-controls.component.css',
 })
 export class PaginationControlsComponent {
   readonly page = input.required<number>();

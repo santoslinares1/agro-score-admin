@@ -1,9 +1,9 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Auditoría</h1>
 </div>
 
-<div class="card" style="margin-bottom: 1.25rem">
-  <div class="filters" style="flex-wrap: wrap">
+<div class="card mb-5 rounded-card border border-border bg-surface p-5 shadow-card">
+  <div class="filters flex flex-wrap items-center gap-[0.6rem]">
     <select [(ngModel)]="action" name="action">
       <option value="">Todas las acciones</option>
       @for (a of knownActions; track a) {
@@ -18,50 +18,80 @@
       }
     </select>
 
-    <input type="text" placeholder="actorUserId (UUID)" [(ngModel)]="actorUserId" name="actorUserId" />
-    <input type="text" placeholder="targetId (UUID)" [(ngModel)]="targetId" name="targetId" />
+    <input
+      type="text"
+      class="w-[150px]"
+      placeholder="actorUserId (UUID)"
+      [(ngModel)]="actorUserId"
+      name="actorUserId"
+    />
+    <input type="text" class="w-[150px]" placeholder="targetId (UUID)" [(ngModel)]="targetId" name="targetId" />
 
-    <button type="button" class="btn btn-primary" (click)="applyFilters()">Filtrar</button>
-    <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
+    <button
+      type="button"
+      class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover"
+      (click)="applyFilters()"
+    >
+      Filtrar
+    </button>
+    <button
+      type="button"
+      class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+      (click)="clearFilters()"
+    >
+      Limpiar
+    </button>
   </div>
 </div>
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading()) {
-  <div class="loading-state">Cargando auditoría...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando auditoría...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay eventos de auditoría para estos filtros.</p>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No hay eventos de auditoría para estos filtros.
+  </p>
 } @else {
-  <div class="table-scroll">
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Actor</th>
-        <th>Acción</th>
-        <th>Target</th>
-        <th>Resumen</th>
-        <th>Detalle</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (log of items(); track log.id) {
+  <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+    <table>
+      <thead>
         <tr>
-          <td>{{ log.createdAt | date: 'short' }}</td>
-          <td class="muted">{{ actorDisplay(log.actorUserId) }}</td>
-          <td><code>{{ log.action }}</code></td>
-          <td class="muted">{{ targetTypeLabel(log.targetType) }} · {{ log.targetId ?? '—' }}</td>
-          <td>{{ actionLabel(log.action) }}</td>
-          <td class="actions">
-            <button type="button" class="btn" (click)="openDetail(log)">Ver JSON</button>
-          </td>
+          <th>Fecha</th>
+          <th>Actor</th>
+          <th>Acción</th>
+          <th>Target</th>
+          <th>Resumen</th>
+          <th>Detalle</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (log of items(); track log.id) {
+          <tr>
+            <td>{{ log.createdAt | date: 'short' }}</td>
+            <td class="muted text-[0.8rem] text-muted">{{ actorDisplay(log.actorUserId) }}</td>
+            <td><code>{{ log.action }}</code></td>
+            <td class="muted text-[0.8rem] text-muted">{{ targetTypeLabel(log.targetType) }} · {{ log.targetId ?? '—' }}</td>
+            <td>{{ actionLabel(log.action) }}</td>
+            <td class="actions flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+                (click)="openDetail(log)"
+              >
+                Ver JSON
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
   </div>
 
   <app-pagination-controls
@@ -73,32 +103,52 @@
 }
 
 @if (selected(); as log) {
-  <div class="modal-backdrop" (click)="closeDetail()">
-    <div class="modal modal--wide card" (click)="$event.stopPropagation()">
+  <div
+    class="modal-backdrop fixed inset-0 z-20 flex items-center justify-center overflow-y-auto bg-black/45 p-4"
+    (click)="closeDetail()"
+  >
+    <div
+      class="modal modal--wide card flex max-h-[calc(100vh-2rem)] w-full max-w-[640px] flex-col gap-[0.85rem] overflow-y-auto rounded-card border border-border bg-surface p-5 shadow-card"
+      (click)="$event.stopPropagation()"
+    >
       <h2>{{ actionLabel(log.action) }}</h2>
-      <p class="muted">
+      <p class="muted text-[0.8rem] text-muted">
         {{ log.createdAt | date: 'medium' }} · actor {{ actorDisplay(log.actorUserId) }} · target
         {{ targetTypeLabel(log.targetType) }} {{ log.targetId ?? '—' }}
       </p>
       @if (log.ip || log.userAgent) {
-        <p class="muted">
+        <p class="muted text-[0.8rem] text-muted">
           @if (log.ip) { IP: {{ log.ip }} }
           @if (log.userAgent) { · {{ log.userAgent }} }
         </p>
       }
 
-      <div class="modal-section">
-        <label>Antes</label>
-        <div class="json-viewer">{{ formatJson(log.before) }}</div>
+      <div class="modal-section mt-1 border-t border-border pt-[0.85rem]">
+        <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">Antes</label>
+        <div
+          class="json-viewer max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-background p-3 font-mono text-xs text-foreground"
+        >
+          {{ formatJson(log.before) }}
+        </div>
       </div>
 
-      <div class="modal-section">
-        <label>Después</label>
-        <div class="json-viewer">{{ formatJson(log.after) }}</div>
+      <div class="modal-section mt-1 border-t border-border pt-[0.85rem]">
+        <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">Después</label>
+        <div
+          class="json-viewer max-h-[240px] overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-border bg-background p-3 font-mono text-xs text-foreground"
+        >
+          {{ formatJson(log.after) }}
+        </div>
       </div>
 
-      <div class="modal-actions">
-        <button type="button" class="btn" (click)="closeDetail()">Cerrar</button>
+      <div class="modal-actions mt-2 flex flex-wrap justify-end gap-[0.6rem]">
+        <button
+          type="button"
+          class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+          (click)="closeDetail()"
+        >
+          Cerrar
+        </button>
       </div>
     </div>
   </div>

@@ -17,7 +17,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   standalone: true,
   imports: [DatePipe, StatusBadgeComponent],
   templateUrl: './system.component.html',
-  styleUrl: './system.component.css',
 })
 export class SystemComponent implements OnInit {
   private readonly systemService = inject(SystemService);

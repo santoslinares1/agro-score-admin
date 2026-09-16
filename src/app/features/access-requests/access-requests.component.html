@@ -1,8 +1,9 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Solicitudes de acceso</h1>
-  <div class="page-header__actions">
+  <div class="page-header__actions flex flex-wrap items-center gap-[0.6rem]">
     <input
       type="search"
+      class="min-w-0 flex-[1_1_180px]"
       placeholder="Buscar por nombre, email u organización..."
       [value]="search()"
       (input)="onSearchChange($any($event.target).value)"
@@ -17,45 +18,57 @@
 </div>
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading()) {
-  <div class="loading-state">Cargando solicitudes...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando solicitudes...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay solicitudes de acceso para estos filtros.</p>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No hay solicitudes de acceso para estos filtros.
+  </p>
 } @else {
-  <div class="table-scroll">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Email</th>
-        <th>Organización</th>
-        <th>Perfil</th>
-        <th>Estado</th>
-        <th>Responsable</th>
-        <th>Creada</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items(); track item.id) {
+  <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+    <table>
+      <thead>
         <tr>
-          <td>{{ item.name }}</td>
-          <td>{{ item.email }}</td>
-          <td>{{ item.organization }}</td>
-          <td>{{ profileLabels[item.profile] }}</td>
-          <td><app-status-badge [label]="statusLabels[item.status]" [tone]="statusTone(item.status)" /></td>
-          <td class="muted">{{ assigneeLabel(item.assignedToUserId) }}</td>
-          <td>{{ item.createdAt | date: 'short' }}</td>
-          <td class="actions">
-            <button type="button" class="btn" (click)="openDetail(item)">Ver detalle</button>
-          </td>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Organización</th>
+          <th>Perfil</th>
+          <th>Estado</th>
+          <th>Responsable</th>
+          <th>Creada</th>
+          <th>Acciones</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td>{{ item.name }}</td>
+            <td>{{ item.email }}</td>
+            <td>{{ item.organization }}</td>
+            <td>{{ profileLabels[item.profile] }}</td>
+            <td><app-status-badge [label]="statusLabels[item.status]" [tone]="statusTone(item.status)" /></td>
+            <td class="muted text-[0.8rem] text-muted">{{ assigneeLabel(item.assignedToUserId) }}</td>
+            <td>{{ item.createdAt | date: 'short' }}</td>
+            <td class="actions flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+                (click)="openDetail(item)"
+              >
+                Ver detalle
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
   </div>
 
   <app-pagination-controls
@@ -67,8 +80,14 @@
 }
 
 @if (selected(); as item) {
-  <div class="modal-backdrop" (click)="closeDetail()">
-    <div class="modal modal--wide card" (click)="$event.stopPropagation()">
+  <div
+    class="modal-backdrop fixed inset-0 z-20 flex items-center justify-center overflow-y-auto bg-black/45 p-4"
+    (click)="closeDetail()"
+  >
+    <div
+      class="modal modal--wide card flex max-h-[calc(100vh-2rem)] w-full max-w-[640px] flex-col gap-[0.85rem] overflow-y-auto rounded-card border border-border bg-surface p-5 shadow-card"
+      (click)="$event.stopPropagation()"
+    >
       <h2>{{ item.name }}</h2>
 
       <div>
@@ -79,8 +98,8 @@
         <p><strong>Mensaje:</strong> {{ item.message ?? '—' }}</p>
       </div>
 
-      <div class="modal-section">
-        <p class="muted">
+      <div class="modal-section mt-1 border-t border-border pt-[0.85rem]">
+        <p class="muted text-[0.8rem] text-muted">
           Creada {{ item.createdAt | date: 'short' }}
           @if (item.contactedAt) { · Contactada {{ item.contactedAt | date: 'short' }} }
           @if (item.convertedAt) { · Convertida {{ item.convertedAt | date: 'short' }} }
@@ -88,12 +107,16 @@
         </p>
       </div>
 
-      <div class="modal-section">
+      <div class="modal-section mt-1 border-t border-border pt-[0.85rem]">
         @if (detailError()) {
-          <div class="error-banner">{{ detailError() }}</div>
+          <div
+            class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+          >
+            {{ detailError() }}
+          </div>
         }
 
-        <label>
+        <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
           Estado
           <select [(ngModel)]="editStatus" name="editStatus">
             @for (s of statuses; track s) {
@@ -102,12 +125,12 @@
           </select>
         </label>
 
-        <label>
+        <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
           Notas internas
           <textarea rows="3" [(ngModel)]="editInternalNotes" name="editInternalNotes"></textarea>
         </label>
 
-        <label>
+        <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
           Responsable asignado
           <select [(ngModel)]="editAssignedToUserId" name="editAssignedToUserId">
             <option value="">Sin asignar</option>
@@ -117,51 +140,80 @@
           </select>
         </label>
 
-        <div class="modal-actions">
-          <button type="button" class="btn" (click)="closeDetail()">Cerrar</button>
-          <button type="button" class="btn btn-primary" [disabled]="detailSaving()" (click)="saveDetail()">
+        <div class="modal-actions mt-2 flex flex-wrap justify-end gap-[0.6rem]">
+          <button
+            type="button"
+            class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+            (click)="closeDetail()"
+          >
+            Cerrar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="detailSaving()"
+            (click)="saveDetail()"
+          >
             {{ detailSaving() ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
       </div>
 
-      <div class="modal-section">
+      <div class="modal-section mt-1 border-t border-border pt-[0.85rem]">
         @if (createUserResult(); as invitation) {
-          <div class="success-banner">
+          <div
+            class="success-banner mb-4 rounded-lg border border-success bg-[color-mix(in_srgb,var(--color-success)_10%,var(--color-surface))] px-4 py-3 text-sm text-success"
+          >
             Invitación creada para <strong>{{ invitation.email }}</strong> (rol {{ invitation.role }}),
             vence {{ invitation.expiresAt | date: 'short' }}.
           </div>
 
           @if (invitation.emailSent && !invitation.dryRun) {
-            <p class="muted">Invitación enviada por email a {{ invitation.email }}.</p>
+            <p class="muted text-[0.8rem] text-muted">Invitación enviada por email a {{ invitation.email }}.</p>
           } @else if (invitation.dryRun) {
-            <p class="warning-banner">
+            <p
+              class="warning-banner mb-4 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface))] px-4 py-3 text-sm text-warning"
+            >
               Invitación generada en modo dry-run — no se envió ningún email real (EMAIL_DRY_RUN=true en el backend).
             </p>
           } @else if (invitation.emailSent === false) {
-            <div class="error-banner">
+            <div
+              class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+            >
               No se pudo enviar el email de invitación. Revisá la configuración de email del backend.
             </div>
           }
 
           @if (invitation.invitationToken) {
-            <div class="warning-banner">
+            <div
+              class="warning-banner mb-4 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface))] px-4 py-3 text-sm text-warning"
+            >
               Link de invitación (solo visible en desarrollo — nunca se muestra así en producción):
             </div>
-            <div class="token-box">{{ invitation.invitationUrl ?? invitation.invitationToken }}</div>
+            <div class="token-box rounded-lg border border-dashed border-border bg-background px-[0.75rem] py-[0.6rem] font-mono text-xs break-all">
+              {{ invitation.invitationUrl ?? invitation.invitationToken }}
+            </div>
           }
         } @else if (item.status === 'converted') {
-          <p class="muted">Esta solicitud ya fue convertida en una invitación de usuario.</p>
+          <p class="muted text-[0.8rem] text-muted">Esta solicitud ya fue convertida en una invitación de usuario.</p>
         } @else if (!createUserOpen()) {
-          <button type="button" class="btn btn-primary" (click)="openCreateUser()">
+          <button
+            type="button"
+            class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover"
+            (click)="openCreateUser()"
+          >
             Crear usuario desde esta solicitud
           </button>
         } @else if (!createUserConfirming()) {
           @if (createUserError()) {
-            <div class="error-banner">{{ createUserError() }}</div>
+            <div
+              class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+            >
+              {{ createUserError() }}
+            </div>
           }
 
-          <label>
+          <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
             Rol del nuevo usuario
             <select [(ngModel)]="createUserRole" name="createUserRole">
               @for (r of roles; track r) {
@@ -170,30 +222,50 @@
             </select>
           </label>
 
-          <div class="modal-actions">
-            <button type="button" class="btn" (click)="cancelCreateUser()">Cancelar</button>
-            <button type="button" class="btn btn-primary" (click)="reviewCreateUser()">Continuar</button>
+          <div class="modal-actions mt-2 flex flex-wrap justify-end gap-[0.6rem]">
+            <button
+              type="button"
+              class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+              (click)="cancelCreateUser()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover"
+              (click)="reviewCreateUser()"
+            >
+              Continuar
+            </button>
           </div>
         } @else {
           @if (createUserError()) {
-            <div class="error-banner">{{ createUserError() }}</div>
+            <div
+              class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+            >
+              {{ createUserError() }}
+            </div>
           }
 
-          <div class="warning-banner">¿Crear usuario para <strong>{{ item.email }}</strong>?</div>
+          <div
+            class="warning-banner mb-4 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface))] px-4 py-3 text-sm text-warning"
+          >
+            ¿Crear usuario para <strong>{{ item.email }}</strong>?
+          </div>
 
-          <dl class="confirm-summary">
-            <dt>Email</dt>
-            <dd>{{ item.email }}</dd>
-            <dt>Nombre</dt>
-            <dd>{{ item.name }}</dd>
-            <dt>Rol</dt>
-            <dd>{{ createUserRole }}</dd>
+          <dl class="confirm-summary m-0 grid grid-cols-[auto_1fr] gap-x-[0.85rem] gap-y-[0.35rem] text-[0.85rem]">
+            <dt class="text-muted">Email</dt>
+            <dd class="m-0">{{ item.email }}</dd>
+            <dt class="text-muted">Nombre</dt>
+            <dd class="m-0">{{ item.name }}</dd>
+            <dt class="text-muted">Rol</dt>
+            <dd class="m-0">{{ createUserRole }}</dd>
           </dl>
 
-          <div class="modal-actions">
+          <div class="modal-actions mt-2 flex flex-wrap justify-end gap-[0.6rem]">
             <button
               type="button"
-              class="btn"
+              class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
               [disabled]="createUserSubmitting()"
               (click)="backToRoleSelect()"
             >
@@ -201,7 +273,7 @@
             </button>
             <button
               type="button"
-              class="btn btn-primary"
+              class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
               [disabled]="createUserSubmitting()"
               (click)="confirmCreateUser()"
             >

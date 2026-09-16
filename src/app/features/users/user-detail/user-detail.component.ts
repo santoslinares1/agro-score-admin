@@ -58,15 +58,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   standalone: true,
   imports: [DatePipe, DurationPipe, RouterLink, StatusBadgeComponent, CopyableIdComponent],
   templateUrl: './user-detail.component.html',
-  // Reusa tal cual las clases .fd-* de Field Detail (PR6: header/summary-grid/summary-card) en vez
-  // de redefinirlas — Angular escapa styleUrls al propio componente (mismo mecanismo que ya usa
-  // field-detail.component.ts con shared-list.component.css), así que importar ese archivo acá es
-  // seguro y no filtra estilos hacia FieldDetailComponent ni viceversa.
-  styleUrls: [
-    '../../shared-list.component.css',
-    '../../fields/field-detail/field-detail.component.css',
-    './user-detail.component.css',
-  ],
 })
 export class UserDetailComponent implements OnInit {
   private readonly userDetailService = inject(UserDetailService);

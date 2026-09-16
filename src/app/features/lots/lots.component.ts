@@ -14,7 +14,6 @@ const PAGE_LIMIT = 20;
   standalone: true,
   imports: [DatePipe, RouterLink, PaginationControlsComponent, StatusBadgeComponent],
   templateUrl: './lots.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class LotsComponent implements OnInit {
   private readonly lotsService = inject(LotsService);

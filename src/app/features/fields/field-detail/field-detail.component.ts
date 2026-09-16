@@ -43,7 +43,6 @@ import {
   standalone: true,
   imports: [DatePipe, DurationPipe, RouterLink, StatusBadgeComponent, CopyableIdComponent],
   templateUrl: './field-detail.component.html',
-  styleUrls: ['../../shared-list.component.css', './field-detail.component.css'],
 })
 export class FieldDetailComponent implements OnInit {
   private readonly fieldDetailService = inject(FieldDetailService);

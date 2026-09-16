@@ -25,6 +25,14 @@ function apiErrorMessage(err: unknown, fallback: string): string {
   return Array.isArray(message) ? message.join(', ') : (message ?? fallback);
 }
 
+// `user.role` es dinámico, así que las clases de tinte de `.role-pill` se resuelven acá en vez
+// de repetir un lookup en el template (mismo criterio que TONE_CLASSES en status-badge).
+const ROLE_PILL_CLASSES: Record<UserRole, string> = {
+  owner: 'bg-[color-mix(in_srgb,var(--color-primary)_18%,transparent)] text-primary',
+  admin: 'bg-[color-mix(in_srgb,var(--color-warning)_18%,transparent)] text-warning',
+  user: 'bg-surface-hover text-muted',
+};
+
 @Component({
   selector: 'app-users',
   standalone: true,
@@ -37,9 +45,10 @@ function apiErrorMessage(err: unknown, fallback: string): string {
     CopyableIdComponent,
   ],
   templateUrl: './users.component.html',
-  styleUrl: './users.component.css',
 })
 export class UsersComponent implements OnInit {
+  protected readonly ROLE_PILL_CLASSES = ROLE_PILL_CLASSES;
+
   private readonly usersService = inject(UsersService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);

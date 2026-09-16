@@ -1,8 +1,9 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Campos</h1>
-  <div class="page-header__actions">
+  <div class="page-header__actions flex flex-wrap items-center gap-[0.6rem]">
     <input
       type="search"
+      class="min-w-0 flex-[1_1_180px]"
       placeholder="Buscar por nombre..."
       [value]="search()"
       (input)="onSearchChange($any($event.target).value)"
@@ -11,142 +12,207 @@
 </div>
 
 @if (hasAnalysisFilter() !== undefined) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: campos {{ hasAnalysisFilter() ? 'con' : 'sin' }} diagnóstico
-    <button type="button" class="link-button" (click)="clearHasAnalysisFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearHasAnalysisFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (userIdFilter(); as filteredUserId) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: campos del usuario #{{ filteredUserId.slice(0, 8) }}…
-    <button type="button" class="link-button" (click)="clearUserIdFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearUserIdFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (fieldIdFilter(); as filteredFieldId) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: solo el campo #{{ filteredFieldId.slice(0, 8) }}…
-    <button type="button" class="link-button" (click)="clearFieldIdFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearFieldIdFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (statusFilter(); as filteredStatus) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: estado = {{ fieldAnalysisStatusLabel(filteredStatus) }}
-    <button type="button" class="link-button" (click)="clearStatusFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearStatusFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 @if (monitoringFilter(); as filteredMonitoring) {
-  <div class="filter-chip">
+  <div
+    class="filter-chip mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-surface px-[0.9rem] py-2 text-[0.85rem]"
+  >
     Filtro activo: monitoreo {{ filteredMonitoring === 'active' ? 'activo' : 'inactivo' }}
-    <button type="button" class="link-button" (click)="clearMonitoringFilter()">Quitar filtro</button>
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+      (click)="clearMonitoringFilter()"
+    >
+      Quitar filtro
+    </button>
   </div>
 }
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading()) {
-  <div class="loading-state">Cargando campos...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando campos...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay campos para mostrar.</p>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No hay campos para mostrar.
+  </p>
 } @else {
-  <div class="table-scroll">
-  <table>
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Dueño</th>
-        <th>Lotes</th>
-        <th>Estado / Último análisis</th>
-        <th>Score / Veredicto</th>
-        <th>Monitoreo</th>
-        <th>Atención</th>
-        <th>Actualizado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (field of items(); track field.id) {
+  <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+    <table>
+      <thead>
         <tr>
-          <td>
-            <a class="entity-link" [routerLink]="['/fields', field.id]">
-              {{ field.name }}
-            </a>
-            <br />
-            <app-copyable-id [value]="field.id" />
-          </td>
-          <td>
-            <a class="entity-link" routerLink="/users" [queryParams]="{ userId: field.ownerId }">
-              {{ field.ownerFullName }}
-            </a>
-            <span class="muted">({{ field.ownerEmail }})</span>
-          </td>
-          <td>{{ field.lotsCount }}</td>
-          <td>
-            <app-status-badge
-              [label]="fieldAnalysisStatusLabel(field.analysisStatus)"
-              [tone]="fieldAnalysisStatusTone(field.analysisStatus)"
-            />
-            @if (field.latestAnalysis; as la) {
-              <p class="field-cell__meta">
-                <a class="entity-link" routerLink="/analysis" [queryParams]="{ analysisId: la.id }">
-                  {{ la.createdAt | date: 'short' }}
-                </a>
-                @if (la.durationMs) {
-                  <span class="muted"> · {{ la.durationMs | duration }}</span>
-                }
-              </p>
-            } @else {
-              <p class="field-cell__meta muted">Este campo todavía no tiene diagnósticos.</p>
-            }
-          </td>
-          <td>
-            @if (field.latestAnalysis?.score != null) {
-              <p class="field-cell__score">
-                <span class="field-cell__score-value">{{ field.latestAnalysis!.score }}</span>
-                <app-status-badge
-                  [label]="scoreBandLabel(field.latestAnalysis!.score!)"
-                  [tone]="scoreBandTone(field.latestAnalysis!.score!)"
-                />
-              </p>
-            } @else if (field.latestAnalysis) {
-              <p class="field-cell__meta muted">Score no disponible.</p>
-            }
-            @if (field.technicalVerdict?.status === 'generated') {
-              <p class="field-cell__meta">
-                <app-status-badge
-                  [label]="verdictLabel(field.technicalVerdict!.verdict)"
-                  [tone]="verdictTone(field.technicalVerdict!.verdict)"
-                />
-                <span class="muted"> · Confianza {{ confidenceLabel(field.technicalVerdict!.confidence) }}</span>
-              </p>
-            } @else if (field.latestAnalysis?.status === 'Finalizado') {
-              <p class="field-cell__meta muted">Veredicto no generado.</p>
-            }
-          </td>
-          <td>
-            <a class="entity-link" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: field.id }">
-              <app-status-badge [label]="fieldMonitoringLabel(field)" [tone]="fieldMonitoringTone(field)" />
-            </a>
-            @if (field.weeklyMonitoring?.active && field.weeklyMonitoring?.nextRunAt) {
-              <p class="field-cell__meta muted">
-                Próxima corrida: {{ field.weeklyMonitoring!.nextRunAt | date: 'short' }}
-              </p>
-            }
-          </td>
-          <td>
-            <app-status-badge [label]="fieldAttentionLabel(field)" [tone]="fieldAttentionTone(field)" />
-          </td>
-          <td>{{ field.updatedAt | date: 'short' }}</td>
-          <td class="actions">
-            <a class="entity-link" routerLink="/scheduled-analysis" [queryParams]="{ fieldId: field.id }">
-              Ver programados
-            </a>
-          </td>
+          <th>Nombre</th>
+          <th>Dueño</th>
+          <th>Lotes</th>
+          <th>Estado / Último análisis</th>
+          <th>Score / Veredicto</th>
+          <th>Monitoreo</th>
+          <th>Atención</th>
+          <th>Actualizado</th>
+          <th>Acciones</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        @for (field of items(); track field.id) {
+          <tr>
+            <td>
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                [routerLink]="['/fields', field.id]"
+              >
+                {{ field.name }}
+              </a>
+              <br />
+              <app-copyable-id [value]="field.id" />
+            </td>
+            <td>
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                routerLink="/users"
+                [queryParams]="{ userId: field.ownerId }"
+              >
+                {{ field.ownerFullName }}
+              </a>
+              <span class="muted text-[0.8rem] text-muted">({{ field.ownerEmail }})</span>
+            </td>
+            <td>{{ field.lotsCount }}</td>
+            <td>
+              <app-status-badge
+                [label]="fieldAnalysisStatusLabel(field.analysisStatus)"
+                [tone]="fieldAnalysisStatusTone(field.analysisStatus)"
+              />
+              @if (field.latestAnalysis; as la) {
+                <p class="field-cell__meta mt-[0.3rem] text-[0.8rem]">
+                  <a
+                    class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                    routerLink="/analysis"
+                    [queryParams]="{ analysisId: la.id }"
+                  >
+                    {{ la.createdAt | date: 'short' }}
+                  </a>
+                  @if (la.durationMs) {
+                    <span class="muted text-[0.8rem] text-muted"> · {{ la.durationMs | duration }}</span>
+                  }
+                </p>
+              } @else {
+                <p class="field-cell__meta muted mt-[0.3rem] text-[0.8rem] text-muted">Este campo todavía no tiene diagnósticos.</p>
+              }
+            </td>
+            <td>
+              @if (field.latestAnalysis?.score != null) {
+                <p class="field-cell__score m-0 flex items-center gap-2">
+                  <span class="field-cell__score-value text-base font-bold">{{ field.latestAnalysis!.score }}</span>
+                  <app-status-badge
+                    [label]="scoreBandLabel(field.latestAnalysis!.score!)"
+                    [tone]="scoreBandTone(field.latestAnalysis!.score!)"
+                  />
+                </p>
+              } @else if (field.latestAnalysis) {
+                <p class="field-cell__meta muted mt-[0.3rem] text-[0.8rem] text-muted">Score no disponible.</p>
+              }
+              @if (field.technicalVerdict?.status === 'generated') {
+                <p class="field-cell__meta mt-[0.3rem] text-[0.8rem]">
+                  <app-status-badge
+                    [label]="verdictLabel(field.technicalVerdict!.verdict)"
+                    [tone]="verdictTone(field.technicalVerdict!.verdict)"
+                  />
+                  <span class="muted text-[0.8rem] text-muted"> · Confianza {{ confidenceLabel(field.technicalVerdict!.confidence) }}</span>
+                </p>
+              } @else if (field.latestAnalysis?.status === 'Finalizado') {
+                <p class="field-cell__meta muted mt-[0.3rem] text-[0.8rem] text-muted">Veredicto no generado.</p>
+              }
+            </td>
+            <td>
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                routerLink="/scheduled-analysis"
+                [queryParams]="{ fieldId: field.id }"
+              >
+                <app-status-badge [label]="fieldMonitoringLabel(field)" [tone]="fieldMonitoringTone(field)" />
+              </a>
+              @if (field.weeklyMonitoring?.active && field.weeklyMonitoring?.nextRunAt) {
+                <p class="field-cell__meta muted mt-[0.3rem] text-[0.8rem] text-muted">
+                  Próxima corrida: {{ field.weeklyMonitoring!.nextRunAt | date: 'short' }}
+                </p>
+              }
+            </td>
+            <td>
+              <app-status-badge [label]="fieldAttentionLabel(field)" [tone]="fieldAttentionTone(field)" />
+            </td>
+            <td>{{ field.updatedAt | date: 'short' }}</td>
+            <td class="actions flex flex-wrap gap-2">
+              <a
+                class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                routerLink="/scheduled-analysis"
+                [queryParams]="{ fieldId: field.id }"
+              >
+                Ver programados
+              </a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
   </div>
 
   <app-pagination-controls

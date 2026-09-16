@@ -1,6 +1,6 @@
-<section class="pa-section">
-  <h2 class="pa-section__title">Entrega técnica</h2>
-  <p class="pa-section__subcopy">
+<section class="pa-section mb-7">
+  <h2 class="pa-section__title mb-[0.35rem] text-base">Entrega técnica</h2>
+  <p class="pa-section__subcopy mb-4 max-w-[60ch] text-[0.85rem] text-muted">
     Cuántos campos y usuarios recibieron un resultado técnicamente utilizable (calidad
     "sufficient"), cuánto tardaron y qué proporción se repite semana a semana. No mide si alguien
     abrió o leyó ese resultado — eso no está instrumentado.
@@ -9,34 +9,63 @@
   <!-- UX-002 (agroscore-product-ux-review): fuera del @if de loading/error/success — visible
        siempre, incluso ante un error de la primera carga, para poder reintentar sin recargar la
        página. generatedAt solo se muestra cuando ya hay una respuesta cargada. -->
-  <div class="pa-toolbar">
+  <div class="pa-toolbar mb-3 flex items-center justify-end gap-[0.85rem]">
     @if (analytics(); as a) {
-      <span class="pa-toolbar__generated-at">Actualizado {{ a.generatedAt | date: 'short' }}</span>
+      <span class="pa-toolbar__generated-at text-[0.8rem] text-muted">Actualizado {{ a.generatedAt | date: 'short' }}</span>
     }
-    <button type="button" class="link-button" [disabled]="loading()" (click)="load()">
+    <button
+      type="button"
+      class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="loading()"
+      (click)="load()"
+    >
       {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
     </button>
   </div>
 
   @if (loading()) {
-    <p class="loading-state">Cargando entrega técnica...</p>
+    <p class="loading-state px-4 py-8 text-center text-muted">Cargando entrega técnica...</p>
   } @else if (errorMessage()) {
-    <p class="error-banner">{{ errorMessage() }}</p>
+    <p
+      class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+    >
+      {{ errorMessage() }}
+    </p>
   } @else {
     @if (analytics(); as a) {
-      <div class="pa-week-nav">
-        <button type="button" class="link-button" (click)="previousWeek()">← Semana anterior</button>
-        <span class="pa-week-nav__label">
+      <div class="pa-week-nav mb-4 flex flex-wrap items-center gap-4 text-[0.85rem]">
+        <button
+          type="button"
+          class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+          (click)="previousWeek()"
+        >
+          ← Semana anterior
+        </button>
+        <span class="pa-week-nav__label font-semibold">
           Semana {{ a.period.week.weekStart }} – {{ a.period.week.weekEnd }} ({{ a.period.timezone }})
         </span>
         @if (!isCurrentWeekView()) {
-          <button type="button" class="link-button" (click)="nextWeek()">Semana siguiente →</button>
-          <button type="button" class="link-button" (click)="backToLatestWeek()">Volver a la última completa</button>
+          <button
+            type="button"
+            class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+            (click)="nextWeek()"
+          >
+            Semana siguiente →
+          </button>
+          <button
+            type="button"
+            class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+            (click)="backToLatestWeek()"
+          >
+            Volver a la última completa
+          </button>
         }
       </div>
 
       @if (!a.coverage.scheduleHistory.complete) {
-        <p class="pa-coverage-note">
+        <p
+          class="pa-coverage-note mb-3 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface))] px-[0.9rem] py-[0.6rem] text-[0.8rem] text-warning"
+        >
           Denominador histórico de campos esperados incompleto para esta semana: el historial de
           habilitación de monitoreo semanal
           @if (a.coverage.scheduleHistory.availableFrom) {
@@ -48,7 +77,9 @@
         </p>
       }
       @if (!a.coverage.analysisTimingAvailability.complete) {
-        <p class="pa-coverage-note">
+        <p
+          class="pa-coverage-note mb-3 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface))] px-[0.9rem] py-[0.6rem] text-[0.8rem] text-warning"
+        >
           Cobertura de duración de análisis incompleta: la marca de finalización (`completedAt`)
           @if (a.coverage.analysisTimingAvailability.availableFrom) {
             recién es confiable desde {{ a.coverage.analysisTimingAvailability.availableFrom | date: 'short' }}.
@@ -59,14 +90,18 @@
         </p>
       }
       @if (a.coverage.analysisClassificationScan.truncated) {
-        <p class="pa-coverage-note">
+        <p
+          class="pa-coverage-note mb-3 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface))] px-[0.9rem] py-[0.6rem] text-[0.8rem] text-warning"
+        >
           Activation/time-to-value se calcularon sobre {{ a.coverage.analysisClassificationScan.scanned }}
           análisis (tope operativo de {{ a.coverage.analysisClassificationScan.limit }}) — pueden quedar
           usuarios sin evaluar en esta corrida.
         </p>
       }
       @if (a.coverage.nonCanonicalSchedules.count > 0) {
-        <p class="pa-coverage-note">
+        <p
+          class="pa-coverage-note mb-3 rounded-lg border border-warning bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface))] px-[0.9rem] py-[0.6rem] text-[0.8rem] text-warning"
+        >
           {{ a.coverage.nonCanonicalSchedules.count }}
           {{ a.coverage.nonCanonicalSchedules.count === 1 ? 'monitoreo semanal tiene' : 'monitoreos semanales tienen' }}
           un horario distinto del cutoff canónico (lunes 09:00 America/Argentina/Cordoba) y quedan
@@ -75,56 +110,56 @@
         </p>
       }
 
-      <div class="pa-kpi-grid">
-        <div class="card pa-kpi-card">
-          <h3 class="pa-kpi-card__title">North Star — campos con monitoreo utilizable</h3>
-          <p class="pa-kpi-card__value">
+      <div class="pa-kpi-grid grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+        <div class="card pa-kpi-card rounded-card border border-border bg-surface p-5 shadow-card">
+          <h3 class="pa-kpi-card__title mb-2 text-[0.85rem] text-muted">North Star — campos con monitoreo utilizable</h3>
+          <p class="pa-kpi-card__value mb-[0.4rem] text-[1.6rem] font-bold">
             {{ a.northStar.usableFieldsCount }} / {{ a.northStar.eligibleFieldsCount }}
             @if (formatPercent(a.northStar.rate); as pct) {
-              <span class="pa-kpi-card__rate">({{ pct }})</span>
+              <span class="pa-kpi-card__rate text-base font-semibold text-muted">({{ pct }})</span>
             } @else {
-              <span class="pa-kpi-card__rate muted">(sin denominador)</span>
+              <span class="pa-kpi-card__rate muted text-base font-normal text-muted">(sin denominador)</span>
             }
           </p>
-          <p class="pa-kpi-card__caption">
+          <p class="pa-kpi-card__caption m-0 text-[0.78rem] text-muted">
             Campos con snapshot sufficient / campos con monitoreo semanal (horario canónico) habilitado
             al cutoff de la semana (lunes 09:00 America/Argentina/Cordoba).
           </p>
         </div>
 
-        <div class="card pa-kpi-card">
-          <h3 class="pa-kpi-card__title">Activation técnica</h3>
-          <p class="pa-kpi-card__value">
+        <div class="card pa-kpi-card rounded-card border border-border bg-surface p-5 shadow-card">
+          <h3 class="pa-kpi-card__title mb-2 text-[0.85rem] text-muted">Activation técnica</h3>
+          <p class="pa-kpi-card__value mb-[0.4rem] text-[1.6rem] font-bold">
             {{ a.activation.activatedUsersCount }} / {{ a.activation.eligibleUsersCount }}
             @if (formatPercent(a.activation.rate); as pct) {
-              <span class="pa-kpi-card__rate">({{ pct }})</span>
+              <span class="pa-kpi-card__rate text-base font-semibold text-muted">({{ pct }})</span>
             } @else {
-              <span class="pa-kpi-card__rate muted">(sin denominador)</span>
+              <span class="pa-kpi-card__rate muted text-base font-normal text-muted">(sin denominador)</span>
             }
           </p>
-          <p class="pa-kpi-card__caption">
+          <p class="pa-kpi-card__caption m-0 text-[0.78rem] text-muted">
             Usuarios con al menos un resultado sufficient / usuarios elegibles (no administrativos).
           </p>
         </div>
 
-        <div class="card pa-kpi-card">
-          <h3 class="pa-kpi-card__title">Retención semanal técnica de campos</h3>
+        <div class="card pa-kpi-card rounded-card border border-border bg-surface p-5 shadow-card">
+          <h3 class="pa-kpi-card__title mb-2 text-[0.85rem] text-muted">Retención semanal técnica de campos</h3>
           @if (a.retention.periodComplete) {
-            <p class="pa-kpi-card__value">
+            <p class="pa-kpi-card__value mb-[0.4rem] text-[1.6rem] font-bold">
               {{ a.retention.retainedInNextWeekCount }} / {{ a.retention.sufficientInWeekCount }}
               @if (formatPercent(a.retention.rate); as pct) {
-                <span class="pa-kpi-card__rate">({{ pct }})</span>
+                <span class="pa-kpi-card__rate text-base font-semibold text-muted">({{ pct }})</span>
               } @else {
-                <span class="pa-kpi-card__rate muted">(sin denominador)</span>
+                <span class="pa-kpi-card__rate muted text-base font-normal text-muted">(sin denominador)</span>
               }
             </p>
-            <p class="pa-kpi-card__caption">
+            <p class="pa-kpi-card__caption m-0 text-[0.78rem] text-muted">
               Campos sufficient en {{ a.retention.week.weekStart }}–{{ a.retention.week.weekEnd }} que
               repitieron sufficient en {{ a.retention.nextWeek.weekStart }}–{{ a.retention.nextWeek.weekEnd }}.
             </p>
           } @else {
-            <p class="pa-kpi-card__value pa-kpi-card__value--unavailable">Todavía no disponible</p>
-            <p class="pa-kpi-card__caption">
+            <p class="pa-kpi-card__value pa-kpi-card__value--unavailable mb-[0.4rem] text-[1.1rem] font-semibold italic text-muted">Todavía no disponible</p>
+            <p class="pa-kpi-card__caption m-0 text-[0.78rem] text-muted">
               La semana {{ a.retention.nextWeek.weekStart }}–{{ a.retention.nextWeek.weekEnd }} todavía
               no terminó — la retención se puede afirmar recién cuando esa semana y la anterior
               ({{ a.retention.week.weekStart }}–{{ a.retention.week.weekEnd }}) estén completas.
@@ -137,48 +172,48 @@
         </div>
       </div>
 
-      <h3 class="pa-subsection__title">Time to First Technical Value</h3>
-      <div class="card pa-ttv-card">
-        <div class="pa-ttv-card__stats">
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.cohortUsersCount }}</span>
-            <span class="pa-ttv-card__label">Usuarios en la cohorte</span>
+      <h3 class="pa-subsection__title mb-3 mt-6 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Time to First Technical Value</h3>
+      <div class="card pa-ttv-card rounded-card border border-border bg-surface p-5 shadow-card">
+        <div class="pa-ttv-card__stats mb-3 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ a.timeToFirstTechnicalValue.cohortUsersCount }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">Usuarios en la cohorte</span>
           </div>
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.activatedUsersCount }}</span>
-            <span class="pa-ttv-card__label">Activados</span>
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ a.timeToFirstTechnicalValue.activatedUsersCount }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">Activados</span>
           </div>
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ a.timeToFirstTechnicalValue.notActivatedUsersCount }}</span>
-            <span class="pa-ttv-card__label">Todavía no activados</span>
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ a.timeToFirstTechnicalValue.notActivatedUsersCount }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">Todavía no activados</span>
           </div>
         </div>
-        <div class="pa-ttv-card__percentiles">
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p50Hours) ?? '—' }}</span>
-            <span class="pa-ttv-card__label">p50</span>
+        <div class="pa-ttv-card__percentiles mb-3 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-4">
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ formatHours(a.timeToFirstTechnicalValue.p50Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">p50</span>
           </div>
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p75Hours) ?? '—' }}</span>
-            <span class="pa-ttv-card__label">p75</span>
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ formatHours(a.timeToFirstTechnicalValue.p75Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">p75</span>
           </div>
-          <div class="pa-ttv-card__stat">
-            <span class="pa-ttv-card__value">{{ formatHours(a.timeToFirstTechnicalValue.p95Hours) ?? '—' }}</span>
-            <span class="pa-ttv-card__label">p95</span>
+          <div class="pa-ttv-card__stat flex flex-col gap-[0.2rem]">
+            <span class="pa-ttv-card__value text-[1.3rem] font-bold">{{ formatHours(a.timeToFirstTechnicalValue.p95Hours) ?? '—' }}</span>
+            <span class="pa-ttv-card__label text-[0.72rem] uppercase tracking-[0.03em] text-muted">p95</span>
             @if (a.timeToFirstTechnicalValue.p95Hours === null && a.timeToFirstTechnicalValue.activatedUsersCount > 0) {
-              <span class="pa-ttv-card__note">Volumen insuficiente todavía</span>
+              <span class="pa-ttv-card__note text-[0.7rem] italic text-muted">Volumen insuficiente todavía</span>
             }
           </div>
         </div>
-        <p class="pa-kpi-card__caption">
+        <p class="pa-kpi-card__caption m-0 text-[0.78rem] text-muted">
           Tiempo entre el alta del usuario y su primer resultado sufficient — mediana y percentiles,
           nunca promedio.
         </p>
       </div>
 
-      <h3 class="pa-subsection__title">Calidad de los resultados de la semana</h3>
+      <h3 class="pa-subsection__title mb-3 mt-6 text-[0.8rem] uppercase tracking-[0.04em] text-muted">Calidad de los resultados de la semana</h3>
       @if (a.qualityBreakdown.totalSnapshots > 0) {
-        <div class="table-scroll table-scroll--plain">
+        <div class="table-scroll table-scroll--plain overflow-x-auto">
           <table>
             <thead>
               <tr>
@@ -201,7 +236,9 @@
           </table>
         </div>
       } @else {
-        <p class="empty-state">Todavía no hay snapshots semanales para esta semana.</p>
+        <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+          Todavía no hay snapshots semanales para esta semana.
+        </p>
       }
     }
   }

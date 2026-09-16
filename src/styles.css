@@ -1,3 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — fuente de verdad para colores/radius/shadow, consumidos tanto por el
+   CSS global de abajo como por tailwind.config.js. Resuelven light/dark automáticamente
+   vía `prefers-color-scheme`, así que ningún utility de Tailwind necesita la variante
+   `dark:` — el theming ocurre acá, Tailwind solo referencia las variables. */
 :root {
   --color-bg: #f4f5f7;
   --color-surface: #ffffff;
@@ -37,388 +45,97 @@
   }
 }
 
-* {
-  box-sizing: border-box;
+/* Base/reset por selector de tipo (html, body, h1-h3, a, table, input...), aplicado a TODA la
+   app sin necesitar una clase en cada elemento. `box-sizing: border-box` y `body { margin: 0 }`
+   quedan afuera porque ya los cubre el preflight de Tailwind (@tailwind base de arriba); el resto
+   son decisiones tipográficas/de marca reales que no están en preflight. Migrar esto a utilities
+   exigiría agregar clases a cada <table>/<input>/<button>/<a> de las ~19 pantallas sin ningún
+   cambio visual — el tipo de conversión mecánica que degrada legibilidad sin beneficio. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--color-primary);
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--color-surface);
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
+  }
+
+  th {
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+  }
+
+  tbody tr:hover {
+    background: var(--color-surface-hover);
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 0.875rem;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+  }
 }
 
-html,
-body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-h1,
-h2,
-h3 {
-  margin: 0 0 0.75rem;
-  font-weight: 600;
-}
-
-a {
-  color: var(--color-primary);
-}
-
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--color-surface);
-}
-
-th,
-td {
-  text-align: left;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 0.875rem;
-}
-
-th {
-  color: var(--color-text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.03em;
-}
-
-tbody tr:hover {
-  background: var(--color-surface-hover);
-}
-
-/* Contenedor de scroll horizontal propio para tablas, para no depender del
-   scroll de toda la página (`.content { overflow-x: auto }`) en mobile. La
-   variante `--plain` se usa cuando la tabla ya vive dentro de un `.card`
-   (dashboard, sistema) y no necesita un segundo marco. */
-.table-scroll {
-  overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.table-scroll table {
-  border: none;
-}
-
-.table-scroll--plain {
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-}
-
-button {
-  font-family: inherit;
-  font-size: 0.875rem;
-}
-
-/* Header de pantalla (buscador + selects + botones) — compartido por todas
-   las pantallas de listado, antes duplicado en shared-list.component.css y
-   users.component.css sin flex-wrap (causaba overflow horizontal en mobile). */
-.page-header__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.page-header__actions input[type='search'],
-.page-header__actions input[type='text'] {
-  flex: 1 1 180px;
-  min-width: 0;
-}
-
-/* Celda de acciones de tabla — compartida por todas las pantallas de
-   listado (antes solo definida localmente en users.component.css). */
-.actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-}
-
-.btn:hover {
-  background: var(--color-surface-hover);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.btn-danger {
-  color: var(--color-error);
-  border-color: var(--color-error);
-  background: var(--color-surface);
-}
-
-.btn-danger:hover {
-  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-input,
-select,
-textarea {
-  font-family: inherit;
-  font-size: 0.875rem;
-  padding: 0.5rem 0.65rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 1px;
-}
-
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 1.25rem;
-  box-shadow: var(--shadow-sm);
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.error-banner {
-  background: color-mix(in srgb, var(--color-error) 10%, var(--color-surface));
-  color: var(--color-error);
-  border: 1px solid var(--color-error);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-}
-
-.empty-state {
-  color: var(--color-text-muted);
-  text-align: center;
-  padding: 2rem 1rem;
-  border: 1px dashed var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface);
-}
-
-.loading-state {
-  color: var(--color-text-muted);
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-.muted {
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-/* ADMIN-2: modal genérico — única definición, usada por todos los modales
-   de la app (usuarios, solicitudes de acceso, auditoría). Antes también
-   existía una copia local en users.component.css con un max-width distinto
-   (380px vs 480px acá); se eliminó esa copia (UI-1) para que todos los
-   modales se vean consistentes. */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 45%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 20;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.modal {
-  width: 100%;
-  max-width: 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
-}
-
-.modal--wide {
-  max-width: 640px;
-}
-
-.modal label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-}
-
-.modal label.checkbox {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.modal-section {
-  border-top: 1px solid var(--color-border);
-  padding-top: 0.85rem;
-  margin-top: 0.25rem;
-}
-
-.warning-banner {
-  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-surface));
-  color: var(--color-warning);
-  border: 1px solid var(--color-warning);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-}
-
-.success-banner {
-  background: color-mix(in srgb, var(--color-success) 10%, var(--color-surface));
-  color: var(--color-success);
-  border: 1px solid var(--color-success);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-}
-
-.json-viewer {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 0.75rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.75rem;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 240px;
-  overflow-y: auto;
-  color: var(--color-text);
-}
-
-.token-box {
-  background: var(--color-bg);
-  border: 1px dashed var(--color-border);
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.75rem;
-  word-break: break-all;
-}
-
-.link-button {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--color-primary);
-  cursor: pointer;
-  font-size: inherit;
-  text-decoration: underline;
-}
-
-/* Admin PR 2: trazabilidad — nombres/dueños que navegan a otra pantalla filtrada (campo, usuario,
-   análisis, etc.). Sin subrayado permanente para no saturar tablas ya densas; aparece en
-   hover/focus, igual que .link-button, para que quede claro que es interactivo sin que TODO el
-   texto de la tabla parezca un link. */
-.entity-link {
-  color: var(--color-primary);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.entity-link:hover,
-.entity-link:focus-visible {
-  text-decoration: underline;
-}
-
-/* Admin PR 1/2: chip de filtro activo llegado por deep link (hasAnalysis en Campos, userId en
-   Usuarios/Campos, etc.) — movido acá desde shared-list.component.css porque Usuarios usa su
-   propio stylesheet y necesita el mismo patrón. */
-.filter-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0.9rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  width: fit-content;
-}
-
-.health-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-}
-
-.health-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.health-card__label {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}

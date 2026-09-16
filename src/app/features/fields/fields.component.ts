@@ -44,7 +44,6 @@ const VALID_STATUS_FILTERS: FieldAnalysisStatus[] = [
     StatusBadgeComponent,
   ],
   templateUrl: './fields.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class FieldsComponent implements OnInit {
   private readonly fieldsService = inject(FieldsService);

@@ -44,7 +44,6 @@ function apiErrorMessage(err: unknown, fallback: string): string {
     CopyableIdComponent,
   ],
   templateUrl: './analysis.component.html',
-  styleUrl: '../shared-list.component.css',
 })
 export class AnalysisComponent implements OnInit {
   private readonly analysisService = inject(AnalysisService);

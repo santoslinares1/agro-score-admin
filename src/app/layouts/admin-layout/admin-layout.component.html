@@ -1,44 +1,73 @@
-<div class="shell">
+<div class="shell flex min-h-screen">
   @if (sidebarOpen()) {
-    <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
+    <div
+      class="sidebar-backdrop hidden max-900:block max-900:fixed max-900:inset-0 max-900:z-[25] max-900:bg-black/45"
+      (click)="closeSidebar()"
+    ></div>
   }
 
-  <aside class="sidebar" [class.sidebar--open]="sidebarOpen()">
-    <div class="sidebar__brand">AgroScore <span>Admin</span></div>
-    <nav class="sidebar__nav">
+  <aside
+    class="sidebar flex w-sidebar shrink-0 flex-col border-r border-border bg-surface max-900:fixed max-900:inset-y-0 max-900:left-0 max-900:z-30 max-900:[transition:transform_0.2s_ease] max-900:shadow-card"
+    [class.sidebar--open]="sidebarOpen()"
+    [ngClass]="{
+      'max-900:translate-x-0': sidebarOpen(),
+      'max-900:-translate-x-full': !sidebarOpen(),
+    }"
+  >
+    <div class="sidebar__brand border-b border-border px-5 pb-4 pt-5 text-[1.05rem] font-bold">
+      AgroScore <span class="text-primary">Admin</span>
+    </div>
+    <nav class="sidebar__nav flex flex-col gap-[0.15rem] p-3">
       @for (item of navItems; track item.path) {
-        <a [routerLink]="item.path" routerLinkActive="active" (click)="closeSidebar()">{{ item.label }}</a>
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="bg-primary text-white"
+          (click)="closeSidebar()"
+          class="rounded-md px-3 py-[0.55rem] text-sm text-foreground no-underline hover:bg-surface-hover"
+          >{{ item.label }}</a
+        >
       }
     </nav>
   </aside>
 
-  <div class="main">
-    <header class="topbar">
+  <div class="main flex min-w-0 flex-1 flex-col">
+    <header
+      class="topbar flex items-center justify-end border-b border-border bg-surface px-6 py-3 max-480:px-4 max-480:py-[0.65rem]"
+    >
       <button
         type="button"
-        class="sidebar-toggle"
+        class="sidebar-toggle hidden w-[34px] h-[34px] max-900:flex flex-col items-center justify-center gap-1 rounded-md border border-border bg-surface p-0 cursor-pointer hover:bg-surface-hover"
         [attr.aria-expanded]="sidebarOpen()"
         [attr.aria-label]="sidebarOpen() ? 'Cerrar navegación' : 'Abrir navegación'"
         (click)="toggleSidebar()"
       >
-        <span class="sidebar-toggle__bar"></span>
-        <span class="sidebar-toggle__bar"></span>
-        <span class="sidebar-toggle__bar"></span>
+        <span class="sidebar-toggle__bar block h-0.5 w-4 rounded-[1px] bg-foreground"></span>
+        <span class="sidebar-toggle__bar block h-0.5 w-4 rounded-[1px] bg-foreground"></span>
+        <span class="sidebar-toggle__bar block h-0.5 w-4 rounded-[1px] bg-foreground"></span>
       </button>
 
-      <div class="topbar__spacer"></div>
-      <div class="topbar__user">
+      <div class="topbar__spacer flex-1"></div>
+      <div class="topbar__user flex items-center gap-3">
         @if (authService.currentUser; as user) {
-          <span class="topbar__user-info">
+          <span class="topbar__user-info flex items-center gap-[0.4rem] text-[0.85rem]">
             {{ user.fullName }}
-            <span class="topbar__role">{{ user.role }}</span>
+            <span
+              class="topbar__role rounded-full bg-surface-hover px-2 py-[0.1rem] text-[0.7rem] uppercase tracking-[0.03em] text-muted"
+              >{{ user.role }}</span
+            >
           </span>
         }
-        <button type="button" class="btn" (click)="logout()">Salir</button>
+        <button
+          type="button"
+          class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+          (click)="logout()"
+        >
+          Salir
+        </button>
       </div>
     </header>
 
-    <main class="content">
+    <main class="content flex-1 min-w-0 p-7 max-900:p-5 max-480:p-4">
       <router-outlet />
     </main>
   </div>

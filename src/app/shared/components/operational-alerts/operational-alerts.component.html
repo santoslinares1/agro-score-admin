@@ -1,23 +1,39 @@
-<section class="alerts-section">
-  <h2 class="alerts-section__title">Alertas operativas</h2>
-  <p class="alerts-section__subcopy">Problemas y oportunidades que conviene revisar primero.</p>
+<section class="alerts-section mb-7">
+  <h2 class="alerts-section__title mb-1 text-[0.8rem] uppercase tracking-[0.04em] text-muted">
+    Alertas operativas
+  </h2>
+  <p class="alerts-section__subcopy mb-[0.85rem] text-[0.9rem] text-muted">
+    Problemas y oportunidades que conviene revisar primero.
+  </p>
 
   @if (alerts().length) {
-    <ul class="alerts-list">
+    <ul class="alerts-list m-0 flex list-none flex-col gap-3 p-0">
       @for (alert of alerts(); track alert.id) {
-        <li class="alert-card" [class]="'alert-card--' + alert.severity">
-          <div class="alert-card__header">
-            <app-status-badge [label]="severityLabel(alert.severity)" [tone]="severityTone(alert.severity)" />
-            <span class="alert-card__title">{{ alert.title }}</span>
+        <li
+          class="alert-card rounded-card border border-l-4 border-border bg-surface px-[1.1rem] py-[0.9rem]"
+          [class]="SEVERITY_BORDER_CLASSES[alert.severity]"
+        >
+          <div class="alert-card__header mb-[0.35rem] flex items-center gap-[0.6rem]">
+            <app-status-badge
+              [label]="severityLabel(alert.severity)"
+              [tone]="severityTone(alert.severity)"
+            />
+            <span class="alert-card__title font-bold">{{ alert.title }}</span>
           </div>
-          <p class="alert-card__description">{{ alert.description }}</p>
-          <a class="alert-card__action" [routerLink]="alert.route" [queryParams]="alert.queryParams">
+          <p class="alert-card__description mb-2 text-[0.9rem] text-muted">{{ alert.description }}</p>
+          <a
+            class="alert-card__action text-[0.85rem] font-semibold no-underline"
+            [routerLink]="alert.route"
+            [queryParams]="alert.queryParams"
+          >
             {{ alert.actionLabel }} →
           </a>
         </li>
       }
     </ul>
   } @else {
-    <p class="empty-state">No hay alertas operativas relevantes en este momento.</p>
+    <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+      No hay alertas operativas relevantes en este momento.
+    </p>
   }
 </section>

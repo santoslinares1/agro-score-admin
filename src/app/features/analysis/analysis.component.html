@@ -1,9 +1,9 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Diagnósticos</h1>
 </div>
 
-<div class="card" style="margin-bottom: 1.25rem">
-  <div class="filters">
+<div class="card mb-5 rounded-card border border-border bg-surface p-5 shadow-card">
+  <div class="filters flex flex-wrap items-center gap-[0.6rem]">
     <select [(ngModel)]="status" name="status">
       <option value="">Todos los estados</option>
       @for (s of statuses; track s) {
@@ -11,239 +11,297 @@
       }
     </select>
 
-    <label class="checkbox-inline">
+    <label class="checkbox-inline flex items-center gap-[0.35rem] whitespace-nowrap text-[0.85rem]">
       <input type="checkbox" [(ngModel)]="onlyFailed" name="onlyFailed" />
       Solo fallidos
     </label>
 
-    <label class="checkbox-inline">
+    <label class="checkbox-inline flex items-center gap-[0.35rem] whitespace-nowrap text-[0.85rem]">
       <input type="checkbox" [(ngModel)]="onlyUnreviewed" name="onlyUnreviewed" />
       Solo no revisados
     </label>
 
-    <input type="text" placeholder="analysisId (UUID)" [(ngModel)]="analysisId" name="analysisId" />
-    <input type="text" placeholder="fieldId (UUID)" [(ngModel)]="fieldId" name="fieldId" />
-    <input type="text" placeholder="userId (UUID)" [(ngModel)]="userId" name="userId" />
+    <input type="text" class="w-[150px]" placeholder="analysisId (UUID)" [(ngModel)]="analysisId" name="analysisId" />
+    <input type="text" class="w-[150px]" placeholder="fieldId (UUID)" [(ngModel)]="fieldId" name="fieldId" />
+    <input type="text" class="w-[150px]" placeholder="userId (UUID)" [(ngModel)]="userId" name="userId" />
 
-    <label class="checkbox-inline">
+    <label class="checkbox-inline flex items-center gap-[0.35rem] whitespace-nowrap text-[0.85rem]">
       Desde
-      <input type="date" [(ngModel)]="from" name="from" />
+      <input type="date" class="w-[150px]" [(ngModel)]="from" name="from" />
     </label>
-    <label class="checkbox-inline">
+    <label class="checkbox-inline flex items-center gap-[0.35rem] whitespace-nowrap text-[0.85rem]">
       Hasta
-      <input type="date" [(ngModel)]="to" name="to" />
+      <input type="date" class="w-[150px]" [(ngModel)]="to" name="to" />
     </label>
 
-    <button type="button" class="btn btn-primary" (click)="applyFilters()">Filtrar</button>
-    <button type="button" class="btn" (click)="clearFilters()">Limpiar</button>
+    <button
+      type="button"
+      class="btn btn-primary cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover"
+      (click)="applyFilters()"
+    >
+      Filtrar
+    </button>
+    <button
+      type="button"
+      class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover"
+      (click)="clearFilters()"
+    >
+      Limpiar
+    </button>
   </div>
 </div>
 
-<p class="muted" style="margin-bottom: 1rem">{{ retryCopy }}</p>
+<p class="muted mb-4 text-[0.8rem] text-muted">{{ retryCopy }}</p>
 
 @if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 @if (loading()) {
-  <div class="loading-state">Cargando diagnósticos...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando diagnósticos...</div>
 } @else if (!items().length) {
-  <p class="empty-state">No hay diagnósticos para estos filtros.</p>
+  <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+    No hay diagnósticos para estos filtros.
+  </p>
 } @else {
-  <div class="table-scroll">
-  <table>
-    <thead>
-      <tr>
-        <th>Campo</th>
-        <th>Usuario</th>
-        <th>Estado</th>
-        <th>Creado</th>
-        <th>Completado</th>
-        <th>Duración</th>
-        <th>Revisión / reintentos</th>
-        <th>Error</th>
-        <th>Veredicto técnico</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (item of items(); track item.id) {
+  <div class="table-scroll overflow-x-auto rounded-card border border-border bg-surface shadow-card">
+    <table>
+      <thead>
         <tr>
-          <td>
-            @if (item.fieldId) {
-              <a class="entity-link" routerLink="/fields" [queryParams]="{ fieldId: item.fieldId }">
-                {{ item.fieldName ?? '—' }}
-              </a>
-            } @else {
-              {{ item.fieldName ?? '—' }}
-            }
-            <br />
-            <app-copyable-id [value]="item.id" />
-          </td>
-          <td>
-            @if (item.ownerId) {
-              <a class="entity-link" routerLink="/users" [queryParams]="{ userId: item.ownerId }">
-                {{ item.ownerFullName ?? '—' }}
-              </a>
-            } @else {
-              {{ item.ownerFullName ?? '—' }}
-            }
-            @if (item.ownerEmail) {
-              <span class="muted">({{ item.ownerEmail }})</span>
-            }
-          </td>
-          <td><app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" /></td>
-          <td>{{ item.createdAt | date: 'short' }}</td>
-          <td>{{ item.completedAt ? (item.completedAt | date: 'short') : '—' }}</td>
-          <td>{{ item.durationMs | duration }}</td>
-          <td class="muted">
-            @if (item.reviewedAt) {
-              Revisado {{ item.reviewedAt | date: 'short' }}
-              @if (reviewerLabel(item.reviewedByUserId); as reviewer) {
-                <br />por {{ reviewer }}
-              }
-            } @else {
-              No revisado
-            }
-            @if (item.retryCount > 0) {
-              <br />
-              Reintentos: {{ item.retryCount }}
-              @if (item.lastRetriedAt) {
-                (última {{ item.lastRetriedAt | date: 'short' }})
-              }
-            }
-          </td>
-          <td class="error-cell" [class.error-cell--expanded]="isErrorExpanded(item.id)">
-            @if (item.errorMessage) {
-              <span class="error-cell__text">{{ item.errorMessage }}</span>
-              <button type="button" class="link-button" (click)="toggleErrorExpanded(item.id)">
-                {{ isErrorExpanded(item.id) ? 'Ocultar' : 'Ver error completo' }}
-              </button>
-            } @else {
-              <span class="muted">Sin error registrado</span>
-            }
-          </td>
-          <td class="verdict-cell">
-            @if (item.technicalVerdict; as verdict) {
-              <app-status-badge
-                [label]="generationStatusLabel(verdict.status)"
-                [tone]="generationStatusTone(verdict.status)"
-              />
-              @if (verdict.verdict) {
-                <br />
-                <span class="muted">{{ verdictLabel(verdict.verdict) }}</span>
-              }
-              <br />
-              <button type="button" class="link-button" (click)="toggleVerdictExpanded(item.id)">
-                {{ isVerdictExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
-              </button>
-            } @else {
-              <span class="muted">Sin veredicto</span>
-            }
-          </td>
-          <td class="actions">
-            @if (item.status === 'Error' && !item.reviewedAt) {
-              <button
-                type="button"
-                class="btn"
-                [disabled]="actionPendingId() === item.id"
-                (click)="markReviewed(item)"
-              >
-                Marcar revisado
-              </button>
-            }
-            @if (item.status === 'Error') {
-              <button
-                type="button"
-                class="btn"
-                [disabled]="actionPendingId() === item.id"
-                (click)="retry(item)"
-              >
-                Reintentar
-              </button>
-            }
-          </td>
+          <th>Campo</th>
+          <th>Usuario</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th>Completado</th>
+          <th>Duración</th>
+          <th>Revisión / reintentos</th>
+          <th>Error</th>
+          <th>Veredicto técnico</th>
+          <th>Acciones</th>
         </tr>
-        @if (isVerdictExpanded(item.id) && item.technicalVerdict; as verdict) {
-          <tr class="verdict-detail-row">
-            <td colspan="10">
-              <div class="verdict-panel">
-                <h3>Veredicto técnico</h3>
-
-                <div class="verdict-panel__meta">
-                  <app-status-badge
-                    [label]="'Estado de generación: ' + generationStatusLabel(verdict.status)"
-                    [tone]="generationStatusTone(verdict.status)"
-                  />
-                  @if (verdict.verdict) {
-                    <app-status-badge
-                      [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
-                      [tone]="verdictTone(verdict.verdict)"
-                    />
-                  }
-                  @if (verdict.confidence) {
-                    <span class="muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
-                  }
-                </div>
-
-                @if (verdict.summary) {
-                  <p class="verdict-panel__summary">{{ verdict.summary }}</p>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.id) {
+          <tr>
+            <td>
+              @if (item.fieldId) {
+                <a
+                  class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                  routerLink="/fields"
+                  [queryParams]="{ fieldId: item.fieldId }"
+                >
+                  {{ item.fieldName ?? '—' }}
+                </a>
+              } @else {
+                {{ item.fieldName ?? '—' }}
+              }
+              <br />
+              <app-copyable-id [value]="item.id" />
+            </td>
+            <td>
+              @if (item.ownerId) {
+                <a
+                  class="entity-link cursor-pointer text-primary no-underline hover:underline focus-visible:underline"
+                  routerLink="/users"
+                  [queryParams]="{ userId: item.ownerId }"
+                >
+                  {{ item.ownerFullName ?? '—' }}
+                </a>
+              } @else {
+                {{ item.ownerFullName ?? '—' }}
+              }
+              @if (item.ownerEmail) {
+                <span class="muted text-[0.8rem] text-muted">({{ item.ownerEmail }})</span>
+              }
+            </td>
+            <td><app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" /></td>
+            <td>{{ item.createdAt | date: 'short' }}</td>
+            <td>{{ item.completedAt ? (item.completedAt | date: 'short') : '—' }}</td>
+            <td>{{ item.durationMs | duration }}</td>
+            <td class="muted text-[0.8rem] text-muted">
+              @if (item.reviewedAt) {
+                Revisado {{ item.reviewedAt | date: 'short' }}
+                @if (reviewerLabel(item.reviewedByUserId); as reviewer) {
+                  <br />por {{ reviewer }}
                 }
-
-                @if (verdict.keyFindings.length) {
-                  <p class="verdict-panel__section-title">Hallazgos principales</p>
-                  <ul>
-                    @for (finding of verdict.keyFindings; track finding) {
-                      <li>{{ finding }}</li>
-                    }
-                  </ul>
+              } @else {
+                No revisado
+              }
+              @if (item.retryCount > 0) {
+                <br />
+                Reintentos: {{ item.retryCount }}
+                @if (item.lastRetriedAt) {
+                  (última {{ item.lastRetriedAt | date: 'short' }})
                 }
-
-                @if (verdict.possibleCauses.length) {
-                  <p class="verdict-panel__section-title">Posibles causas</p>
-                  <ul>
-                    @for (cause of verdict.possibleCauses; track cause) {
-                      <li>{{ cause }}</li>
-                    }
-                  </ul>
+              }
+            </td>
+            <td
+              class="error-cell flex flex-col items-start gap-[0.3rem] text-[0.8rem] text-error"
+              [class]="isErrorExpanded(item.id) ? 'max-w-[420px]' : 'max-w-[280px]'"
+              [class.error-cell--expanded]="isErrorExpanded(item.id)"
+            >
+              @if (item.errorMessage) {
+                <span
+                  class="error-cell__text block max-w-full"
+                  [class]="
+                    isErrorExpanded(item.id)
+                      ? 'whitespace-normal overflow-visible break-words'
+                      : 'overflow-hidden text-ellipsis whitespace-nowrap'
+                  "
+                  >{{ item.errorMessage }}</span
+                >
+                <button
+                  type="button"
+                  class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+                  (click)="toggleErrorExpanded(item.id)"
+                >
+                  {{ isErrorExpanded(item.id) ? 'Ocultar' : 'Ver error completo' }}
+                </button>
+              } @else {
+                <span class="muted text-[0.8rem] text-muted">Sin error registrado</span>
+              }
+            </td>
+            <td class="verdict-cell flex max-w-[220px] flex-col items-start gap-[0.3rem] whitespace-nowrap text-[0.8rem]">
+              @if (item.technicalVerdict; as verdict) {
+                <app-status-badge
+                  [label]="generationStatusLabel(verdict.status)"
+                  [tone]="generationStatusTone(verdict.status)"
+                />
+                @if (verdict.verdict) {
+                  <br />
+                  <span class="muted text-[0.8rem] text-muted">{{ verdictLabel(verdict.verdict) }}</span>
                 }
-
-                @if (verdict.recommendations.length) {
-                  <p class="verdict-panel__section-title">Recomendaciones</p>
-                  <ul>
-                    @for (recommendation of verdict.recommendations; track recommendation) {
-                      <li>{{ recommendation }}</li>
-                    }
-                  </ul>
-                }
-
-                @if (verdict.limitations.length) {
-                  <p class="verdict-panel__section-title">Limitaciones</p>
-                  <ul>
-                    @for (limitation of verdict.limitations; track limitation) {
-                      <li>{{ limitation }}</li>
-                    }
-                  </ul>
-                }
-
-                @if (verdict.status === 'failed' && verdict.errorMessage) {
-                  <p class="verdict-panel__section-title verdict-panel__section-title--error">Error técnico</p>
-                  <p class="verdict-panel__error">{{ verdict.errorMessage }}</p>
-                }
-
-                <p class="verdict-panel__section-title">Datos técnicos</p>
-                <ul class="verdict-panel__tech-data">
-                  <li>Generator: {{ verdict.generator ?? '—' }}</li>
-                  <li>Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
-                  <li>Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
-                </ul>
-              </div>
+                <br />
+                <button
+                  type="button"
+                  class="link-button cursor-pointer border-0 bg-transparent p-0 text-primary underline"
+                  (click)="toggleVerdictExpanded(item.id)"
+                >
+                  {{ isVerdictExpanded(item.id) ? 'Ocultar' : 'Ver detalle' }}
+                </button>
+              } @else {
+                <span class="muted text-[0.8rem] text-muted">Sin veredicto</span>
+              }
+            </td>
+            <td class="actions flex flex-wrap gap-2">
+              @if (item.status === 'Error' && !item.reviewedAt) {
+                <button
+                  type="button"
+                  class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  [disabled]="actionPendingId() === item.id"
+                  (click)="markReviewed(item)"
+                >
+                  Marcar revisado
+                </button>
+              }
+              @if (item.status === 'Error') {
+                <button
+                  type="button"
+                  class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  [disabled]="actionPendingId() === item.id"
+                  (click)="retry(item)"
+                >
+                  Reintentar
+                </button>
+              }
             </td>
           </tr>
+          @if (isVerdictExpanded(item.id) && item.technicalVerdict; as verdict) {
+            <tr class="verdict-detail-row">
+              <td colspan="10" class="bg-[#f8f9fb] px-5 py-4">
+                <div class="verdict-panel">
+                  <h3 class="mb-[0.6rem] text-[0.95rem]">Veredicto técnico</h3>
+
+                  <div class="verdict-panel__meta mb-[0.6rem] flex flex-wrap items-center gap-2">
+                    <app-status-badge
+                      [label]="'Estado de generación: ' + generationStatusLabel(verdict.status)"
+                      [tone]="generationStatusTone(verdict.status)"
+                    />
+                    @if (verdict.verdict) {
+                      <app-status-badge
+                        [label]="'Veredicto: ' + verdictLabel(verdict.verdict)"
+                        [tone]="verdictTone(verdict.verdict)"
+                      />
+                    }
+                    @if (verdict.confidence) {
+                      <span class="muted text-[0.8rem] text-muted">Confianza: {{ confidenceLabel(verdict.confidence) }}</span>
+                    }
+                  </div>
+
+                  @if (verdict.summary) {
+                    <p class="verdict-panel__summary mb-[0.6rem] max-w-[60ch]">{{ verdict.summary }}</p>
+                  }
+
+                  @if (verdict.keyFindings.length) {
+                    <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                      Hallazgos principales
+                    </p>
+                    <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                      @for (finding of verdict.keyFindings; track finding) {
+                        <li>{{ finding }}</li>
+                      }
+                    </ul>
+                  }
+
+                  @if (verdict.possibleCauses.length) {
+                    <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                      Posibles causas
+                    </p>
+                    <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                      @for (cause of verdict.possibleCauses; track cause) {
+                        <li>{{ cause }}</li>
+                      }
+                    </ul>
+                  }
+
+                  @if (verdict.recommendations.length) {
+                    <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                      Recomendaciones
+                    </p>
+                    <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                      @for (recommendation of verdict.recommendations; track recommendation) {
+                        <li>{{ recommendation }}</li>
+                      }
+                    </ul>
+                  }
+
+                  @if (verdict.limitations.length) {
+                    <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                      Limitaciones
+                    </p>
+                    <ul class="mb-[0.4rem] max-w-[60ch] pl-[1.2rem]">
+                      @for (limitation of verdict.limitations; track limitation) {
+                        <li>{{ limitation }}</li>
+                      }
+                    </ul>
+                  }
+
+                  @if (verdict.status === 'failed' && verdict.errorMessage) {
+                    <p class="verdict-panel__section-title verdict-panel__section-title--error mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-error">
+                      Error técnico
+                    </p>
+                    <p class="verdict-panel__error m-0 max-w-[60ch] text-error">{{ verdict.errorMessage }}</p>
+                  }
+
+                  <p class="verdict-panel__section-title mb-1 mt-[0.7rem] text-xs font-semibold uppercase tracking-[0.02em] text-[#6b7280]">
+                    Datos técnicos
+                  </p>
+                  <ul class="verdict-panel__tech-data list-none pl-0 font-mono text-[0.8rem] text-[#6b7280]">
+                    <li class="break-words">Generator: {{ verdict.generator ?? '—' }}</li>
+                    <li class="break-words">Prompt version: {{ verdict.promptVersion ?? '—' }}</li>
+                    <li class="break-words">Generated at: {{ verdict.generatedAt ? (verdict.generatedAt | date: 'short') : '—' }}</li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          }
         }
-      }
-    </tbody>
-  </table>
+      </tbody>
+    </table>
   </div>
 
   <app-pagination-controls

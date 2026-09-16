@@ -1,18 +1,27 @@
-<div class="login-page">
-  <form class="login-card card" (ngSubmit)="submit()">
-    <h1>AgroScore <span>Admin</span></h1>
-    <p class="subtitle">Panel interno — acceso restringido a owner/admin.</p>
+<div class="login-page flex min-h-screen items-center justify-center bg-background">
+  <form
+    class="login-card card flex w-full max-w-[340px] flex-col gap-[0.9rem] rounded-card border border-border bg-surface p-5 shadow-card"
+    (ngSubmit)="submit()"
+  >
+    <h1 class="mb-0 text-xl">AgroScore <span class="text-primary">Admin</span></h1>
+    <p class="subtitle mb-2 text-[0.8rem] text-muted">
+      Panel interno — acceso restringido a owner/admin.
+    </p>
 
     @if (errorMessage(); as message) {
-      <div class="error-banner">{{ message }}</div>
+      <div
+        class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+      >
+        {{ message }}
+      </div>
     }
 
-    <label>
+    <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
       Email
       <input type="email" name="email" [(ngModel)]="email" required autocomplete="username" />
     </label>
 
-    <label>
+    <label class="flex flex-col gap-[0.3rem] text-[0.85rem]">
       Contraseña
       <input
         type="password"
@@ -23,7 +32,11 @@
       />
     </label>
 
-    <button type="submit" class="btn btn-primary" [disabled]="loading()">
+    <button
+      type="submit"
+      class="btn btn-primary mt-2 cursor-pointer rounded-md border border-primary bg-primary px-4 py-2 text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="loading()"
+    >
       {{ loading() ? 'Ingresando...' : 'Ingresar' }}
     </button>
   </form>

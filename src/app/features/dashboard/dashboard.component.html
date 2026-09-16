@@ -1,18 +1,27 @@
-<div class="page-header">
+<div class="page-header mb-5 flex flex-wrap items-center justify-between gap-4">
   <h1>Dashboard</h1>
-  <div class="page-header__actions">
+  <div class="page-header__actions flex flex-wrap items-center gap-[0.6rem]">
     <!-- UX-002 (agroscore-product-ux-review): visible en cualquier estado (loading/error/success)
          para poder reintentar sin recargar la página completa, no solo "refrescar" con éxito. -->
-    <button type="button" class="btn" [disabled]="loading()" (click)="load()">
+    <button
+      type="button"
+      class="btn cursor-pointer rounded-md border border-border bg-surface px-4 py-2 text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="loading()"
+      (click)="load()"
+    >
       {{ loading() ? 'Actualizando…' : '↻ Actualizar' }}
     </button>
   </div>
 </div>
 
 @if (loading()) {
-  <div class="loading-state">Cargando métricas...</div>
+  <div class="loading-state px-4 py-8 text-center text-muted">Cargando métricas...</div>
 } @else if (errorMessage()) {
-  <div class="error-banner">{{ errorMessage() }}</div>
+  <div
+    class="error-banner mb-4 rounded-lg border border-error bg-[color-mix(in_srgb,var(--color-error)_10%,var(--color-surface))] px-4 py-3 text-sm text-error"
+  >
+    {{ errorMessage() }}
+  </div>
 }
 
 <!-- UX-003 (agroscore-product-ux-review): alertas antes que el inventario. Misma condición de
@@ -35,102 +44,110 @@
 <!-- UX-003: resto del inventario — mismo criterio de éxito que el bloque de alertas de arriba. -->
 @if (!loading() && !errorMessage()) {
   @if (metrics(); as m) {
-  <section class="metrics-section">
-    <h2 class="metrics-section__title">Usuarios</h2>
-    <div class="metrics-grid">
-      <div class="metric-card card">
-        <span class="metric-card__label">Totales</span>
-        <span class="metric-card__value">{{ m.totalUsers }}</span>
+  <section class="metrics-section mb-7">
+    <h2 class="metrics-section__title mb-[0.6rem] text-[0.8rem] uppercase tracking-[0.04em] text-muted">Usuarios</h2>
+    <div class="metrics-grid grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Totales</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.totalUsers }}</span>
       </div>
       <!-- UX-005 (agroscore-product-ux-review): "Activos" prometía uso/engagement; el dato real
            es isActive=true (cuenta no desactivada, ver UsersService.countActive) — no tiene
            relación con actividad reciente. Solo cambia el label, m.activeUsers no se toca. -->
-      <div class="metric-card card">
-        <span class="metric-card__label">Cuentas habilitadas</span>
-        <span class="metric-card__value">{{ m.activeUsers }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Cuentas habilitadas</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.activeUsers }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Nuevos (7 días)</span>
-        <span class="metric-card__value">{{ m.usersCreatedLast7Days ?? 0 }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Nuevos (7 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.usersCreatedLast7Days ?? 0 }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Nuevos (30 días)</span>
-        <span class="metric-card__value">{{ m.usersCreatedLast30Days ?? 0 }}</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="metrics-section">
-    <h2 class="metrics-section__title">Campos</h2>
-    <div class="metrics-grid">
-      <div class="metric-card card">
-        <span class="metric-card__label">Totales</span>
-        <span class="metric-card__value">{{ m.totalFields }}</span>
-      </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Lotes</span>
-        <span class="metric-card__value">{{ m.totalLots }}</span>
-      </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Nuevos (7 días)</span>
-        <span class="metric-card__value">{{ m.fieldsCreatedLast7Days ?? 0 }}</span>
-      </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Nuevos (30 días)</span>
-        <span class="metric-card__value">{{ m.fieldsCreatedLast30Days ?? 0 }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Nuevos (30 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.usersCreatedLast30Days ?? 0 }}</span>
       </div>
     </div>
   </section>
 
-  <section class="metrics-section">
-    <h2 class="metrics-section__title">Diagnósticos</h2>
-    <div class="metrics-grid">
-      <div class="metric-card card">
-        <span class="metric-card__label">Totales</span>
-        <span class="metric-card__value">{{ m.totalAnalysis }}</span>
+  <section class="metrics-section mb-7">
+    <h2 class="metrics-section__title mb-[0.6rem] text-[0.8rem] uppercase tracking-[0.04em] text-muted">Campos</h2>
+    <div class="metrics-grid grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Totales</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.totalFields }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Procesando</span>
-        <span class="metric-card__value metric-card__value--processing">{{ processingAnalysis(m) }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Lotes</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.totalLots }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Completados</span>
-        <span class="metric-card__value">{{ m.completedAnalysis }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Nuevos (7 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.fieldsCreatedLast7Days ?? 0 }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Fallidos</span>
-        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysis }}</span>
-      </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Últimos 7 días</span>
-        <span class="metric-card__value">{{ m.analysisCreatedLast7Days ?? 0 }}</span>
-      </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Últimos 30 días</span>
-        <span class="metric-card__value">{{ m.analysisCreatedLast30Days ?? 0 }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Nuevos (30 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.fieldsCreatedLast30Days ?? 0 }}</span>
       </div>
     </div>
   </section>
 
-  <section class="metrics-section">
-    <h2 class="metrics-section__title">Salud operativa</h2>
-    <div class="metrics-grid">
+  <section class="metrics-section mb-7">
+    <h2 class="metrics-section__title mb-[0.6rem] text-[0.8rem] uppercase tracking-[0.04em] text-muted">Diagnósticos</h2>
+    <div class="metrics-grid grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Totales</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.totalAnalysis }}</span>
+      </div>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Procesando</span>
+        <span class="metric-card__value metric-card__value--processing text-[1.6rem] font-bold text-info">{{ processingAnalysis(m) }}</span>
+      </div>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Completados</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.completedAnalysis }}</span>
+      </div>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Fallidos</span>
+        <span class="metric-card__value metric-card__value--error text-[1.6rem] font-bold text-error">{{ m.failedAnalysis }}</span>
+      </div>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Últimos 7 días</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.analysisCreatedLast7Days ?? 0 }}</span>
+      </div>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Últimos 30 días</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.analysisCreatedLast30Days ?? 0 }}</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-section mb-7">
+    <h2 class="metrics-section__title mb-[0.6rem] text-[0.8rem] uppercase tracking-[0.04em] text-muted">Salud operativa</h2>
+    <div class="metrics-grid grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
       <!-- UX-004 (agroscore-product-ux-review): mismo filtro (?status=Error) que ya usa la alerta
            "diagnósticos fallidos en los últimos 30 días" — hereda la misma imprecisión que esa
            alerta a propósito: el backend no soporta un filtro por fecha, así que el link muestra
            TODOS los errores, no solo los de la ventana de 7/30 días. No se inventa un filtro
            nuevo acá. -->
-      <a class="metric-card card metric-card--link" routerLink="/analysis" [queryParams]="{ status: 'Error' }">
-        <span class="metric-card__label">Fallidos (7 días)</span>
-        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast7Days ?? 0 }}</span>
+      <a
+        class="metric-card card metric-card--link flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 text-inherit no-underline shadow-card hover:border-muted"
+        routerLink="/analysis"
+        [queryParams]="{ status: 'Error' }"
+      >
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Fallidos (7 días)</span>
+        <span class="metric-card__value metric-card__value--error text-[1.6rem] font-bold text-error">{{ m.failedAnalysisLast7Days ?? 0 }}</span>
       </a>
-      <a class="metric-card card metric-card--link" routerLink="/analysis" [queryParams]="{ status: 'Error' }">
-        <span class="metric-card__label">Fallidos (30 días)</span>
-        <span class="metric-card__value metric-card__value--error">{{ m.failedAnalysisLast30Days ?? 0 }}</span>
+      <a
+        class="metric-card card metric-card--link flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 text-inherit no-underline shadow-card hover:border-muted"
+        routerLink="/analysis"
+        [queryParams]="{ status: 'Error' }"
+      >
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Fallidos (30 días)</span>
+        <span class="metric-card__value metric-card__value--error text-[1.6rem] font-bold text-error">{{ m.failedAnalysisLast30Days ?? 0 }}</span>
       </a>
-      <div class="metric-card card">
-        <span class="metric-card__label">Tasa de fallo (7 días)</span>
-        <span class="metric-card__value">
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Tasa de fallo (7 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">
           @if (m.analysisFailureRateLast7Days != null) {
             {{ m.analysisFailureRateLast7Days * 100 | number: '1.0-1' }}%
           } @else {
@@ -138,50 +155,58 @@
           }
         </span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Duración promedio</span>
-        <span class="metric-card__value">{{ m.averageAnalysisDurationMs | duration }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Duración promedio</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.averageAnalysisDurationMs | duration }}</span>
       </div>
-      <div class="metric-card card">
-        <span class="metric-card__label">Duración promedio (7 días)</span>
-        <span class="metric-card__value">{{ m.averageAnalysisDurationMsLast7Days | duration }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Duración promedio (7 días)</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.averageAnalysisDurationMsLast7Days | duration }}</span>
       </div>
       <!-- UX-004: sin cambios — /admin/users no tiene hoy un filtro equivalente a hasAnalysis
            (verificado en ListUsersQueryDto: solo userId/paginación). No se inventa un query
            param inexistente en el backend; queda como texto plano a propósito. -->
-      <div class="metric-card card">
-        <span class="metric-card__label">Usuarios sin diagnóstico</span>
-        <span class="metric-card__value">{{ m.usersWithNoAnalysis ?? 0 }}</span>
+      <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Usuarios sin diagnóstico</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.usersWithNoAnalysis ?? 0 }}</span>
       </div>
       <!-- UX-004: mismo filtro (?hasAnalysis=false) que ya usa la alerta "campos sin diagnóstico". -->
-      <a class="metric-card card metric-card--link" routerLink="/fields" [queryParams]="{ hasAnalysis: false }">
-        <span class="metric-card__label">Campos sin diagnóstico</span>
-        <span class="metric-card__value">{{ m.fieldsWithNoAnalysis ?? 0 }}</span>
+      <a
+        class="metric-card card metric-card--link flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 text-inherit no-underline shadow-card hover:border-muted"
+        routerLink="/fields"
+        [queryParams]="{ hasAnalysis: false }"
+      >
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Campos sin diagnóstico</span>
+        <span class="metric-card__value text-[1.6rem] font-bold">{{ m.fieldsWithNoAnalysis ?? 0 }}</span>
       </a>
     </div>
   </section>
 
-  <section class="metrics-section">
-    <h2 class="metrics-section__title">Solicitudes de acceso</h2>
-    <div class="status-summary">
+  <section class="metrics-section mb-7">
+    <h2 class="metrics-section__title mb-[0.6rem] text-[0.8rem] uppercase tracking-[0.04em] text-muted">Solicitudes de acceso</h2>
+    <div class="status-summary flex flex-wrap gap-5 rounded-card border border-border bg-surface px-5 py-4">
       <!-- UX-004: ListAccessRequestsQueryDto ya acepta `status` — mismo filtro, nunca inventado. -->
       @for (s of accessRequestStatusOrder; track s) {
-        <a class="status-summary__item status-summary__item--link" routerLink="/access-requests" [queryParams]="{ status: s }">
+        <a
+          class="status-summary__item status-summary__item--link group flex items-center gap-2 text-inherit no-underline"
+          routerLink="/access-requests"
+          [queryParams]="{ status: s }"
+        >
           <app-status-badge [label]="accessRequestStatusLabels[s]" [tone]="accessRequestStatusTone(s)" />
-          <span class="status-summary__count">{{ m.accessRequestsByStatus?.[s] ?? 0 }}</span>
+          <span class="status-summary__count font-bold group-hover:underline">{{ m.accessRequestsByStatus?.[s] ?? 0 }}</span>
         </a>
       }
     </div>
   </section>
 
-  <div class="lists-grid">
-    <div class="card">
-      <div class="list-header">
-        <h2>Últimos diagnósticos</h2>
-        <a routerLink="/analysis">Ver todos →</a>
+  <div class="lists-grid grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
+    <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
+      <div class="list-header mb-3 flex items-center justify-between">
+        <h2 class="m-0 text-base">Últimos diagnósticos</h2>
+        <a class="text-[0.8rem] no-underline" routerLink="/analysis">Ver todos →</a>
       </div>
       @if (m.latestAnalysis.length) {
-        <div class="table-scroll table-scroll--plain">
+        <div class="table-scroll table-scroll--plain overflow-x-auto">
         <table>
           <thead>
             <tr>
@@ -206,17 +231,19 @@
         </table>
         </div>
       } @else {
-        <p class="empty-state">Todavía no hay diagnósticos.</p>
+        <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+          Todavía no hay diagnósticos.
+        </p>
       }
     </div>
 
-    <div class="card">
-      <div class="list-header">
-        <h2>Últimas solicitudes de acceso</h2>
-        <a routerLink="/access-requests">Ver todas →</a>
+    <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
+      <div class="list-header mb-3 flex items-center justify-between">
+        <h2 class="m-0 text-base">Últimas solicitudes de acceso</h2>
+        <a class="text-[0.8rem] no-underline" routerLink="/access-requests">Ver todas →</a>
       </div>
       @if (m.latestAccessRequests.length) {
-        <div class="table-scroll table-scroll--plain">
+        <div class="table-scroll table-scroll--plain overflow-x-auto">
         <table>
           <thead>
             <tr>
@@ -237,7 +264,9 @@
         </table>
         </div>
       } @else {
-        <p class="empty-state">Todavía no hay solicitudes de acceso.</p>
+        <p class="empty-state rounded-card border border-dashed border-border bg-surface px-4 py-8 text-center text-muted">
+          Todavía no hay solicitudes de acceso.
+        </p>
       }
     </div>
   </div>
