@@ -10,7 +10,7 @@ import { DurationPipe } from '../../shared/pipes/duration.pipe';
 import { OperationalAlertsComponent } from '../../shared/components/operational-alerts/operational-alerts.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { ProductAnalyticsComponent } from './product-analytics/product-analytics.component';
-import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
+import { analysisStatusLabel, analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
   ACCESS_REQUEST_STATUS_LABELS,
   accessRequestStatusTone,
@@ -47,6 +47,8 @@ export class DashboardComponent implements OnInit {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly analysisStatusTone = analysisStatusTone;
+
+  protected readonly analysisStatusLabel = analysisStatusLabel;
   protected readonly accessRequestStatusTone = accessRequestStatusTone;
   protected readonly accessRequestStatusLabels = ACCESS_REQUEST_STATUS_LABELS;
   protected readonly accessRequestStatusOrder = ACCESS_REQUEST_STATUS_ORDER;
@@ -55,10 +57,11 @@ export class DashboardComponent implements OnInit {
     this.load();
   }
 
-  // `/admin/metrics` no expone un contador de análisis "en proceso" (ver
-  // docs/admin-audit.md §9). Los únicos tres estados posibles de un análisis
-  // son Procesando/Finalizado/Error (ver AnalysisStatus), así que se deriva
-  // de forma exacta a partir de los totales que el backend sí devuelve.
+  // `/admin/metrics` no expone un contador de análisis "en curso" (ver
+  // docs/admin-audit.md §9). ADR-001: los estados posibles son Queued/Procesando/
+  // Finalizado/Error — el resto después de Finalizado y Error son los NO terminales
+  // (En cola + Procesando), así que la métrica se muestra como "En curso", no como
+  // "Procesando" a secas.
   // Se acota a 0 como defensa ante una lectura inconsistente entre contadores
   // (p. ej. un análisis creado entre los distintos COUNT del backend).
   protected processingAnalysis(m: AdminMetrics): number {

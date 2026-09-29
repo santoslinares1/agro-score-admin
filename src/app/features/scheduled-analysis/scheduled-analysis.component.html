@@ -204,7 +204,7 @@
             <td>
               @if (item.latestRun; as run) {
                 @if (run.analysisStatus) {
-                  <app-status-badge [label]="run.analysisStatus" [tone]="analysisStatusTone(run.analysisStatus)" />
+                  <app-status-badge [label]="analysisStatusLabel(run.analysisStatus)" [tone]="analysisStatusTone(run.analysisStatus)" />
                   @if (run.analysisId) {
                     <br />
                     <a

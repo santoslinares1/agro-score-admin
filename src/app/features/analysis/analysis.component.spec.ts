@@ -127,6 +127,30 @@ describe('AnalysisComponent', () => {
     expect(badge?.classList).not.toContain('badge--warning');
   });
 
+  it('ADR-001: renders "Queued" as "En cola" with the same non-terminal info tone, never the raw value', () => {
+    setup([buildAnalysis({ status: 'Queued', errorMessage: null })]);
+
+    const el = fixture.nativeElement as HTMLElement;
+    const badge = el.querySelector('tbody app-status-badge .badge');
+
+    expect(badge?.textContent?.trim()).toBe('En cola');
+    expect(badge?.classList).toContain('badge--info');
+    expect(el.querySelector('tbody')?.textContent).not.toContain('Queued');
+  });
+
+  it('ADR-001: el filtro de estado ofrece "En cola" (valor Queued) además de los estados existentes', () => {
+    setup([]);
+
+    const options = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>('select[name="status"] option'),
+    ).map((option) => [option.value, option.textContent?.trim()]);
+
+    expect(options).toContain(['Queued', 'En cola']);
+    expect(options).toContain(['Procesando', 'Procesando']);
+    expect(options).toContain(['Finalizado', 'Finalizado']);
+    expect(options).toContain(['Error', 'Error']);
+  });
+
   it('expands and collapses each row error independently without affecting other rows', () => {
     setup([
       buildAnalysis({ id: 'a1', errorMessage: 'Error corto A' }),

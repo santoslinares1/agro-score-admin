@@ -1,7 +1,9 @@
 // Los valores de status se mantienen en español, igual que el backend
 // (agro-score-api mantuvo el sistema de estados existente sin migrarlo a
 // inglés — ver docs/admin-backend.md en agro-score-api).
-export type AnalysisStatus = 'Procesando' | 'Finalizado' | 'Error';
+// ADR-001: 'Queued' = encolado de forma durable (todavía sin tomar por el job runner). Es no
+// terminal igual que 'Procesando'; se muestra como "En cola" (ver analysisStatusLabel).
+export type AnalysisStatus = 'Queued' | 'Procesando' | 'Finalizado' | 'Error';
 
 // PR 13A: mismos valores que analysis-verdict/entities/analysis-technical-verdict.entity.ts en
 // agro-score-api (AnalysisVerdictStatus/AnalysisVerdictLabel/AnalysisVerdictConfidence).

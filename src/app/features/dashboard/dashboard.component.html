@@ -99,7 +99,7 @@
         <span class="metric-card__value text-[1.6rem] font-bold">{{ m.totalAnalysis }}</span>
       </div>
       <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
-        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">Procesando</span>
+        <span class="metric-card__label text-xs uppercase tracking-[0.03em] text-muted">En curso</span>
         <span class="metric-card__value metric-card__value--processing text-[1.6rem] font-bold text-info">{{ processingAnalysis(m) }}</span>
       </div>
       <div class="metric-card card flex flex-col gap-[0.35rem] rounded-card border border-border bg-surface p-5 shadow-card">
@@ -221,7 +221,7 @@
               <tr>
                 <td>{{ item.lotName }}</td>
                 <td>
-                  <app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" />
+                  <app-status-badge [label]="analysisStatusLabel(item.status)" [tone]="analysisStatusTone(item.status)" />
                 </td>
                 <td>{{ item.durationMs | duration }}</td>
                 <td>{{ item.createdAt | date: 'short' }}</td>

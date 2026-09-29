@@ -9,7 +9,7 @@ import { UsersService } from '../../../core/services/users.service';
 import { CopyableIdComponent } from '../../../shared/components/copyable-id/copyable-id.component';
 import { StatusBadgeComponent, StatusTone } from '../../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
-import { analysisStatusTone } from '../../../shared/utils/analysis-status.util';
+import { analysisStatusLabel, analysisStatusTone } from '../../../shared/utils/analysis-status.util';
 import { getAuditActionLabel } from '../../../shared/utils/audit-action.util';
 import {
   fieldAnalysisStatusLabel,
@@ -77,6 +77,8 @@ export class UserDetailComponent implements OnInit {
   protected readonly assistanceError = signal<string | null>(null);
 
   protected readonly analysisStatusTone = analysisStatusTone;
+
+  protected readonly analysisStatusLabel = analysisStatusLabel;
   protected readonly fieldAnalysisStatusLabel = fieldAnalysisStatusLabel;
   protected readonly fieldAnalysisStatusTone = fieldAnalysisStatusTone;
   protected readonly fieldAttentionLabel = fieldAttentionLabel;

@@ -136,7 +136,7 @@
     @if (d.latestAnalysis; as la) {
       <div class="card rounded-card border border-border bg-surface p-5 shadow-card">
         <p>
-          <app-status-badge [label]="la.status" [tone]="analysisStatusTone(la.status)" />
+          <app-status-badge [label]="analysisStatusLabel(la.status)" [tone]="analysisStatusTone(la.status)" />
         </p>
         <dl class="fd-dl my-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-[0.4rem]">
           <dt class="text-[0.85rem] text-muted">Fecha</dt>
@@ -298,7 +298,7 @@
             @for (row of d.analyses; track row.id) {
               <tr>
                 <td>{{ row.createdAt | date: 'short' }}</td>
-                <td><app-status-badge [label]="row.status" [tone]="analysisStatusTone(row.status)" /></td>
+                <td><app-status-badge [label]="analysisStatusLabel(row.status)" [tone]="analysisStatusTone(row.status)" /></td>
                 <td>
                   @if (row.score != null) {
                     {{ row.score }}

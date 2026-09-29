@@ -10,7 +10,7 @@ import { ScheduledAnalysisService } from '../../core/services/scheduled-analysis
 import { CopyableIdComponent } from '../../shared/components/copyable-id/copyable-id.component';
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
-import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
+import { analysisStatusLabel, analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
   flowStageTone,
   flowStateBadgeLabel,
@@ -62,6 +62,8 @@ export class ScheduledAnalysisComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly analysisStatusTone = analysisStatusTone;
+
+  protected readonly analysisStatusLabel = analysisStatusLabel;
   protected readonly scheduleTone = scheduleTone;
   protected readonly runStatusLabel = runStatusLabel;
   protected readonly runStatusTone = runStatusTone;

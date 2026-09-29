@@ -7,7 +7,7 @@
     <select [(ngModel)]="status" name="status">
       <option value="">Todos los estados</option>
       @for (s of statuses; track s) {
-        <option [value]="s">{{ s }}</option>
+        <option [value]="s">{{ analysisStatusLabel(s) }}</option>
       }
     </select>
 
@@ -118,7 +118,7 @@
                 <span class="muted text-[0.8rem] text-muted">({{ item.ownerEmail }})</span>
               }
             </td>
-            <td><app-status-badge [label]="item.status" [tone]="analysisStatusTone(item.status)" /></td>
+            <td><app-status-badge [label]="analysisStatusLabel(item.status)" [tone]="analysisStatusTone(item.status)" /></td>
             <td>{{ item.createdAt | date: 'short' }}</td>
             <td>{{ item.completedAt ? (item.completedAt | date: 'short') : '—' }}</td>
             <td>{{ item.durationMs | duration }}</td>

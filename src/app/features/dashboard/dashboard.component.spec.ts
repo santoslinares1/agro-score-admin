@@ -177,11 +177,12 @@ describe('DashboardComponent', () => {
   function processingCardValue(fixture: ComponentFixture<DashboardComponent>): string | null {
     const root = fixture.nativeElement as HTMLElement;
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.metric-card'));
-    const processingCard = cards.find((card) => card.textContent?.includes('Procesando'));
+    // ADR-001: la card se llama "En curso" (En cola + Procesando), ya no "Procesando".
+    const processingCard = cards.find((card) => card.textContent?.includes('En curso'));
     return processingCard?.querySelector('.metric-card__value')?.textContent?.trim() ?? null;
   }
 
-  it('renders a "Procesando" KPI card with the value derived from /admin/metrics (total - completados - fallidos)', () => {
+  it('renders an "En curso" KPI card (Queued + Procesando) with the value derived from /admin/metrics (total - completados - fallidos)', () => {
     const fixture = createComponent(
       buildMetrics({ totalAnalysis: 20, completedAnalysis: 12, failedAnalysis: 3 }),
     );
@@ -189,7 +190,7 @@ describe('DashboardComponent', () => {
     expect(processingCardValue(fixture)).toBe('5');
   });
 
-  it('never shows a negative "Procesando" value when the backend counters are momentarily inconsistent', () => {
+  it('never shows a negative "En curso" value when the backend counters are momentarily inconsistent', () => {
     const fixture = createComponent(
       buildMetrics({ totalAnalysis: 10, completedAnalysis: 8, failedAnalysis: 5 }),
     );

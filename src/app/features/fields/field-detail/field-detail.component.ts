@@ -8,7 +8,7 @@ import { FieldDetailService } from '../../../core/services/field-detail.service'
 import { CopyableIdComponent } from '../../../shared/components/copyable-id/copyable-id.component';
 import { StatusBadgeComponent, StatusTone } from '../../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../../shared/pipes/duration.pipe';
-import { analysisStatusTone } from '../../../shared/utils/analysis-status.util';
+import { analysisStatusLabel, analysisStatusTone } from '../../../shared/utils/analysis-status.util';
 import {
   fieldAnalysisStatusLabel,
   fieldAnalysisStatusTone,
@@ -55,6 +55,8 @@ export class FieldDetailComponent implements OnInit {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly analysisStatusTone = analysisStatusTone;
+
+  protected readonly analysisStatusLabel = analysisStatusLabel;
   protected readonly fieldAnalysisStatusLabel = fieldAnalysisStatusLabel;
   protected readonly fieldAnalysisStatusTone = fieldAnalysisStatusTone;
   protected readonly fieldAttentionLabel = fieldAttentionLabel;

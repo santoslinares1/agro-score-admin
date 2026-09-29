@@ -10,7 +10,7 @@ import { CopyableIdComponent } from '../../shared/components/copyable-id/copyabl
 import { PaginationControlsComponent } from '../../shared/components/pagination-controls/pagination-controls.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge/status-badge.component';
 import { DurationPipe } from '../../shared/pipes/duration.pipe';
-import { analysisStatusTone } from '../../shared/utils/analysis-status.util';
+import { analysisStatusLabel, analysisStatusTone } from '../../shared/utils/analysis-status.util';
 import {
   confidenceLabel,
   generationStatusLabel,
@@ -50,8 +50,9 @@ export class AnalysisComponent implements OnInit {
   private readonly usersService = inject(UsersService);
   private readonly route = inject(ActivatedRoute);
 
-  protected readonly statuses: AnalysisStatus[] = ['Procesando', 'Finalizado', 'Error'];
+  protected readonly statuses: AnalysisStatus[] = ['Queued', 'Procesando', 'Finalizado', 'Error'];
   protected readonly analysisStatusTone = analysisStatusTone;
+  protected readonly analysisStatusLabel = analysisStatusLabel;
   protected readonly retryCopy = RETRY_COPY;
 
   // PR 13A: veredicto técnico — solo lectura, mismos labels que web/PDF (ver
