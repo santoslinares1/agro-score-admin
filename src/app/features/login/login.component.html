@@ -3,6 +3,16 @@
     class="login-card card flex w-full max-w-[340px] flex-col gap-[0.9rem] rounded-card border border-border bg-surface p-5 shadow-card"
     (ngSubmit)="submit()"
   >
+    <picture>
+      <source srcset="/brand/agroscore-isotipo-mono-white.svg" media="(prefers-color-scheme: dark)" />
+      <img
+        src="/brand/agroscore-isotipo-color-optimized.svg"
+        alt="AgroScore"
+        width="51"
+        height="32"
+        class="mb-2 h-8 w-auto"
+      />
+    </picture>
     <h1 class="mb-0 text-xl">AgroScore <span class="text-primary">Admin</span></h1>
     <p class="subtitle mb-2 text-[0.8rem] text-muted">
       Panel interno — acceso restringido a owner/admin.

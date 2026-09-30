@@ -14,8 +14,18 @@
       'max-900:-translate-x-full': !sidebarOpen(),
     }"
   >
-    <div class="sidebar__brand border-b border-border px-5 pb-4 pt-5 text-[1.05rem] font-bold">
-      AgroScore <span class="text-primary">Admin</span>
+    <div class="sidebar__brand flex items-center gap-2 border-b border-border px-5 pb-4 pt-5">
+      <picture>
+        <source srcset="/brand/agroscore-lockup-mono-white.svg" media="(prefers-color-scheme: dark)" />
+        <img
+          src="/brand/agroscore-lockup-color-optimized.svg"
+          alt="AgroScore"
+          width="131"
+          height="28"
+          class="h-7 w-auto"
+        />
+      </picture>
+      <span class="text-[1.05rem] font-bold text-primary">Admin</span>
     </div>
     <nav class="sidebar__nav flex flex-col gap-[0.15rem] p-3">
       @for (item of navItems; track item.path) {
